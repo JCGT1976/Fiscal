@@ -1,645 +1,112 @@
-<!DOCTYPE html>
-<html lang="es" data-theme="dark">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<meta name="theme-color" content="#0f1923">
-<title>Fiscal · SIF · MI Global</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-:root{
-  --bg:#0f1923; --surface:#161f2c; --surface2:#1d2a3a; --border:#243044;
-  --accent:#00c2ff; --accent2:#0077b6; --green:#00e5a0; --red:#ff4d6d; --yellow:#ffd166;
-  --text:#e8f0f8; --muted:#7a95b0; --radius:12px; --font:'Inter',system-ui,sans-serif;
-}
-[data-theme="light"]{
-  --bg:#e6ecf3; --surface:#f7fafd; --surface2:#ebf1f8; --border:#c9d3e0;
-  --accent:#0284c7; --accent2:#0369a1; --green:#059669; --red:#e11d48; --yellow:#d97706;
-  --text:#1e293b; --muted:#64748b;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;padding:24px}
-.wrap{max-width:1180px;margin:0 auto}
+-- ============================================================
+-- MÓDULO FISCAL — SIF · MI Global
+-- Tablas + Row Level Security (RLS)
+-- Ejecutar completo en: Supabase Dashboard → SQL Editor → New query
+-- ============================================================
 
-/* ── BOOT LOADER (verificación de sesión SSO) ───────────── */
-#bootLoader{
-  position:fixed;inset:0;z-index:99999;
-  background:#002855;
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
-}
-#bootLoader .spin{
-  width:32px;height:32px;
-  border:2px solid rgba(255,255,255,0.12);
-  border-top-color:#FFFFFF;
-  border-radius:50%;
-  animation:bootspin .7s linear infinite;
-  margin:0 auto 16px;
-}
-#bootLoader .txt{
-  font-size:11px;font-weight:500;letter-spacing:.14em;
-  text-transform:uppercase;color:rgba(255,255,255,0.55);
-  text-align:center;
-}
-@keyframes bootspin{to{transform:rotate(360deg)}}
-#app{display:none}
+-- 1) OBLIGACIONES / CALENDARIO SAT
+create table if not exists fiscal_obligaciones (
+  id            uuid primary key default gen_random_uuid(),
+  concepto      text not null,
+  periodicidad  text not null check (periodicidad in ('Mensual','Bimestral','Anual','Única')),
+  fecha_limite  date not null,
+  creado_por    uuid references auth.users(id),
+  creado_en     timestamptz not null default now()
+);
 
-.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
-.topbar-left h1{font-size:20px;font-weight:700}
-.topbar-left .sub{color:var(--muted);font-size:12px;margin-top:2px}
-.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.user-chip{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);
-  border-radius:999px;padding:5px 12px 5px 6px}
-.user-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent2);color:#03222e;
-  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
-.user-meta{display:flex;flex-direction:column;line-height:1.1}
-.user-meta .name{font-size:11.5px;font-weight:600}
-.user-meta .role{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.btn-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text);
-  border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600}
-.btn-ghost:hover{opacity:.85}
+-- 2) CONTROL DE CFDI
+create table if not exists fiscal_cfdi (
+  id          uuid primary key default gen_random_uuid(),
+  tipo        text not null check (tipo in ('Emitido','Recibido')),
+  rfc         text not null,
+  folio_uuid  text not null,
+  fecha       date not null,
+  monto       numeric(14,2) not null default 0,
+  estatus     text not null default 'Pendiente' check (estatus in ('Pendiente','Conciliado','Cancelado')),
+  creado_por  uuid references auth.users(id),
+  creado_en   timestamptz not null default now()
+);
 
-/* KPI cards */
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
-@media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr}}
-.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
-.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-.kpi-value{font-size:22px;font-weight:700}
-.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
+-- 3) PROVISIONES Y PAGOS
+create table if not exists fiscal_provisiones (
+  id                  uuid primary key default gen_random_uuid(),
+  concepto            text not null,
+  periodo             text not null,              -- formato 'YYYY-MM'
+  monto_provisionado  numeric(14,2) not null default 0,
+  monto_pagado        numeric(14,2) not null default 0,
+  creado_por          uuid references auth.users(id),
+  creado_en           timestamptz not null default now()
+);
 
-/* Tabs */
-.nav-tabs{display:flex;gap:6px;border-bottom:1px solid var(--border);margin-bottom:20px;flex-wrap:wrap}
-.nav-tab{background:none;border:none;color:var(--muted);padding:10px 14px;font-size:13px;font-weight:600;
-  cursor:pointer;border-bottom:2px solid transparent}
-.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.view{display:none}
-.view.active{display:block}
+-- 4) DEUDA FISCAL (actualización + recargos + multa)
+create table if not exists fiscal_deudas (
+  id                  uuid primary key default gen_random_uuid(),
+  concepto            text not null,
+  monto_historico     numeric(14,2) not null default 0,
+  fecha_vencimiento   date not null,
+  fecha_pago          date,
+  inpc_inicial        numeric(12,4),
+  inpc_final          numeric(12,4),
+  tasa_recargo        numeric(6,3) not null default 0,
+  meses               integer not null default 0,
+  factor_actualizacion numeric(10,4) not null default 1,
+  monto_actualizado   numeric(14,2) not null default 0,
+  recargos            numeric(14,2) not null default 0,
+  multa               numeric(14,2) not null default 0,
+  total               numeric(14,2) not null default 0,
+  creado_por          uuid references auth.users(id),
+  creado_en           timestamptz not null default now()
+);
 
-/* Cards / sections */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:18px}
-.card h2{font-size:15px;font-weight:700;margin-bottom:4px}
-.card .desc{font-size:12px;color:var(--muted);margin-bottom:16px}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-@media(max-width:800px){.grid-2,.grid-3{grid-template-columns:1fr}}
+-- 5) CÁLCULOS DE ISR / IVA (historial del simulador)
+create table if not exists fiscal_calculos_impuestos (
+  id                uuid primary key default gen_random_uuid(),
+  periodo           text not null,                 -- formato 'YYYY-MM'
+  ingresos          numeric(14,2) not null default 0,
+  deducciones       numeric(14,2) not null default 0,
+  tasa_isr          numeric(6,3) not null default 30,
+  tasa_iva          numeric(6,3) not null default 16,
+  iva_acreditable   numeric(14,2) not null default 0,
+  utilidad          numeric(14,2) not null default 0,
+  isr               numeric(14,2) not null default 0,
+  iva_cargo         numeric(14,2) not null default 0,
+  total             numeric(14,2) not null default 0,
+  creado_por        uuid references auth.users(id),
+  creado_en         timestamptz not null default now()
+);
 
-label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
-input,select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);
-  border-radius:8px;padding:9px 10px;font-size:13px;font-family:var(--font)}
-input:focus,select:focus{outline:none;border-color:var(--accent)}
-.field{margin-bottom:12px}
-.btn{background:var(--accent);color:#03222e;border:none;border-radius:8px;padding:10px 18px;
-  font-size:13px;font-weight:700;cursor:pointer}
-.btn:hover{opacity:.9}
-.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+-- ============================================================
+-- ROW LEVEL SECURITY
+-- Regla: solo usuarios con sesión válida (los que ya pasaron el
+-- login del SIF-Portal) pueden leer/escribir. Igual de estricto
+-- que necesitas para arrancar; se puede refinar por rol después
+-- (ej. solo 'admin'/'income' pueden capturar, 'view' solo lee).
+-- ============================================================
 
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th{text-align:left;color:var(--muted);text-transform:uppercase;font-size:10.5px;letter-spacing:.04em;
-  padding:8px 10px;border-bottom:1px solid var(--border)}
-td{padding:9px 10px;border-bottom:1px solid var(--border)}
-tr:last-child td{border-bottom:none}
-.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700}
-.badge-green{background:rgba(0,229,160,.15);color:var(--green)}
-.badge-red{background:rgba(255,77,109,.15);color:var(--red)}
-.badge-yellow{background:rgba(255,209,102,.15);color:var(--yellow)}
-.badge-muted{background:rgba(122,149,176,.15);color:var(--muted)}
+alter table fiscal_obligaciones        enable row level security;
+alter table fiscal_cfdi                enable row level security;
+alter table fiscal_provisiones         enable row level security;
+alter table fiscal_deudas              enable row level security;
+alter table fiscal_calculos_impuestos  enable row level security;
 
-.note{font-size:11.5px;color:var(--muted);background:var(--surface2);border:1px dashed var(--border);
-  border-radius:8px;padding:10px 12px;margin-top:10px}
-.note b{color:var(--text)}
-.result-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:14px}
-.result-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
-.result-row.total{border-top:1px solid var(--border);margin-top:6px;padding-top:10px;font-weight:700;font-size:15px}
-.result-row .muted{color:var(--muted)}
-.table-wrap{overflow-x:auto}
-</style>
-</head>
-<body>
+create policy "auth full access" on fiscal_obligaciones
+  for all using (auth.uid() is not null) with check (auth.uid() is not null);
 
-<!-- ═══════════ BOOT LOADER — verifica sesión SSO contra SIF-Portal ═══════════ -->
-<div id="bootLoader">
-  <div>
-    <div class="spin"></div>
-    <div class="txt">Verificando sesión</div>
-  </div>
-</div>
+create policy "auth full access" on fiscal_cfdi
+  for all using (auth.uid() is not null) with check (auth.uid() is not null);
 
-<div id="app" class="wrap">
+create policy "auth full access" on fiscal_provisiones
+  for all using (auth.uid() is not null) with check (auth.uid() is not null);
 
-  <div class="topbar">
-    <div class="topbar-left">
-      <h1>Módulo Fiscal</h1>
-      <div class="sub">SIF · MI Global — Obligaciones SAT, impuestos, CFDI, provisiones y deuda fiscal</div>
-    </div>
-    <div class="topbar-right">
-      <div class="user-chip">
-        <div class="user-avatar" id="userAvatar">—</div>
-        <div class="user-meta">
-          <span class="name" id="userName">—</span>
-          <span class="role" id="userRole">—</span>
-        </div>
-      </div>
-      <button class="btn-ghost" onclick="toggleTheme()">🌓</button>
-      <button class="btn-ghost" onclick="volverPortal()">← Portal</button>
-      <button class="btn-ghost" onclick="cerrarSesion()">Cerrar sesión</button>
-    </div>
-  </div>
+create policy "auth full access" on fiscal_deudas
+  for all using (auth.uid() is not null) with check (auth.uid() is not null);
 
-  <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-label">Próximo vencimiento</div>
-      <div class="kpi-value" id="kpiProximo">—</div>
-      <div class="kpi-sub" id="kpiProximoSub">—</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Impuesto estimado del mes</div>
-      <div class="kpi-value" id="kpiImpuestoMes">$0</div>
-      <div class="kpi-sub">ISR + IVA estimados</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">CFDI pendientes de conciliar</div>
-      <div class="kpi-value" id="kpiCfdiPend">0</div>
-      <div class="kpi-sub">de <span id="kpiCfdiTotal">0</span> registrados</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Deuda fiscal actualizada</div>
-      <div class="kpi-value" id="kpiDeudaTotal">$0</div>
-      <div class="kpi-sub">Incluye recargos y actualización</div>
-    </div>
-  </div>
+create policy "auth full access" on fiscal_calculos_impuestos
+  for all using (auth.uid() is not null) with check (auth.uid() is not null);
 
-  <div class="nav-tabs">
-    <button class="nav-tab active" data-view="calendario" onclick="showView('calendario')">📅 Calendario SAT</button>
-    <button class="nav-tab" data-view="impuestos" onclick="showView('impuestos')">🧮 Cálculo de Impuestos</button>
-    <button class="nav-tab" data-view="cfdi" onclick="showView('cfdi')">🧾 Control de CFDI</button>
-    <button class="nav-tab" data-view="provisiones" onclick="showView('provisiones')">💰 Provisiones y Pagos</button>
-    <button class="nav-tab" data-view="deuda" onclick="showView('deuda')">⚠️ Deuda Fiscal</button>
-  </div>
-
-  <!-- ===================== CALENDARIO SAT ===================== -->
-  <div class="view active" id="view-calendario">
-    <div class="card">
-      <h2>Agregar obligación</h2>
-      <div class="desc">Registra una obligación fiscal recurrente o única (declaración, pago provisional, informativa, etc.)</div>
-      <div class="grid-3">
-        <div class="field"><label>Concepto</label><input id="oblConcepto" placeholder="Ej. Pago provisional ISR"></div>
-        <div class="field"><label>Periodicidad</label>
-          <select id="oblPeriodicidad">
-            <option>Mensual</option><option>Bimestral</option><option>Anual</option><option>Única</option>
-          </select>
-        </div>
-        <div class="field"><label>Próxima fecha límite</label><input id="oblFecha" type="date"></div>
-      </div>
-      <button class="btn" onclick="agregarObligacion()">+ Agregar obligación</button>
-    </div>
-    <div class="card">
-      <h2>Calendario de obligaciones</h2>
-      <div class="desc">Ordenadas por fecha límite más próxima. El estatus se recalcula automáticamente según los días restantes.</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Concepto</th><th>Periodicidad</th><th>Fecha límite</th><th>Días restantes</th><th>Estatus</th><th></th></tr></thead>
-          <tbody id="tblObligaciones"></tbody>
-        </table>
-      </div>
-      <div class="note"><b>Nota:</b> este calendario es de control interno. Las fechas límite oficiales deben confirmarse siempre contra el <a href="https://www.sat.gob.mx" target="_blank" style="color:var(--accent)">portal del SAT</a>.</div>
-    </div>
-  </div>
-
-  <!-- ===================== CALCULO DE IMPUESTOS ===================== -->
-  <div class="view" id="view-impuestos">
-    <div class="card">
-      <h2>Simulador de ISR / IVA del periodo</h2>
-      <div class="desc">Estimación simplificada de pago provisional. No sustituye el cálculo oficial de tu contador — úsalo como control preventivo.</div>
-      <div class="grid-3">
-        <div class="field"><label>Periodo</label><input id="impPeriodo" type="month"></div>
-        <div class="field"><label>Ingresos gravables</label><input id="impIngresos" type="number" step="0.01" placeholder="0.00"></div>
-        <div class="field"><label>Deducciones autorizadas</label><input id="impDeducciones" type="number" step="0.01" placeholder="0.00"></div>
-      </div>
-      <div class="grid-3">
-        <div class="field"><label>Tasa ISR aplicable (%)</label><input id="impTasaIsr" type="number" step="0.01" value="30"></div>
-        <div class="field"><label>Tasa IVA (%)</label><input id="impTasaIva" type="number" step="0.01" value="16"></div>
-        <div class="field"><label>IVA acreditable del periodo</label><input id="impIvaAcreditable" type="number" step="0.01" placeholder="0.00"></div>
-      </div>
-      <button class="btn" onclick="calcularImpuesto()">Calcular y guardar en historial</button>
-      <div class="result-box" id="impResultado" style="display:none">
-        <div class="result-row"><span class="muted">Utilidad fiscal (ingresos − deducciones)</span><span id="rUtilidad">$0</span></div>
-        <div class="result-row"><span class="muted">ISR estimado</span><span id="rIsr">$0</span></div>
-        <div class="result-row"><span class="muted">IVA trasladado</span><span id="rIvaTrasladado">$0</span></div>
-        <div class="result-row"><span class="muted">IVA a favor / a cargo</span><span id="rIvaCargo">$0</span></div>
-        <div class="result-row total"><span>Total estimado a pagar</span><span id="rTotal">$0</span></div>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Historial de cálculos</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Periodo</th><th>Utilidad fiscal</th><th>ISR</th><th>IVA a cargo</th><th>Total</th></tr></thead>
-          <tbody id="tblImpuestos"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== CFDI ===================== -->
-  <div class="view" id="view-cfdi">
-    <div class="card">
-      <h2>Registrar CFDI</h2>
-      <div class="grid-3">
-        <div class="field"><label>Tipo</label>
-          <select id="cfdiTipo"><option>Emitido</option><option>Recibido</option></select>
-        </div>
-        <div class="field"><label>RFC contraparte</label><input id="cfdiRfc" placeholder="XAXX010101000"></div>
-        <div class="field"><label>Folio fiscal (UUID)</label><input id="cfdiFolio" placeholder="UUID"></div>
-      </div>
-      <div class="grid-3">
-        <div class="field"><label>Fecha</label><input id="cfdiFecha" type="date"></div>
-        <div class="field"><label>Monto total</label><input id="cfdiMonto" type="number" step="0.01" placeholder="0.00"></div>
-        <div class="field"><label>Estatus</label>
-          <select id="cfdiEstatus"><option>Pendiente</option><option>Conciliado</option><option>Cancelado</option></select>
-        </div>
-      </div>
-      <button class="btn" onclick="agregarCfdi()">+ Registrar CFDI</button>
-    </div>
-    <div class="card">
-      <h2>Comprobantes registrados</h2>
-      <div class="desc">Concilia contra los gastos/ingresos del módulo de Flujo y Gastos para detectar CFDI faltantes o duplicados.</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Tipo</th><th>RFC</th><th>Folio</th><th>Fecha</th><th>Monto</th><th>Estatus</th><th></th></tr></thead>
-          <tbody id="tblCfdi"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== PROVISIONES Y PAGOS ===================== -->
-  <div class="view" id="view-provisiones">
-    <div class="card">
-      <h2>Registrar provisión / pago</h2>
-      <div class="grid-3">
-        <div class="field"><label>Concepto</label><input id="provConcepto" placeholder="Ej. ISR mensual"></div>
-        <div class="field"><label>Periodo</label><input id="provPeriodo" type="month"></div>
-        <div class="field"><label>Monto provisionado</label><input id="provProvisionado" type="number" step="0.01" placeholder="0.00"></div>
-      </div>
-      <div class="field" style="max-width:260px"><label>Monto pagado</label><input id="provPagado" type="number" step="0.01" placeholder="0.00"></div>
-      <button class="btn" onclick="agregarProvision()">+ Registrar</button>
-    </div>
-    <div class="card">
-      <h2>Provisiones vs pagos realizados</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Concepto</th><th>Periodo</th><th>Provisionado</th><th>Pagado</th><th>Diferencia</th><th>Estatus</th></tr></thead>
-          <tbody id="tblProvisiones"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== DEUDA FISCAL ===================== -->
-  <div class="view" id="view-deuda">
-    <div class="card">
-      <h2>Calculadora de deuda fiscal (actualización + recargos + multa)</h2>
-      <div class="desc">Metodología CFF: la actualización se aplica primero sobre el monto histórico; los recargos se calculan sobre el monto ya actualizado.</div>
-      <div class="grid-3">
-        <div class="field"><label>Concepto / obligación</label><input id="deuConcepto" placeholder="Ej. IVA marzo 2025"></div>
-        <div class="field"><label>Monto histórico del adeudo</label><input id="deuMonto" type="number" step="0.01" placeholder="0.00"></div>
-        <div class="field"><label>Fecha en que debió pagarse</label><input id="deuFechaVenc" type="date"></div>
-      </div>
-      <div class="grid-3">
-        <div class="field"><label>Fecha de pago (o de hoy)</label><input id="deuFechaPago" type="date"></div>
-        <div class="field"><label>INPC del mes anterior al vencimiento</label><input id="deuInpcIni" type="number" step="0.0001" placeholder="Ej. 128.5432"></div>
-        <div class="field"><label>INPC del mes anterior al pago</label><input id="deuInpcFin" type="number" step="0.0001" placeholder="Ej. 134.1200"></div>
-      </div>
-      <div class="grid-3">
-        <div class="field"><label>Tipo de recargo</label>
-          <select id="deuTipoRecargo" onchange="actualizarTasaRecargo()">
-            <option value="1.38">Prórroga — 1.38% mensual</option>
-            <option value="2.07" selected>Mora — 2.07% mensual</option>
-            <option value="1.42">Pago a plazos ≤12 meses — 1.42% mensual</option>
-            <option value="1.63">Pago a plazos 13–24 meses — 1.63% mensual</option>
-            <option value="1.97">Pago a plazos ≥25 meses / diferido — 1.97% mensual</option>
-          </select>
-        </div>
-        <div class="field"><label>Tasa de recargo mensual (%) — editable</label><input id="deuTasaRecargo" type="number" step="0.01" value="2.07"></div>
-        <div class="field"><label>Multa aplicable (opcional)</label><input id="deuMulta" type="number" step="0.01" placeholder="0.00"></div>
-      </div>
-      <button class="btn" onclick="calcularDeuda()">Calcular deuda actualizada</button>
-
-      <div class="result-box" id="deuResultado" style="display:none">
-        <div class="result-row"><span class="muted">Meses transcurridos (para recargos)</span><span id="dMeses">0</span></div>
-        <div class="result-row"><span class="muted">Factor de actualización</span><span id="dFactor">1.0000</span></div>
-        <div class="result-row"><span class="muted">Monto actualizado</span><span id="dMontoAct">$0</span></div>
-        <div class="result-row"><span class="muted">Recargos generados</span><span id="dRecargos">$0</span></div>
-        <div class="result-row"><span class="muted">Multa</span><span id="dMulta">$0</span></div>
-        <div class="result-row total"><span>Total a pagar</span><span id="dTotal">$0</span></div>
-      </div>
-      <div class="note">
-        <b>Fuentes de referencia (verificar vigencia antes de usar en producción):</b> tasa de recargos por mora 2026 = 2.07% mensual; prórroga = 1.38% mensual; pagos a plazos = 1.42% / 1.63% / 1.97% según parcialidades. Factor de actualización = INPC del mes anterior al pago ÷ INPC del mes anterior al vencimiento. Multas por declaración extemporánea del ISR: rango general aproximado de $2,050 a $50,710 por obligación (Art. 82 CFF) — ingrésala manualmente según el caso. Confirma siempre contra el <a href="https://www.sat.gob.mx" target="_blank" style="color:var(--accent)">simulador oficial del SAT</a> o con tu contador antes de pagar.
-      </div>
-    </div>
-    <div class="card">
-      <h2>Adeudos registrados</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Concepto</th><th>Monto histórico</th><th>Actualizado</th><th>Recargos</th><th>Multa</th><th>Total</th></tr></thead>
-          <tbody id="tblDeudas"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<script>
-/* ============================================================
-   MÓDULO FISCAL — SIF · MI Global
-   SSO: comparte sesión de Supabase con SIF-Portal (mismo origen
-   jcgt1976.github.io), igual que ya hace Deadpool / Flujo y Gastos.
-   ============================================================ */
-const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
-const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
-});
-
-/* Si el logout ocurre en otra pestaña/módulo, regresamos al portal. */
-sb.auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_OUT') window.location.replace(PORTAL_URL);
-});
-
-async function bootstrapAuth() {
-  try {
-    const { data: { session }, error } = await sb.auth.getSession();
-    if (error || !session || !session.user) {
-      window.location.replace(PORTAL_URL);
-      return;
-    }
-    // Cargar nombre/rol desde la misma tabla 'usuarios' que usa el portal.
-    try {
-      const { data: user } = await sb.from('usuarios').select('*').eq('auth_id', session.user.id).maybeSingle();
-      if (user) {
-        document.getElementById('userName').textContent = user.nombre || user.username || '—';
-        document.getElementById('userRole').textContent = user.rol || '—';
-        document.getElementById('userAvatar').textContent = getInitials(user.nombre || user.username || '?');
-      }
-    } catch (e) { console.warn('No se pudo cargar el usuario:', e); }
-
-    document.getElementById('bootLoader').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-  } catch (e) {
-    console.error('bootstrapAuth error:', e);
-    window.location.replace(PORTAL_URL);
-  }
-}
-function getInitials(nom){
-  const parts = String(nom).trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].substring(0,2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-}
-function volverPortal(){ window.location.href = PORTAL_URL; }
-async function cerrarSesion(){
-  try { await sb.auth.signOut(); } catch(e){ console.warn(e); }
-  window.location.replace(PORTAL_URL);
-}
-
-/* ---------- Estado en memoria (sample data) ----------
-   Al conectar a Supabase de verdad, reemplazar estos arrays por
-   lecturas/escrituras a las tablas fiscal_* (ver guía de integración). */
-let obligaciones = [
-  {concepto:"Pago provisional ISR", periodicidad:"Mensual", fecha:addDays(8)},
-  {concepto:"Declaración IVA", periodicidad:"Mensual", fecha:addDays(8)},
-  {concepto:"DIOT", periodicidad:"Mensual", fecha:addDays(15)},
-];
-let calculosImpuestos = [];
-let cfdis = [];
-let provisiones = [];
-let deudas = [];
-
-function addDays(n){
-  const d = new Date(); d.setDate(d.getDate()+n);
-  return d.toISOString().slice(0,10);
-}
-function fmtMoney(n){
-  n = Number(n)||0;
-  return n.toLocaleString('es-MX',{style:'currency',currency:'MXN'});
-}
-function diasRestantes(fechaStr){
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const f = new Date(fechaStr+"T00:00:00");
-  return Math.round((f-hoy)/86400000);
-}
-
-/* ---------- THEME ---------- */
-function toggleTheme(){
-  const html = document.documentElement;
-  html.dataset.theme = html.dataset.theme === "light" ? "dark" : "light";
-}
-
-/* ---------- TABS ---------- */
-function showView(name){
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('view-'+name).classList.add('active');
-  document.querySelector('.nav-tab[data-view="'+name+'"]').classList.add('active');
-}
-
-/* ---------- CALENDARIO ---------- */
-function agregarObligacion(){
-  const concepto = document.getElementById('oblConcepto').value.trim();
-  const periodicidad = document.getElementById('oblPeriodicidad').value;
-  const fecha = document.getElementById('oblFecha').value;
-  if(!concepto || !fecha){ alert('Completa concepto y fecha.'); return; }
-  obligaciones.push({concepto, periodicidad, fecha});
-  document.getElementById('oblConcepto').value='';
-  document.getElementById('oblFecha').value='';
-  renderObligaciones();
-}
-function eliminarObligacion(i){ obligaciones.splice(i,1); renderObligaciones(); }
-
-function renderObligaciones(){
-  obligaciones.sort((a,b)=> new Date(a.fecha) - new Date(b.fecha));
-  const tbody = document.getElementById('tblObligaciones');
-  tbody.innerHTML = obligaciones.map((o,i)=>{
-    const dr = diasRestantes(o.fecha);
-    let badge = 'badge-green', txt = 'A tiempo';
-    if(dr < 0){ badge='badge-red'; txt='Vencida'; }
-    else if(dr <= 3){ badge='badge-red'; txt='Urgente'; }
-    else if(dr <= 7){ badge='badge-yellow'; txt='Próxima'; }
-    return `<tr>
-      <td>${o.concepto}</td><td>${o.periodicidad}</td><td>${o.fecha}</td>
-      <td>${dr}</td>
-      <td><span class="badge ${badge}">${txt}</span></td>
-      <td><button class="btn-secondary btn" style="padding:4px 10px;font-size:11px" onclick="eliminarObligacion(${i})">Quitar</button></td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin obligaciones registradas.</td></tr>';
-
-  if(obligaciones.length){
-    const prox = [...obligaciones].sort((a,b)=> new Date(a.fecha)-new Date(b.fecha))[0];
-    document.getElementById('kpiProximo').textContent = prox.fecha;
-    document.getElementById('kpiProximoSub').textContent = prox.concepto;
-  }
-}
-
-/* ---------- IMPUESTOS ---------- */
-function calcularImpuesto(){
-  const periodo = document.getElementById('impPeriodo').value || '—';
-  const ingresos = parseFloat(document.getElementById('impIngresos').value)||0;
-  const deducciones = parseFloat(document.getElementById('impDeducciones').value)||0;
-  const tasaIsr = parseFloat(document.getElementById('impTasaIsr').value)||0;
-  const tasaIva = parseFloat(document.getElementById('impTasaIva').value)||0;
-  const ivaAcreditable = parseFloat(document.getElementById('impIvaAcreditable').value)||0;
-
-  const utilidad = Math.max(ingresos - deducciones, 0);
-  const isr = utilidad * (tasaIsr/100);
-  const ivaTrasladado = ingresos * (tasaIva/100);
-  const ivaCargo = Math.max(ivaTrasladado - ivaAcreditable, 0);
-  const total = isr + ivaCargo;
-
-  document.getElementById('rUtilidad').textContent = fmtMoney(utilidad);
-  document.getElementById('rIsr').textContent = fmtMoney(isr);
-  document.getElementById('rIvaTrasladado').textContent = fmtMoney(ivaTrasladado);
-  document.getElementById('rIvaCargo').textContent = fmtMoney(ivaCargo);
-  document.getElementById('rTotal').textContent = fmtMoney(total);
-  document.getElementById('impResultado').style.display = 'block';
-
-  calculosImpuestos.unshift({periodo, utilidad, isr, ivaCargo, total});
-  renderImpuestos();
-  document.getElementById('kpiImpuestoMes').textContent = fmtMoney(total);
-}
-function renderImpuestos(){
-  const tbody = document.getElementById('tblImpuestos');
-  tbody.innerHTML = calculosImpuestos.map(c=>`<tr>
-      <td>${c.periodo}</td><td>${fmtMoney(c.utilidad)}</td><td>${fmtMoney(c.isr)}</td>
-      <td>${fmtMoney(c.ivaCargo)}</td><td>${fmtMoney(c.total)}</td>
-    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">Sin cálculos registrados.</td></tr>';
-}
-
-/* ---------- CFDI ---------- */
-function agregarCfdi(){
-  const tipo = document.getElementById('cfdiTipo').value;
-  const rfc = document.getElementById('cfdiRfc').value.trim();
-  const folio = document.getElementById('cfdiFolio').value.trim();
-  const fecha = document.getElementById('cfdiFecha').value;
-  const monto = parseFloat(document.getElementById('cfdiMonto').value)||0;
-  const estatus = document.getElementById('cfdiEstatus').value;
-  if(!rfc || !folio || !fecha){ alert('Completa RFC, folio y fecha.'); return; }
-  cfdis.push({tipo, rfc, folio, fecha, monto, estatus});
-  ['cfdiRfc','cfdiFolio','cfdiFecha','cfdiMonto'].forEach(id=>document.getElementById(id).value='');
-  renderCfdi();
-}
-function cambiarEstatusCfdi(i){
-  const orden = ['Pendiente','Conciliado','Cancelado'];
-  const actual = orden.indexOf(cfdis[i].estatus);
-  cfdis[i].estatus = orden[(actual+1)%orden.length];
-  renderCfdi();
-}
-function renderCfdi(){
-  const tbody = document.getElementById('tblCfdi');
-  tbody.innerHTML = cfdis.map((c,i)=>{
-    const badge = c.estatus==='Conciliado'?'badge-green':c.estatus==='Cancelado'?'badge-red':'badge-yellow';
-    return `<tr>
-      <td>${c.tipo}</td><td>${c.rfc}</td><td style="font-size:10.5px">${c.folio}</td><td>${c.fecha}</td>
-      <td>${fmtMoney(c.monto)}</td>
-      <td><span class="badge ${badge}" style="cursor:pointer" onclick="cambiarEstatusCfdi(${i})">${c.estatus}</span></td>
-      <td></td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="7" style="color:var(--muted)">Sin CFDI registrados.</td></tr>';
-
-  document.getElementById('kpiCfdiTotal').textContent = cfdis.length;
-  document.getElementById('kpiCfdiPend').textContent = cfdis.filter(c=>c.estatus==='Pendiente').length;
-}
-
-/* ---------- PROVISIONES ---------- */
-function agregarProvision(){
-  const concepto = document.getElementById('provConcepto').value.trim();
-  const periodo = document.getElementById('provPeriodo').value;
-  const provisionado = parseFloat(document.getElementById('provProvisionado').value)||0;
-  const pagado = parseFloat(document.getElementById('provPagado').value)||0;
-  if(!concepto || !periodo){ alert('Completa concepto y periodo.'); return; }
-  provisiones.push({concepto, periodo, provisionado, pagado});
-  ['provConcepto','provPeriodo','provProvisionado','provPagado'].forEach(id=>document.getElementById(id).value='');
-  renderProvisiones();
-}
-function renderProvisiones(){
-  const tbody = document.getElementById('tblProvisiones');
-  tbody.innerHTML = provisiones.map(p=>{
-    const dif = p.provisionado - p.pagado;
-    const estatus = dif<=0 ? '<span class="badge badge-green">Cubierto</span>' : '<span class="badge badge-yellow">Pendiente</span>';
-    return `<tr>
-      <td>${p.concepto}</td><td>${p.periodo}</td><td>${fmtMoney(p.provisionado)}</td>
-      <td>${fmtMoney(p.pagado)}</td><td>${fmtMoney(dif)}</td><td>${estatus}</td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin provisiones registradas.</td></tr>';
-}
-
-/* ---------- DEUDA FISCAL ---------- */
-function actualizarTasaRecargo(){
-  const sel = document.getElementById('deuTipoRecargo');
-  document.getElementById('deuTasaRecargo').value = sel.value;
-}
-function mesesEntre(f1,f2){
-  const d1 = new Date(f1+"T00:00:00"), d2 = new Date(f2+"T00:00:00");
-  let meses = (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
-  if(d2.getDate() >= d1.getDate()) meses += 1;
-  return Math.max(meses,0);
-}
-function calcularDeuda(){
-  const concepto = document.getElementById('deuConcepto').value.trim() || 'Adeudo sin nombre';
-  const monto = parseFloat(document.getElementById('deuMonto').value)||0;
-  const fVenc = document.getElementById('deuFechaVenc').value;
-  const fPago = document.getElementById('deuFechaPago').value || new Date().toISOString().slice(0,10);
-  const inpcIni = parseFloat(document.getElementById('deuInpcIni').value)||0;
-  const inpcFin = parseFloat(document.getElementById('deuInpcFin').value)||0;
-  const tasaRecargo = parseFloat(document.getElementById('deuTasaRecargo').value)||0;
-  const multa = parseFloat(document.getElementById('deuMulta').value)||0;
-
-  if(!monto || !fVenc){ alert('Captura al menos el monto y la fecha de vencimiento.'); return; }
-
-  const meses = mesesEntre(fVenc, fPago);
-  let factor = 1;
-  if(inpcIni > 0 && inpcFin > 0){
-    factor = inpcFin / inpcIni;
-    if(factor < 1) factor = 1;
-  }
-  const montoActualizado = monto * factor;
-  const recargos = montoActualizado * (tasaRecargo/100) * meses;
-  const total = montoActualizado + recargos + multa;
-
-  document.getElementById('dMeses').textContent = meses;
-  document.getElementById('dFactor').textContent = factor.toFixed(4);
-  document.getElementById('dMontoAct').textContent = fmtMoney(montoActualizado);
-  document.getElementById('dRecargos').textContent = fmtMoney(recargos);
-  document.getElementById('dMulta').textContent = fmtMoney(multa);
-  document.getElementById('dTotal').textContent = fmtMoney(total);
-  document.getElementById('deuResultado').style.display = 'block';
-
-  deudas.unshift({concepto, monto, montoActualizado, recargos, multa, total});
-  renderDeudas();
-}
-function renderDeudas(){
-  const tbody = document.getElementById('tblDeudas');
-  tbody.innerHTML = deudas.map(d=>`<tr>
-      <td>${d.concepto}</td><td>${fmtMoney(d.monto)}</td><td>${fmtMoney(d.montoActualizado)}</td>
-      <td>${fmtMoney(d.recargos)}</td><td>${fmtMoney(d.multa)}</td><td><b>${fmtMoney(d.total)}</b></td>
-    </tr>`).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin adeudos registrados.</td></tr>';
-
-  const totalDeuda = deudas.reduce((s,d)=>s+d.total,0);
-  document.getElementById('kpiDeudaTotal').textContent = fmtMoney(totalDeuda);
-}
-
-/* ---------- INIT ---------- */
-renderObligaciones();
-renderImpuestos();
-renderCfdi();
-renderProvisiones();
-renderDeudas();
-bootstrapAuth();
-</script>
-</body>
-</html>
+-- ============================================================
+-- Índices útiles
+-- ============================================================
+create index if not exists idx_fiscal_obligaciones_fecha on fiscal_obligaciones(fecha_limite);
+create index if not exists idx_fiscal_cfdi_estatus on fiscal_cfdi(estatus);
+create index if not exists idx_fiscal_deudas_vencimiento on fiscal_deudas(fecha_vencimiento);
