@@ -121,6 +121,11 @@ tr:last-child td{border-bottom:none}
 .sync-badge{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
 .sync-dot.error{background:var(--red)}
+.cxc-controls{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;margin-bottom:14px}
+.cxc-controls .grp{display:flex;flex-direction:column;gap:6px}
+.cxc-controls .grp.grow{flex:1;min-width:220px}
+.cxc-controls .chips{display:flex;gap:6px;flex-wrap:wrap}
+.cxc-controls select{width:auto;min-width:200px}
 </style>
 </head>
 <body>
@@ -249,7 +254,29 @@ tr:last-child td{border-bottom:none}
         <b style="color:var(--yellow)">amarillo</b> = pendiente no fiduciario y negociable con el SAT, o ya dentro de un plan de pago activo;
         <b style="color:var(--green)">verde</b> = liquidado. Cifras extraídas de la cédula fiscal corporativa (hoja "Resumen").
       </div>
-      <div id="cxcFiltros" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
+
+      <div class="cxc-controls">
+        <div class="grp grow">
+          <label style="margin-bottom:0">Empresa</label>
+          <div id="cxcFiltros" class="chips"></div>
+        </div>
+        <div class="grp grow">
+          <label style="margin-bottom:0">Tipo de impuesto</label>
+          <div id="cxcFiltrosCategoria" class="chips"></div>
+        </div>
+        <div class="grp">
+          <label style="margin-bottom:0">Ordenar por</label>
+          <select id="cxcOrden" onchange="cxcSetOrden(this.value)">
+            <option value="monto_desc">Monto (mayor a menor)</option>
+            <option value="monto_asc">Monto (menor a mayor)</option>
+            <option value="empresa">Empresa (A-Z)</option>
+            <option value="categoria">Tipo de impuesto (A-Z)</option>
+            <option value="anio_asc">Año (más antiguo primero)</option>
+            <option value="anio_desc">Año (más reciente primero)</option>
+          </select>
+        </div>
+      </div>
+
       <div class="table-wrap">
         <table>
           <thead><tr><th>Empresa</th><th>Tipo de impuesto</th><th>Monto</th><th>Vigencia</th><th>Naturaleza</th><th>Estatus</th><th>Semáforo</th></tr></thead>
@@ -257,6 +284,9 @@ tr:last-child td{border-bottom:none}
         </table>
       </div>
       <div class="note" id="cxcNota" style="display:none"></div>
+      <div class="note">
+        <b>Nota sobre periodicidad:</b> esta cartera se registra a nivel anual (vigencia por año, no por mes), tomada de la cédula fiscal corporativa consolidada 2023–2026. El filtro de "Tipo de impuesto" y el orden por "Año" ya están disponibles arriba. Si necesitas desglose mes por mes, hay que ampliar la tabla <code>fiscal_cxc_impuestos</code> con un campo de periodo mensual y volver a cargar los montos con ese detalle — avísame y lo preparamos.
+      </div>
     </div>
   </div>
 
@@ -482,6 +512,8 @@ let provisiones = [];
 let deudas = [];
 let cxcImpuestos = [];
 let cxcFiltroEmpresa = 'Todas';
+let cxcFiltroCategoria = 'Todas';
+let cxcOrden = 'monto_desc';
 
 function fmtMoney(n){
   n = Number(n)||0;
@@ -525,7 +557,12 @@ async function cargarTodo(){
    Resumen, consolidado 2023–2026 YTD). Vive en la tabla
    fiscal_cxc_impuestos (ver fiscal-cxc-impuestos.sql). Si la tabla
    no existe todavía o está vacía, usamos SEED_CXC como referencia de
-   solo lectura para que el semáforo sea útil desde el primer momento. */
+   solo lectura para que el semáforo sea útil desde el primer momento.
+
+   Nota: la vigencia (anio_inicio/anio_fin) es ANUAL — la cédula de
+   origen no trae desglose mensual, así que el orden "por mes" no
+   aplica a este set de datos todavía (ver nota en la vista). El
+   filtro por Tipo de impuesto y el orden por Año sí están disponibles. */
 const SEED_CXC = [
   { empresa:'Internacional', categoria:'ISR Retenido a Empleados', monto:14808998.20, fiduciario:true,  anio_inicio:2023, anio_fin:2026, estatus:'En plan de pago' },
   { empresa:'Internacional', categoria:'ISR Propio',               monto:7732939.00,  fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'En plan de pago' },
@@ -605,8 +642,30 @@ function cxcSetFiltro(empresa){
   renderCxc();
 }
 
+function cxcSetFiltroCategoria(categoria){
+  cxcFiltroCategoria = categoria;
+  renderCxc();
+}
+
+function cxcSetOrden(valor){
+  cxcOrden = valor;
+  renderCxc();
+}
+
+/* Comparadores de orden. El orden por Empresa/Tipo de impuesto usa
+   el monto (desc) como criterio secundario para mantener las filas
+   legibles dentro de cada grupo. */
+const CXC_ORDENADORES = {
+  monto_desc: (a,b)=> Number(b.monto)-Number(a.monto),
+  monto_asc:  (a,b)=> Number(a.monto)-Number(b.monto),
+  empresa:    (a,b)=> a.empresa.localeCompare(b.empresa, 'es') || Number(b.monto)-Number(a.monto),
+  categoria:  (a,b)=> a.categoria.localeCompare(b.categoria, 'es') || Number(b.monto)-Number(a.monto),
+  anio_asc:   (a,b)=> Number(a.anio_inicio)-Number(b.anio_inicio) || Number(b.monto)-Number(a.monto),
+  anio_desc:  (a,b)=> Number(b.anio_inicio)-Number(a.anio_inicio) || Number(b.monto)-Number(a.monto),
+};
+
 function renderCxc(){
-  const empresas = ['Todas', ...Array.from(new Set(cxcImpuestos.map(r=>r.empresa))).sort()];
+  const empresas = ['Todas', ...Array.from(new Set(cxcImpuestos.map(r=>r.empresa))).sort((a,b)=>a.localeCompare(b,'es'))];
   const filtrosEl = document.getElementById('cxcFiltros');
   if (filtrosEl) {
     filtrosEl.innerHTML = empresas.map(e=>{
@@ -615,8 +674,18 @@ function renderCxc(){
     }).join('');
   }
 
-  const filas = cxcFiltroEmpresa === 'Todas' ? cxcImpuestos : cxcImpuestos.filter(r=>r.empresa===cxcFiltroEmpresa);
-  const ordenadas = [...filas].sort((a,b)=>Number(b.monto)-Number(a.monto));
+  const categorias = ['Todas', ...Array.from(new Set(cxcImpuestos.map(r=>r.categoria))).sort((a,b)=>a.localeCompare(b,'es'))];
+  const filtrosCatEl = document.getElementById('cxcFiltrosCategoria');
+  if (filtrosCatEl) {
+    filtrosCatEl.innerHTML = categorias.map(c=>{
+      const activo = c === cxcFiltroCategoria;
+      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltroCategoria('${c}')">${c}</button>`;
+    }).join('');
+  }
+
+  let filas = cxcFiltroEmpresa === 'Todas' ? cxcImpuestos : cxcImpuestos.filter(r=>r.empresa===cxcFiltroEmpresa);
+  filas = cxcFiltroCategoria === 'Todas' ? filas : filas.filter(r=>r.categoria===cxcFiltroCategoria);
+  const ordenadas = [...filas].sort(CXC_ORDENADORES[cxcOrden] || CXC_ORDENADORES.monto_desc);
 
   const tbody = document.getElementById('tblCxc');
   const ESTATUS_OPCIONES = ['Pendiente','En plan de pago','Pagado'];
