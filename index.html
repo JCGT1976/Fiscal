@@ -264,6 +264,10 @@ tr:last-child td{border-bottom:none}
           <label style="margin-bottom:0">Tipo de impuesto</label>
           <div id="cxcFiltrosCategoria" class="chips"></div>
         </div>
+        <div class="grp grow">
+          <label style="margin-bottom:0">Año</label>
+          <div id="cxcFiltrosAnio" class="chips"></div>
+        </div>
         <div class="grp">
           <label style="margin-bottom:0">Ordenar por</label>
           <select id="cxcOrden" onchange="cxcSetOrden(this.value)">
@@ -285,7 +289,7 @@ tr:last-child td{border-bottom:none}
       </div>
       <div class="note" id="cxcNota" style="display:none"></div>
       <div class="note">
-        <b>Nota sobre periodicidad:</b> esta cartera se registra a nivel anual (vigencia por año, no por mes), tomada de la cédula fiscal corporativa consolidada 2023–2026. El filtro de "Tipo de impuesto" y el orden por "Año" ya están disponibles arriba. Si necesitas desglose mes por mes, hay que ampliar la tabla <code>fiscal_cxc_impuestos</code> con un campo de periodo mensual y volver a cargar los montos con ese detalle — avísame y lo preparamos.
+        <b>Nota sobre periodicidad:</b> esta cartera se registra a nivel anual (vigencia por año, no por mes), tomada de la cédula fiscal corporativa consolidada 2023–2026. Los filtros de "Tipo de impuesto" y "Año", y el orden por "Año", ya están disponibles arriba. Si necesitas desglose mes por mes, hay que ampliar la tabla <code>fiscal_cxc_impuestos</code> con un campo de periodo mensual y volver a cargar los montos con ese detalle — avísame y lo preparamos.
       </div>
     </div>
   </div>
@@ -513,6 +517,7 @@ let deudas = [];
 let cxcImpuestos = [];
 let cxcFiltroEmpresa = 'Todas';
 let cxcFiltroCategoria = 'Todas';
+let cxcFiltroAnio = 'Todos';
 let cxcOrden = 'monto_desc';
 
 function fmtMoney(n){
@@ -647,6 +652,11 @@ function cxcSetFiltroCategoria(categoria){
   renderCxc();
 }
 
+function cxcSetFiltroAnio(anio){
+  cxcFiltroAnio = anio;
+  renderCxc();
+}
+
 function cxcSetOrden(valor){
   cxcOrden = valor;
   renderCxc();
@@ -683,8 +693,24 @@ function renderCxc(){
     }).join('');
   }
 
+  // Año: la vigencia es un rango (anio_inicio–anio_fin), así que el filtro
+  // muestra todos los años que aparecen en ese rango para cualquier fila.
+  const aniosSet = new Set();
+  cxcImpuestos.forEach(r=>{
+    for (let a = Number(r.anio_inicio); a <= Number(r.anio_fin); a++) aniosSet.add(a);
+  });
+  const anios = ['Todos', ...Array.from(aniosSet).sort((a,b)=>a-b)];
+  const filtrosAnioEl = document.getElementById('cxcFiltrosAnio');
+  if (filtrosAnioEl) {
+    filtrosAnioEl.innerHTML = anios.map(a=>{
+      const activo = String(a) === String(cxcFiltroAnio);
+      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltroAnio('${a}')">${a}</button>`;
+    }).join('');
+  }
+
   let filas = cxcFiltroEmpresa === 'Todas' ? cxcImpuestos : cxcImpuestos.filter(r=>r.empresa===cxcFiltroEmpresa);
   filas = cxcFiltroCategoria === 'Todas' ? filas : filas.filter(r=>r.categoria===cxcFiltroCategoria);
+  filas = cxcFiltroAnio === 'Todos' ? filas : filas.filter(r=>Number(cxcFiltroAnio) >= Number(r.anio_inicio) && Number(cxcFiltroAnio) <= Number(r.anio_fin));
   const ordenadas = [...filas].sort(CXC_ORDENADORES[cxcOrden] || CXC_ORDENADORES.monto_desc);
 
   const tbody = document.getElementById('tblCxc');
