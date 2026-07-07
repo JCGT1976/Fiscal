@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -150,6 +150,20 @@ tr:last-child td{border-bottom:none}
 </head>
 <body>
 
+<!-- Bootstrap inline: aplica preferencias de tema e idioma guardadas ANTES
+     de que se pinte el DOM, para evitar flash (FOUC). Default: tema=light, lang=es. -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem('mitech_fiscal_theme');
+    if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+    // Si no hay valor, se queda con 'light' del atributo HTML por defecto.
+    var l = localStorage.getItem('mitech_fiscal_lang');
+    if (l === 'en' || l === 'es') document.documentElement.lang = l;
+  } catch(e) {}
+})();
+</script>
+
 <!-- ═══════════ BOOT LOADER — verifica sesión SSO contra SIF-Portal ═══════════ -->
 <div id="bootLoader">
   <div>
@@ -160,19 +174,19 @@ tr:last-child td{border-bottom:none}
 
 <!-- Etapa 5.1 · Banner de actualización — aparece cuando el auto-updater detecta nueva versión -->
 <div id="updateBanner" role="alert" aria-live="polite">
-  <div class="msg">🔄 Hay una nueva versión del módulo Fiscal disponible. Recárgala para verla.</div>
-  <button onclick="applyUpdate()">Recargar ahora</button>
+  <div class="msg" data-i18n="update.msg">🔄 Hay una nueva versión del módulo Fiscal disponible. Recárgala para verla.</div>
+  <button onclick="applyUpdate()" data-i18n="update.btn">Recargar ahora</button>
 </div>
 
 <div id="app" class="wrap">
 
   <div class="topbar">
     <div class="topbar-left">
-      <h1>Módulo Fiscal</h1>
-      <div class="sub">SIF · MI Global — Obligaciones SAT, impuestos, CFDI, provisiones y deuda fiscal</div>
+      <h1 data-i18n="app.title">Módulo Fiscal</h1>
+      <div class="sub" data-i18n="app.subtitle">SIF · MI Global — Obligaciones SAT, impuestos, CFDI, provisiones y deuda fiscal</div>
     </div>
     <div class="topbar-right">
-      <span class="sync-badge" id="syncBadge"><span class="sync-dot" id="syncDot"></span><span id="syncTxt">Conectado a Supabase</span></span>
+      <span class="sync-badge" id="syncBadge"><span class="sync-dot" id="syncDot"></span><span id="syncTxt" data-i18n="sync.ok">Conectado a Supabase</span></span>
       <div class="user-chip">
         <div class="user-avatar" id="userAvatar">—</div>
         <div class="user-meta">
@@ -180,42 +194,43 @@ tr:last-child td{border-bottom:none}
           <span class="role" id="userRole">—</span>
         </div>
       </div>
+      <button class="btn-ghost" id="langToggleBtn" onclick="toggleLang()" title="Cambiar idioma / Change language">ES</button>
       <button class="btn-ghost" onclick="toggleTheme()">🌓</button>
-      <button class="btn-ghost" onclick="volverPortal()">← Portal</button>
-      <button class="btn-ghost" onclick="cerrarSesion()">Cerrar sesión</button>
+      <button class="btn-ghost" onclick="volverPortal()" data-i18n="btn.portal">← Portal</button>
+      <button class="btn-ghost" onclick="cerrarSesion()" data-i18n="btn.logout">Cerrar sesión</button>
     </div>
   </div>
 
   <div class="kpi-grid">
     <div class="kpi-card">
-      <div class="kpi-label">Próximo vencimiento</div>
+      <div class="kpi-label" data-i18n="kpi.proximo">Próximo vencimiento</div>
       <div class="kpi-value" id="kpiProximo">—</div>
       <div class="kpi-sub" id="kpiProximoSub">—</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Impuesto estimado del mes</div>
+      <div class="kpi-label" data-i18n="kpi.impuesto_mes">Impuesto estimado del mes</div>
       <div class="kpi-value" id="kpiImpuestoMes">$0</div>
-      <div class="kpi-sub">ISR + IVA estimados</div>
+      <div class="kpi-sub" data-i18n="kpi.impuesto_mes.sub">ISR + IVA estimados</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">CFDI pendientes de conciliar</div>
+      <div class="kpi-label" data-i18n="kpi.cfdi_pend">CFDI pendientes de conciliar</div>
       <div class="kpi-value" id="kpiCfdiPend">0</div>
-      <div class="kpi-sub">de <span id="kpiCfdiTotal">0</span> registrados</div>
+      <div class="kpi-sub"><span data-i18n="kpi.cfdi_pend.of">de</span> <span id="kpiCfdiTotal">0</span> <span data-i18n="kpi.cfdi_pend.regs">registrados</span></div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Deuda fiscal actualizada</div>
+      <div class="kpi-label" data-i18n="kpi.deuda">Deuda fiscal actualizada</div>
       <div class="kpi-value" id="kpiDeudaTotal">$0</div>
-      <div class="kpi-sub">Incluye recargos y actualización</div>
+      <div class="kpi-sub" data-i18n="kpi.deuda.sub">Incluye recargos y actualización</div>
     </div>
   </div>
 
   <div class="nav-tabs">
-    <button class="nav-tab active" data-view="calendario" onclick="showView('calendario')">📅 Calendario SAT</button>
-    <button class="nav-tab" data-view="cxc" onclick="showView('cxc')">🚦 CxC Fiscal</button>
-    <button class="nav-tab" data-view="impuestos" onclick="showView('impuestos')">🧮 Cálculo de Impuestos</button>
-    <button class="nav-tab" data-view="cfdi" onclick="showView('cfdi')">🧾 Control de CFDI</button>
-    <button class="nav-tab" data-view="provisiones" onclick="showView('provisiones')">💰 Provisiones y Pagos</button>
-    <button class="nav-tab" data-view="deuda" onclick="showView('deuda')">⚠️ Deuda Fiscal</button>
+    <button class="nav-tab active" data-view="calendario" onclick="showView('calendario')" data-i18n="tab.calendario">📅 Calendario SAT</button>
+    <button class="nav-tab" data-view="cxc" onclick="showView('cxc')" data-i18n="tab.cxc">🚦 CxC Fiscal</button>
+    <button class="nav-tab" data-view="impuestos" onclick="showView('impuestos')" data-i18n="tab.impuestos">🧮 Cálculo de Impuestos</button>
+    <button class="nav-tab" data-view="cfdi" onclick="showView('cfdi')" data-i18n="tab.cfdi">🧾 Control de CFDI</button>
+    <button class="nav-tab" data-view="provisiones" onclick="showView('provisiones')" data-i18n="tab.provisiones">💰 Provisiones y Pagos</button>
+    <button class="nav-tab" data-view="deuda" onclick="showView('deuda')" data-i18n="tab.deuda">⚠️ Deuda Fiscal</button>
   </div>
 
   <!-- ===================== CALENDARIO SAT ===================== -->
@@ -476,7 +491,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.07.1';
+const APP_VERSION = '2026.07.07.2';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -513,6 +528,9 @@ async function bootstrapAuth() {
 
     document.getElementById('bootLoader').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+
+    // Aplicar el idioma persistido a todo el chrome de la app (ES por defecto).
+    try { applyI18n(); } catch(e) { console.warn('applyI18n:', e); }
 
     await cargarTodo();
   } catch (e) {
@@ -561,10 +579,90 @@ function diasRestantes(fechaStr){
   return Math.round((f-hoy)/86400000);
 }
 
-/* ---------- THEME ---------- */
+/* ---------- THEME ----------
+   Default = 'light' (day). Se persiste en localStorage.mitech_fiscal_theme.
+   El bootstrap inline al inicio del <body> aplica la preferencia guardada
+   antes de mostrar el app (evita FOUC). Solo cambia si el usuario toggleó. */
 function toggleTheme(){
   const html = document.documentElement;
-  html.dataset.theme = html.dataset.theme === "light" ? "dark" : "light";
+  const nuevo = html.dataset.theme === "light" ? "dark" : "light";
+  html.dataset.theme = nuevo;
+  try { localStorage.setItem('mitech_fiscal_theme', nuevo); } catch(e){}
+}
+
+/* ---------- I18N (ES/EN) ----------
+   Mismo patrón que Deadpool: diccionario `translations` + función `t()` +
+   toggle en header. Aplica traducciones a cualquier elemento con
+   `data-i18n="clave"`. Se persiste en localStorage.mitech_fiscal_lang.
+   Fase 1: cubre chrome (header, KPIs, tabs, botones globales, banner). Los
+   contenidos dinámicos generados por JS se pueden traducir en fases
+   posteriores llamando a t('clave.x') donde se emitan.
+*/
+const translations = {
+  // Header + chrome global
+  'app.title':                { es:'Módulo Fiscal',                                  en:'Tax Module' },
+  'app.subtitle':             { es:'SIF · MI Global — Obligaciones SAT, impuestos, CFDI, provisiones y deuda fiscal',
+                                en:'SIF · MI Global — Tax obligations, taxes, CFDI, provisions and tax debt' },
+  'sync.ok':                  { es:'Conectado a Supabase',                           en:'Connected to Supabase' },
+  'btn.portal':               { es:'← Portal',                                       en:'← Portal' },
+  'btn.logout':               { es:'Cerrar sesión',                                  en:'Sign out' },
+  // KPIs
+  'kpi.proximo':              { es:'Próximo vencimiento',                            en:'Next due date' },
+  'kpi.impuesto_mes':         { es:'Impuesto estimado del mes',                     en:'Estimated tax this month' },
+  'kpi.impuesto_mes.sub':     { es:'ISR + IVA estimados',                            en:'Estimated ISR + IVA' },
+  'kpi.cfdi_pend':            { es:'CFDI pendientes de conciliar',                   en:'CFDI pending reconciliation' },
+  'kpi.cfdi_pend.of':         { es:'de',                                             en:'of' },
+  'kpi.cfdi_pend.regs':       { es:'registrados',                                    en:'registered' },
+  'kpi.deuda':                { es:'Deuda fiscal actualizada',                       en:'Updated tax debt' },
+  'kpi.deuda.sub':            { es:'Incluye recargos y actualización',               en:'Includes surcharges and inflation adjustment' },
+  // Tabs
+  'tab.calendario':           { es:'📅 Calendario SAT',                              en:'📅 SAT Calendar' },
+  'tab.cxc':                  { es:'🚦 CxC Fiscal',                                  en:'🚦 Tax Receivables' },
+  'tab.impuestos':            { es:'🧮 Cálculo de Impuestos',                        en:'🧮 Tax Calculation' },
+  'tab.cfdi':                 { es:'🧾 Control de CFDI',                             en:'🧾 CFDI Control' },
+  'tab.provisiones':          { es:'💰 Provisiones y Pagos',                         en:'💰 Provisions & Payments' },
+  'tab.deuda':                { es:'⚠️ Deuda Fiscal',                                 en:'⚠️ Tax Debt' },
+  // Banner update
+  'update.msg':               { es:'🔄 Hay una nueva versión del módulo Fiscal disponible. Recárgala para verla.',
+                                en:'🔄 A new version of the Tax module is available. Reload to see it.' },
+  'update.btn':               { es:'Recargar ahora',                                 en:'Reload now' },
+};
+
+function getLang(){
+  const l = (localStorage.getItem('mitech_fiscal_lang') || document.documentElement.lang || 'es').toLowerCase();
+  return (l === 'en') ? 'en' : 'es';
+}
+
+function t(key){
+  const entry = translations[key];
+  if (!entry) return key;
+  const l = getLang();
+  return entry[l] || entry.es || key;
+}
+
+/* Recorre todos los elementos con data-i18n y les inyecta la traducción actual. */
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const txt = t(key);
+    if (txt !== null && txt !== undefined) el.textContent = txt;
+  });
+  // Actualizar etiqueta del botón de idioma para mostrar el idioma OPUESTO
+  // (indica qué idioma se activará al hacer clic).
+  const btn = document.getElementById('langToggleBtn');
+  if (btn) btn.textContent = (getLang() === 'es') ? 'EN' : 'ES';
+  // Sincronizar atributo lang del documento
+  document.documentElement.lang = getLang();
+}
+
+function setLang(lang){
+  const nuevo = (lang === 'en') ? 'en' : 'es';
+  try { localStorage.setItem('mitech_fiscal_lang', nuevo); } catch(e){}
+  applyI18n();
+}
+
+function toggleLang(){
+  setLang(getLang() === 'es' ? 'en' : 'es');
 }
 
 /* ---------- TABS ---------- */
