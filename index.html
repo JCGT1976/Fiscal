@@ -491,7 +491,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.07.2';
+const APP_VERSION = '2026.07.07.3';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -862,10 +862,14 @@ function renderCxc(){
   }).join('') || '<tr><td colspan="7" style="color:var(--muted)">Sin conceptos registrados.</td></tr>';
 
   const sum = (arr) => arr.reduce((s,r)=>s+Number(r.monto||0),0);
-  const total = sum(cxcImpuestos);
-  const rojos = cxcImpuestos.filter(r=>r.estatus==='Pendiente' && (r.fiduciario || Number(r.monto)>2000000));
-  const amarillos = cxcImpuestos.filter(r=>r.estatus!=='Pagado' && !rojos.includes(r));
-  const verdes = cxcImpuestos.filter(r=>r.estatus==='Pagado');
+  // KPIs recalculados sobre las FILAS FILTRADAS (Empresa + Tipo de impuesto + Año).
+  // Cuando todos los chips están en "Todas/Todos", `filas` === `cxcImpuestos` y
+  // los totales coinciden con el histórico global. Cualquier chip seleccionado
+  // restringe los 4 KPIs a esa intersección.
+  const total = sum(filas);
+  const rojos     = filas.filter(r=>r.estatus==='Pendiente' && (r.fiduciario || Number(r.monto)>2000000));
+  const amarillos = filas.filter(r=>r.estatus!=='Pagado' && !rojos.includes(r));
+  const verdes    = filas.filter(r=>r.estatus==='Pagado');
 
   document.getElementById('kpiCxcTotal').textContent = fmtMoney(total);
   document.getElementById('kpiCxcRojo').textContent = fmtMoney(sum(rojos));
