@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#0f1923">
 <title>Fiscal · SIF · MI Global</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 :root{
@@ -146,6 +147,45 @@ tr:last-child td{border-bottom:none}
 .cxc-controls .grp.grow{flex:1;min-width:220px}
 .cxc-controls .chips{display:flex;gap:6px;flex-wrap:wrap}
 .cxc-controls select{width:auto;min-width:200px}
+
+/* ══════════ EXCEL UPLOAD ══════════ */
+.excel-drop{
+  border:2px dashed var(--border);border-radius:12px;
+  padding:24px;text-align:center;cursor:pointer;
+  transition:all .15s ease;background:var(--surface2);
+}
+.excel-drop:hover,.excel-drop.drag{
+  border-color:var(--accent);background:rgba(0,194,255,.06);
+}
+.excel-drop-inner{pointer-events:none}
+.excel-drop-inner .btn{pointer-events:auto}
+.excel-preview{
+  border:1px solid var(--border);border-radius:10px;
+  padding:14px;background:var(--surface2);margin-top:12px;
+}
+.excel-preview h3{font-size:14px;margin-bottom:10px;color:var(--accent)}
+.excel-preview .stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:10px;margin:10px 0;
+}
+.excel-preview .stat{
+  background:var(--surface);border-radius:8px;padding:10px 12px;
+  border:1px solid var(--border);
+}
+.excel-preview .stat .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.excel-preview .stat .val{font-size:20px;font-weight:700;color:var(--accent);margin-top:2px}
+.excel-warn{
+  background:rgba(255,77,109,.10);border:1px solid var(--red);
+  border-radius:8px;padding:10px 12px;color:var(--red);
+  font-size:12.5px;margin:10px 0;
+}
+[data-theme="light"] .excel-warn{background:rgba(225,29,72,.08)}
+.excel-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.btn-danger{
+  background:var(--red);color:#fff;border:none;padding:8px 16px;
+  border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;
+}
+.btn-danger:hover{opacity:.9}
 </style>
 </head>
 <body>
@@ -222,30 +262,48 @@ tr:last-child td{border-bottom:none}
 
   <!-- ===================== CALENDARIO SAT ===================== -->
   <div class="view active" id="view-calendario">
+    <div class="card" id="cardCargaExcel">
+      <h2 data-i18n="cal.excel.title">📥 Carga masiva desde Excel</h2>
+      <div class="desc" data-i18n="cal.excel.desc">
+        Carga la Cédula Fiscal Corporativa (.xlsx) para sembrar el histórico de impuestos. Usa solo la hoja <b>Resumen</b>. <b style="color:var(--red)">Reemplaza todo</b> el histórico previo en Calendario SAT y CxC Fiscal.
+      </div>
+      <div id="excelDrop" class="excel-drop">
+        <input type="file" id="excelInput" accept=".xlsx,.xls" style="display:none" onchange="excelHandleInput(event)">
+        <div class="excel-drop-inner">
+          <div style="font-size:32px;line-height:1">📊</div>
+          <div style="margin-top:8px;font-weight:600" data-i18n="cal.excel.drop">Arrastra el archivo .xlsx aquí</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="cal.excel.or">o</div>
+          <button class="btn" onclick="document.getElementById('excelInput').click()" style="margin-top:8px" data-i18n="cal.excel.btn_pick">Elegir archivo</button>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px" data-i18n="cal.excel.hint">Sin password. Hoja: Resumen. Columnas: Año · Empresa · Impuesto · Enero…Diciembre · TOTAL.</div>
+        </div>
+      </div>
+      <div id="excelPreview" style="display:none;margin-top:14px"></div>
+    </div>
+
     <div class="card">
-      <h2>Agregar obligación</h2>
-      <div class="desc">Registra una obligación fiscal recurrente o única (declaración, pago provisional, informativa, etc.)</div>
+      <h2 data-i18n="cal.add.title">Agregar obligación</h2>
+      <div class="desc" data-i18n="cal.add.desc">Registra una obligación fiscal recurrente o única (declaración, pago provisional, informativa, etc.)</div>
       <div class="grid-3">
-        <div class="field"><label>Concepto</label><input id="oblConcepto" placeholder="Ej. Pago provisional ISR"></div>
-        <div class="field"><label>Periodicidad</label>
+        <div class="field"><label data-i18n="cal.add.concepto">Concepto</label><input id="oblConcepto" placeholder="Ej. Pago provisional ISR"></div>
+        <div class="field"><label data-i18n="cal.add.periodicidad">Periodicidad</label>
           <select id="oblPeriodicidad">
-            <option>Mensual</option><option>Bimestral</option><option>Anual</option><option>Única</option>
+            <option value="Mensual" data-i18n="periodicidad.Mensual">Mensual</option><option value="Bimestral" data-i18n="periodicidad.Bimestral">Bimestral</option><option value="Anual" data-i18n="periodicidad.Anual">Anual</option><option value="Única" data-i18n="periodicidad.Unica">Única</option>
           </select>
         </div>
-        <div class="field"><label>Próxima fecha límite</label><input id="oblFecha" type="date"></div>
+        <div class="field"><label data-i18n="cal.add.fecha">Próxima fecha límite</label><input id="oblFecha" type="date"></div>
       </div>
-      <button class="btn" id="btnAgregarObligacion" onclick="agregarObligacion()">+ Agregar obligación</button>
+      <button class="btn" id="btnAgregarObligacion" onclick="agregarObligacion()" data-i18n="cal.add.btn">+ Agregar obligación</button>
     </div>
     <div class="card">
-      <h2>Calendario de obligaciones</h2>
-      <div class="desc">Ordenadas por fecha límite más próxima. El estatus se recalcula automáticamente según los días restantes.</div>
+      <h2 data-i18n="cal.list.title">Calendario de obligaciones</h2>
+      <div class="desc" data-i18n="cal.list.desc">Ordenadas por fecha límite más próxima. El estatus se recalcula automáticamente según los días restantes.</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Concepto</th><th>Periodicidad</th><th>Fecha límite</th><th>Días restantes</th><th>Estatus</th><th></th></tr></thead>
-          <tbody id="tblObligaciones"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
+          <thead><tr><th data-i18n="cal.th.concepto">Concepto</th><th data-i18n="cal.th.periodicidad">Periodicidad</th><th data-i18n="cal.th.fecha">Fecha límite</th><th data-i18n="cal.th.dias">Días restantes</th><th data-i18n="cal.th.estatus">Estatus</th><th></th></tr></thead>
+          <tbody id="tblObligaciones"><tr><td colspan="6" style="color:var(--muted)" data-i18n="loading">Cargando…</td></tr></tbody>
         </table>
       </div>
-      <div class="note"><b>Nota:</b> este calendario es de control interno. Las fechas límite oficiales deben confirmarse siempre contra el <a href="https://www.sat.gob.mx" target="_blank" style="color:var(--accent)">portal del SAT</a>.</div>
+      <div class="note"><b data-i18n="cal.list.note.label">Nota:</b> <span data-i18n="cal.list.note.txt">este calendario es de control interno. Las fechas límite oficiales deben confirmarse siempre contra el</span> <a href="https://www.sat.gob.mx" target="_blank" style="color:var(--accent)" data-i18n="cal.list.note.link">portal del SAT</a>.</div>
     </div>
   </div>
 
@@ -253,29 +311,29 @@ tr:last-child td{border-bottom:none}
   <div class="view" id="view-cxc">
     <div class="kpi-grid">
       <div class="kpi-card">
-        <div class="kpi-label">Cartera fiscal total</div>
+        <div class="kpi-label" data-i18n="cxc.kpi.total">Cartera fiscal total</div>
         <div class="kpi-value" id="kpiCxcTotal">$0</div>
-        <div class="kpi-sub">Histórico 2023–2026 · cédula corporativa</div>
+        <div class="kpi-sub" data-i18n="cxc.kpi.total.sub">Histórico 2023–2026 · cédula corporativa</div>
       </div>
       <div class="kpi-card" style="border-color:var(--red)">
-        <div class="kpi-label">🔴 En riesgo (rojo)</div>
+        <div class="kpi-label" data-i18n="cxc.kpi.rojo">🔴 En riesgo (rojo)</div>
         <div class="kpi-value" id="kpiCxcRojo" style="color:var(--red)">$0</div>
         <div class="kpi-sub" id="kpiCxcRojoSub">0 conceptos</div>
       </div>
       <div class="kpi-card" style="border-color:var(--yellow)">
-        <div class="kpi-label">🟡 En plan de pago / negociable</div>
+        <div class="kpi-label" data-i18n="cxc.kpi.amarillo">🟡 En plan de pago / negociable</div>
         <div class="kpi-value" id="kpiCxcAmarillo" style="color:var(--yellow)">$0</div>
         <div class="kpi-sub" id="kpiCxcAmarilloSub">0 conceptos</div>
       </div>
       <div class="kpi-card" style="border-color:var(--green)">
-        <div class="kpi-label">🟢 Pagado</div>
+        <div class="kpi-label" data-i18n="cxc.kpi.verde">🟢 Pagado</div>
         <div class="kpi-value" id="kpiCxcVerde" style="color:var(--green)">$0</div>
         <div class="kpi-sub" id="kpiCxcVerdeSub">0 conceptos</div>
       </div>
     </div>
 
     <div class="card">
-      <h2>Cuentas por cobrar de impuestos — por empresa / tipo de impuesto</h2>
+      <h2 data-i18n="cxc.title">Cuentas por cobrar de impuestos — por empresa / tipo de impuesto</h2>
       <div class="desc">
         Semáforo basado en la estrategia de prioridad de pagos del corporativo:
         <b style="color:var(--red)">rojo</b> = obligaciones fiduciarias (retenciones a empleados, IMSS) pendientes o cualquier concepto pendiente &gt; $2,000,000 — riesgo penal/laboral, cero tolerancia;
@@ -285,34 +343,34 @@ tr:last-child td{border-bottom:none}
 
       <div class="cxc-controls">
         <div class="grp grow">
-          <label style="margin-bottom:0">Empresa</label>
+          <label style="margin-bottom:0" data-i18n="cxc.lbl.empresa">Empresa</label>
           <div id="cxcFiltros" class="chips"></div>
         </div>
         <div class="grp grow">
-          <label style="margin-bottom:0">Tipo de impuesto</label>
+          <label style="margin-bottom:0" data-i18n="cxc.lbl.tipo">Tipo de impuesto</label>
           <div id="cxcFiltrosCategoria" class="chips"></div>
         </div>
         <div class="grp grow">
-          <label style="margin-bottom:0">Año</label>
+          <label style="margin-bottom:0" data-i18n="cxc.lbl.anio">Año</label>
           <div id="cxcFiltrosAnio" class="chips"></div>
         </div>
         <div class="grp">
-          <label style="margin-bottom:0">Ordenar por</label>
+          <label style="margin-bottom:0" data-i18n="cxc.lbl.orden">Ordenar por</label>
           <select id="cxcOrden" onchange="cxcSetOrden(this.value)">
-            <option value="monto_desc">Monto (mayor a menor)</option>
-            <option value="monto_asc">Monto (menor a mayor)</option>
-            <option value="empresa">Empresa (A-Z)</option>
-            <option value="categoria">Tipo de impuesto (A-Z)</option>
-            <option value="anio_asc">Año (más antiguo primero)</option>
-            <option value="anio_desc">Año (más reciente primero)</option>
+            <option value="monto_desc" data-i18n="cxc.ord.monto_desc">Monto (mayor a menor)</option>
+            <option value="monto_asc" data-i18n="cxc.ord.monto_asc">Monto (menor a mayor)</option>
+            <option value="empresa" data-i18n="cxc.ord.empresa">Empresa (A-Z)</option>
+            <option value="categoria" data-i18n="cxc.ord.categoria">Tipo de impuesto (A-Z)</option>
+            <option value="anio_asc" data-i18n="cxc.ord.anio_asc">Año (más antiguo primero)</option>
+            <option value="anio_desc" data-i18n="cxc.ord.anio_desc">Año (más reciente primero)</option>
           </select>
         </div>
       </div>
 
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Empresa</th><th>Tipo de impuesto</th><th>Monto</th><th>Vigencia</th><th>Naturaleza</th><th>Estatus</th><th>Semáforo</th></tr></thead>
-          <tbody id="tblCxc"><tr><td colspan="7" style="color:var(--muted)">Cargando…</td></tr></tbody>
+          <thead><tr><th data-i18n="cxc.th.empresa">Empresa</th><th data-i18n="cxc.th.tipo">Tipo de impuesto</th><th data-i18n="cxc.th.monto">Monto</th><th data-i18n="cxc.th.vigencia">Vigencia</th><th data-i18n="cxc.th.naturaleza">Naturaleza</th><th data-i18n="cxc.th.estatus">Estatus</th><th data-i18n="cxc.th.semaforo">Semáforo</th></tr></thead>
+          <tbody id="tblCxc"><tr><td colspan="7" style="color:var(--muted)" data-i18n="loading">Cargando…</td></tr></tbody>
         </table>
       </div>
       <div class="note" id="cxcNota" style="display:none"></div>
@@ -369,7 +427,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.07.4';
+const APP_VERSION = '2026.07.07.5';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -496,7 +554,122 @@ const translations = {
   'update.msg':               { es:'🔄 Hay una nueva versión del módulo Fiscal disponible. Recárgala para verla.',
                                 en:'🔄 A new version of the Tax module is available. Reload to see it.' },
   'update.btn':               { es:'Recargar ahora',                                 en:'Reload now' },
+  // Generic
+  'loading':                  { es:'Cargando…',                                      en:'Loading…' },
+  // === CALENDARIO SAT VIEW ===
+  'cal.excel.title':          { es:'📥 Carga masiva desde Excel',                     en:'📥 Bulk load from Excel' },
+  'cal.excel.desc':           { es:'Carga la Cédula Fiscal Corporativa (.xlsx) para sembrar el histórico de impuestos. Usa solo la hoja <b>Resumen</b>. <b style="color:var(--red)">Reemplaza todo</b> el histórico previo en Calendario SAT y CxC Fiscal.',
+                                en:'Load the Corporate Tax Ledger (.xlsx) to seed the tax history. Uses only the <b>Resumen</b> sheet. <b style="color:var(--red)">Replaces all</b> previous history in Tax Calendar and Tax Receivables.' },
+  'cal.excel.drop':           { es:'Arrastra el archivo .xlsx aquí',                  en:'Drag the .xlsx file here' },
+  'cal.excel.or':             { es:'o',                                              en:'or' },
+  'cal.excel.btn_pick':       { es:'Elegir archivo',                                 en:'Choose file' },
+  'cal.excel.hint':           { es:'Sin password. Hoja: Resumen. Columnas: Año · Empresa · Impuesto · Enero…Diciembre · TOTAL.',
+                                en:'No password. Sheet: Resumen. Columns: Year · Company · Tax · January…December · TOTAL.' },
+  'cal.excel.preview_title':  { es:'Vista previa de la carga',                        en:'Load preview' },
+  'cal.excel.stat.anios':     { es:'Años',                                            en:'Years' },
+  'cal.excel.stat.empresas':  { es:'Empresas',                                        en:'Companies' },
+  'cal.excel.stat.oblig':     { es:'Obligaciones mensuales',                          en:'Monthly obligations' },
+  'cal.excel.stat.cxc':       { es:'Registros CxC (anuales)',                         en:'CxC records (yearly)' },
+  'cal.excel.warn':           { es:'⚠️ Esta operación BORRA todos los registros previos de las tablas fiscal_obligaciones y fiscal_cxc_impuestos.',
+                                en:'⚠️ This operation ERASES all previous records in fiscal_obligaciones and fiscal_cxc_impuestos tables.' },
+  'cal.excel.btn_cancel':     { es:'Cancelar',                                        en:'Cancel' },
+  'cal.excel.btn_apply':      { es:'⚠️ Reemplazar histórico completo',                 en:'⚠️ Replace complete history' },
+  'cal.excel.err_sheet':      { es:'❌ El archivo no contiene la hoja "Resumen".',      en:'❌ The file does not contain the "Resumen" sheet.' },
+  'cal.excel.err_lib':        { es:'❌ La librería SheetJS no está cargada.',            en:'❌ SheetJS library is not loaded.' },
+  'cal.excel.err_empty':      { es:'❌ No se encontraron filas válidas en el Excel.',    en:'❌ No valid rows found in the Excel file.' },
+  'cal.excel.uploading':      { es:'Subiendo a Supabase…',                             en:'Uploading to Supabase…' },
+  'cal.excel.ok':             { es:'✅ Carga completada exitosamente',                  en:'✅ Load completed successfully' },
+  'cal.excel.confirm_msg':    { es:'Esto REEMPLAZA TODO el histórico:\n\n• Se borrarán todas las obligaciones existentes\n• Se borrará toda la cartera CxC existente\n• Se insertarán los datos del Excel\n\n¿Continuar?',
+                                en:'This REPLACES ALL history:\n\n• All existing obligations will be deleted\n• All existing CxC records will be deleted\n• Excel data will be inserted\n\nContinue?' },
+  'cal.add.title':            { es:'Agregar obligación',                              en:'Add obligation' },
+  'cal.add.desc':             { es:'Registra una obligación fiscal recurrente o única (declaración, pago provisional, informativa, etc.)',
+                                en:'Register a recurring or one-off tax obligation (return, provisional payment, informative, etc.)' },
+  'cal.add.concepto':         { es:'Concepto',                                        en:'Concept' },
+  'cal.add.periodicidad':     { es:'Periodicidad',                                    en:'Frequency' },
+  'cal.add.fecha':            { es:'Próxima fecha límite',                            en:'Next due date' },
+  'cal.add.btn':              { es:'+ Agregar obligación',                            en:'+ Add obligation' },
+  'cal.list.title':           { es:'Calendario de obligaciones',                      en:'Obligations calendar' },
+  'cal.list.desc':            { es:'Ordenadas por fecha límite más próxima. El estatus se recalcula automáticamente según los días restantes.',
+                                en:'Sorted by nearest due date. Status is recalculated automatically based on remaining days.' },
+  'cal.th.concepto':          { es:'Concepto',                                        en:'Concept' },
+  'cal.th.periodicidad':      { es:'Periodicidad',                                    en:'Frequency' },
+  'cal.th.fecha':             { es:'Fecha límite',                                    en:'Due date' },
+  'cal.th.dias':              { es:'Días restantes',                                  en:'Days left' },
+  'cal.th.estatus':           { es:'Estatus',                                         en:'Status' },
+  'cal.list.note.label':      { es:'Nota:',                                           en:'Note:' },
+  'cal.list.note.txt':        { es:'este calendario es de control interno. Las fechas límite oficiales deben confirmarse siempre contra el',
+                                en:'this calendar is for internal control. Official due dates must always be verified against the' },
+  'cal.list.note.link':       { es:'portal del SAT',                                  en:'SAT portal' },
+  'periodicidad.Mensual':     { es:'Mensual',                                         en:'Monthly' },
+  'periodicidad.Bimestral':   { es:'Bimestral',                                       en:'Bimonthly' },
+  'periodicidad.Anual':       { es:'Anual',                                           en:'Yearly' },
+  'periodicidad.Unica':       { es:'Única',                                           en:'One-off' },
+  // Obligaciones — badges y acciones
+  'obl.on_time':              { es:'A tiempo',                                        en:'On time' },
+  'obl.overdue':              { es:'Vencida',                                         en:'Overdue' },
+  'obl.urgent':               { es:'Urgente',                                         en:'Urgent' },
+  'obl.soon':                 { es:'Próxima',                                         en:'Coming up' },
+  'obl.remove':               { es:'Quitar',                                          en:'Remove' },
+  'obl.empty':                { es:'Sin obligaciones registradas.',                   en:'No obligations registered.' },
+  // === CxC FISCAL VIEW ===
+  'cxc.kpi.total':            { es:'Cartera fiscal total',                            en:'Total tax portfolio' },
+  'cxc.kpi.total.sub':        { es:'Histórico 2023–2026 · cédula corporativa',        en:'History 2023–2026 · corporate ledger' },
+  'cxc.kpi.rojo':             { es:'🔴 En riesgo (rojo)',                              en:'🔴 At risk (red)' },
+  'cxc.kpi.amarillo':         { es:'🟡 En plan de pago / negociable',                  en:'🟡 On payment plan / negotiable' },
+  'cxc.kpi.verde':            { es:'🟢 Pagado',                                        en:'🟢 Paid' },
+  'cxc.kpi.conceptos':        { es:'conceptos',                                       en:'items' },
+  'cxc.kpi.concepto':         { es:'concepto',                                        en:'item' },
+  'cxc.title':                { es:'Cuentas por cobrar de impuestos — por empresa / tipo de impuesto',
+                                en:'Tax receivables — by company / tax type' },
+  'cxc.lbl.empresa':          { es:'Empresa',                                         en:'Company' },
+  'cxc.lbl.tipo':             { es:'Tipo de impuesto',                                en:'Tax type' },
+  'cxc.lbl.anio':             { es:'Año',                                             en:'Year' },
+  'cxc.lbl.orden':            { es:'Ordenar por',                                     en:'Sort by' },
+  'cxc.ord.monto_desc':       { es:'Monto (mayor a menor)',                           en:'Amount (high to low)' },
+  'cxc.ord.monto_asc':        { es:'Monto (menor a mayor)',                           en:'Amount (low to high)' },
+  'cxc.ord.empresa':          { es:'Empresa (A-Z)',                                   en:'Company (A-Z)' },
+  'cxc.ord.categoria':        { es:'Tipo de impuesto (A-Z)',                          en:'Tax type (A-Z)' },
+  'cxc.ord.anio_asc':         { es:'Año (más antiguo primero)',                       en:'Year (oldest first)' },
+  'cxc.ord.anio_desc':        { es:'Año (más reciente primero)',                      en:'Year (newest first)' },
+  'cxc.th.empresa':           { es:'Empresa',                                         en:'Company' },
+  'cxc.th.tipo':              { es:'Tipo de impuesto',                                en:'Tax type' },
+  'cxc.th.monto':             { es:'Monto',                                           en:'Amount' },
+  'cxc.th.vigencia':          { es:'Vigencia',                                        en:'Period' },
+  'cxc.th.naturaleza':        { es:'Naturaleza',                                      en:'Nature' },
+  'cxc.th.estatus':           { es:'Estatus',                                         en:'Status' },
+  'cxc.th.semaforo':          { es:'Semáforo',                                        en:'Signal' },
+  'cxc.chip.todas':           { es:'Todas',                                           en:'All' },
+  'cxc.chip.todos':           { es:'Todos',                                           en:'All' },
+  'cxc.empty':                { es:'Sin conceptos registrados.',                      en:'No records.' },
+  // Naturaleza
+  'nat.fiduciario':           { es:'Fiduciario',                                      en:'Fiduciary' },
+  'nat.no_fiduciario':        { es:'No fiduciario',                                   en:'Non-fiduciary' },
+  // Estatus
+  'est.Pendiente':            { es:'Pendiente',                                       en:'Pending' },
+  'est.En plan de pago':      { es:'En plan de pago',                                 en:'On payment plan' },
+  'est.Pagado':               { es:'Pagado',                                          en:'Paid' },
+  // Semáforo — texto del badge
+  'sem.monto_critico':        { es:'Monto crítico',                                   en:'Critical amount' },
+  'sem.fiduciario':           { es:'Fiduciario',                                      en:'Fiduciary' },
+  'sem.en_plan':              { es:'En plan de pago',                                 en:'On payment plan' },
+  'sem.pagado':               { es:'Pagado',                                          en:'Paid' },
+  'sem.pendiente':            { es:'Pendiente',                                       en:'Pending' },
+  // Categorías de impuesto (siglas SAT se mantienen)
+  'cat.ISR Propio':                        { es:'ISR Propio',                    en:'ISR (own)' },
+  'cat.ISR Retenido a Empleados':          { es:'ISR Retenido a Empleados',      en:'ISR withheld — employees' },
+  'cat.IVA Retenido a Terceros':           { es:'IVA Retenido a Terceros',       en:'IVA withheld — 3rd parties' },
+  'cat.ISR Retenido a Terceros':           { es:'ISR Retenido a Terceros',       en:'ISR withheld — 3rd parties' },
+  'cat.IMSS / Seguridad Social':           { es:'IMSS / Seguridad Social',       en:'IMSS / Social Security' },
+  'cat.INFONAVIT / RCV':                   { es:'INFONAVIT / RCV',               en:'INFONAVIT / RCV' },
+  'cat.ISN Estatal':                       { es:'ISN Estatal',                   en:'ISN (state payroll)' },
+  'cat.IVA':                               { es:'IVA',                           en:'IVA (VAT)' },
 };
+
+/* Helpers de traducción para valores dinámicos guardados en BD (categorías,
+   estatus, naturaleza). Devuelven el mismo valor si no hay traducción registrada. */
+function catT(cat){ return t('cat.' + cat) === ('cat.' + cat) ? cat : t('cat.' + cat); }
+function estT(est){ return t('est.' + est) === ('est.' + est) ? est : t('est.' + est); }
+function natT(esFid){ return esFid ? t('nat.fiduciario') : t('nat.no_fiduciario'); }
 
 function getLang(){
   const l = (localStorage.getItem('mitech_fiscal_lang') || document.documentElement.lang || 'es').toLowerCase();
@@ -515,7 +688,9 @@ function applyI18n(){
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     const txt = t(key);
-    if (txt !== null && txt !== undefined) el.textContent = txt;
+    if (txt === null || txt === undefined) return;
+    // Si el texto de traducción contiene HTML (etiquetas), usar innerHTML
+    if (/<[a-z][\s\S]*>/i.test(txt)) el.innerHTML = txt; else el.textContent = txt;
   });
   // Actualizar etiqueta del botón de idioma para mostrar el idioma OPUESTO
   // (indica qué idioma se activará al hacer clic).
@@ -523,6 +698,10 @@ function applyI18n(){
   if (btn) btn.textContent = (getLang() === 'es') ? 'EN' : 'ES';
   // Sincronizar atributo lang del documento
   document.documentElement.lang = getLang();
+  // Re-renderizar vistas dinámicas para que las etiquetas de datos (categorías,
+  // estatus, naturaleza, chips) también se muestren traducidas.
+  try { if (typeof renderCxc === 'function' && Array.isArray(cxcImpuestos)) renderCxc(); } catch(e){}
+  try { if (typeof renderObligaciones === 'function' && Array.isArray(obligaciones)) renderObligaciones(); } catch(e){}
 }
 
 function setLang(lang){
@@ -620,12 +799,12 @@ async function cargarCxc(){
    - Pendiente + monto > $2,000,000      → rojo   (materialidad alta aunque no sea fiduciario)
    - Pendiente (resto) / En plan de pago → amarillo */
 function cxcSemaforo(row){
-  if (row.estatus === 'Pagado') return { clase:'badge-green', texto:'🟢 Liquidado' };
+  if (row.estatus === 'Pagado') return { clase:'badge-green', texto:'🟢 ' + t('sem.pagado') };
   if (row.estatus === 'Pendiente' && (row.fiduciario || Number(row.monto) > 2000000)) {
-    return { clase:'badge-red', texto: row.fiduciario ? '🔴 Fiduciario sin pagar' : '🔴 Monto crítico' };
+    return { clase:'badge-red', texto: row.fiduciario ? '🔴 ' + t('sem.fiduciario') : '🔴 ' + t('sem.monto_critico') };
   }
-  if (row.estatus === 'En plan de pago') return { clase:'badge-yellow', texto:'🟡 En plan de pago' };
-  return { clase:'badge-yellow', texto:'🟡 Pendiente negociable' };
+  if (row.estatus === 'En plan de pago') return { clase:'badge-yellow', texto:'🟡 ' + t('sem.en_plan') };
+  return { clase:'badge-yellow', texto:'🟡 ' + t('sem.pendiente') };
 }
 
 async function cxcCambiarEstatus(id, nuevoEstatus){
@@ -676,7 +855,9 @@ function renderCxc(){
   if (filtrosEl) {
     filtrosEl.innerHTML = empresas.map(e=>{
       const activo = e === cxcFiltroEmpresa;
-      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltro('${e}')">${e}</button>`;
+      // "Todas" se traduce; nombres de empresa son propios y no se traducen
+      const label = (e === 'Todas') ? t('cxc.chip.todas') : e;
+      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltro('${e}')">${label}</button>`;
     }).join('');
   }
 
@@ -685,7 +866,8 @@ function renderCxc(){
   if (filtrosCatEl) {
     filtrosCatEl.innerHTML = categorias.map(c=>{
       const activo = c === cxcFiltroCategoria;
-      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltroCategoria('${c}')">${c}</button>`;
+      const label = (c === 'Todas') ? t('cxc.chip.todas') : catT(c);
+      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltroCategoria('${c.replace(/'/g,"\\'")}')">${label}</button>`;
     }).join('');
   }
 
@@ -700,7 +882,8 @@ function renderCxc(){
   if (filtrosAnioEl) {
     filtrosAnioEl.innerHTML = anios.map(a=>{
       const activo = String(a) === String(cxcFiltroAnio);
-      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltroAnio('${a}')">${a}</button>`;
+      const label = (a === 'Todos') ? t('cxc.chip.todos') : a;
+      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltroAnio('${a}')">${label}</button>`;
     }).join('');
   }
 
@@ -715,18 +898,18 @@ function renderCxc(){
     const sem = cxcSemaforo(r);
     const vigencia = r.anio_inicio === r.anio_fin ? r.anio_inicio : `${r.anio_inicio}–${r.anio_fin}`;
     const estatusSelect = `<select style="width:auto;font-size:11.5px;padding:5px 8px" onchange="cxcCambiarEstatus('${r.id}', this.value)" ${cxcModoSoloLectura?'disabled':''}>
-        ${ESTATUS_OPCIONES.map(op=>`<option value="${op}" ${op===r.estatus?'selected':''}>${op}</option>`).join('')}
+        ${ESTATUS_OPCIONES.map(op=>`<option value="${op}" ${op===r.estatus?'selected':''}>${estT(op)}</option>`).join('')}
       </select>`;
     return `<tr>
       <td>${r.empresa}</td>
-      <td>${r.categoria}</td>
+      <td>${catT(r.categoria)}</td>
       <td><b>${fmtMoney(r.monto)}</b></td>
       <td>${vigencia}</td>
-      <td>${r.fiduciario ? '<span class="badge badge-red">Fiduciario</span>' : '<span class="badge badge-muted">No fiduciario</span>'}</td>
+      <td>${r.fiduciario ? `<span class="badge badge-red">${natT(true)}</span>` : `<span class="badge badge-muted">${natT(false)}</span>`}</td>
       <td>${estatusSelect}</td>
       <td><span class="badge ${sem.clase}">${sem.texto}</span></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="7" style="color:var(--muted)">Sin conceptos registrados.</td></tr>';
+  }).join('') || `<tr><td colspan="7" style="color:var(--muted)">${t('cxc.empty')}</td></tr>`;
 
   const sum = (arr) => arr.reduce((s,r)=>s+Number(r.monto||0),0);
   // KPIs recalculados sobre las FILAS FILTRADAS (Empresa + Tipo de impuesto + Año).
@@ -738,13 +921,14 @@ function renderCxc(){
   const amarillos = filas.filter(r=>r.estatus!=='Pagado' && !rojos.includes(r));
   const verdes    = filas.filter(r=>r.estatus==='Pagado');
 
+  const nLabel = (n) => n===1 ? t('cxc.kpi.concepto') : t('cxc.kpi.conceptos');
   document.getElementById('kpiCxcTotal').textContent = fmtMoney(total);
   document.getElementById('kpiCxcRojo').textContent = fmtMoney(sum(rojos));
-  document.getElementById('kpiCxcRojoSub').textContent = `${rojos.length} concepto${rojos.length===1?'':'s'}`;
+  document.getElementById('kpiCxcRojoSub').textContent = `${rojos.length} ${nLabel(rojos.length)}`;
   document.getElementById('kpiCxcAmarillo').textContent = fmtMoney(sum(amarillos));
-  document.getElementById('kpiCxcAmarilloSub').textContent = `${amarillos.length} concepto${amarillos.length===1?'':'s'}`;
+  document.getElementById('kpiCxcAmarilloSub').textContent = `${amarillos.length} ${nLabel(amarillos.length)}`;
   document.getElementById('kpiCxcVerde').textContent = fmtMoney(sum(verdes));
-  document.getElementById('kpiCxcVerdeSub').textContent = `${verdes.length} concepto${verdes.length===1?'':'s'}`;
+  document.getElementById('kpiCxcVerdeSub').textContent = `${verdes.length} ${nLabel(verdes.length)}`;
 
   const notaEl = document.getElementById('cxcNota');
   if (cxcModoSoloLectura) {
@@ -752,6 +936,324 @@ function renderCxc(){
     notaEl.innerHTML = '<b>Modo de referencia:</b> estos montos vienen de la cédula fiscal cargada como respaldo (no de Supabase), y el estatus no se puede editar todavía. Corre <code>fiscal-cxc-impuestos.sql</code> en el SQL Editor de Supabase para activar la tabla <code>fiscal_cxc_impuestos</code> y poder actualizar el estatus de cada concepto desde aquí.';
   } else {
     notaEl.style.display = 'none';
+  }
+}
+
+/* ══════════════════════════════════════════
+   CARGA MASIVA DESDE EXCEL — Cédula Fiscal Corporativa
+   Lee la hoja "Resumen" y genera dos derivaciones:
+   1) Obligaciones MENSUALES en fiscal_obligaciones (una por mes con monto>0)
+   2) Registros ANUALES en fiscal_cxc_impuestos (uno por año+empresa+categoría)
+
+   REEMPLAZA TODO el histórico previo en ambas tablas al confirmar.
+   ══════════════════════════════════════════ */
+
+/* Mapa de nombres largos del Excel → categorías canónicas del sistema (ES).
+   Cada key es un patrón regex case-insensitive. La categoría canónica es
+   la que se guarda en Supabase y luego se traduce en la UI con catT(). */
+const EXCEL_CAT_MAP = [
+  { pat:/imss/i,                                                        cat:'IMSS / Seguridad Social',           fid:true  },
+  { pat:/infonavit|rcv/i,                                               cat:'INFONAVIT / RCV',                    fid:true  },
+  { pat:/isn|state\s*tax\s*on\s*payroll/i,                              cat:'ISN Estatal',                        fid:false },
+  { pat:/(iva\s*ret\.?\s*|iva\s*withheld|third\s*party.*iva)/i,         cat:'IVA Retenido a Terceros',            fid:true  },
+  { pat:/(isr\s*ret\.?\s*terceros|isr\s*withheld|third\s*party.*isr)/i, cat:'ISR Retenido a Terceros',            fid:true  },
+  { pat:/(isr\s*ret\.?\s*emple|employees.*withholding)/i,               cat:'ISR Retenido a Empleados',           fid:true  },
+  { pat:/isr\s*propio|income\s*tax/i,                                   cat:'ISR Propio',                         fid:false },
+  { pat:/\biva\b|vat/i,                                                 cat:'IVA',                                fid:false },
+];
+
+/* Devuelve { categoria, fiduciario } o null si no matchea */
+function excelMapImpuesto(txt){
+  if (!txt) return null;
+  for (const {pat, cat, fid} of EXCEL_CAT_MAP) {
+    if (pat.test(txt)) return { categoria: cat, fiduciario: fid };
+  }
+  return null;
+}
+
+/* Fecha límite estándar SAT: día 17 del mes siguiente al del periodo.
+   Ej: periodo 2025-06 → fecha_limite 2025-07-17. Si el mes+1 excede diciembre,
+   avanza al enero del año siguiente. */
+function excelFechaLimiteSAT(anio, mesIdx0){
+  const mesSig = mesIdx0 + 1; // 0=enero → 1=febrero
+  const anioLim = mesSig > 11 ? anio + 1 : anio;
+  const mesLim = mesSig > 11 ? 0 : mesSig;
+  const d = new Date(anioLim, mesLim, 17);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MESES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+/* Datos parseados en memoria mientras se muestra el preview */
+let excelParsedObligaciones = null; // array para fiscal_obligaciones
+let excelParsedCxc = null;          // array para fiscal_cxc_impuestos
+
+/* Drag & drop handlers para la zona de upload */
+document.addEventListener('DOMContentLoaded', () => {
+  const drop = document.getElementById('excelDrop');
+  if (!drop) return;
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault();
+    drop.classList.remove('drag');
+    if (e.dataTransfer.files.length) excelProcessFile(e.dataTransfer.files[0]);
+  });
+});
+
+function excelHandleInput(ev){
+  const f = ev.target.files && ev.target.files[0];
+  if (f) excelProcessFile(f);
+}
+
+async function excelProcessFile(file){
+  if (typeof XLSX === 'undefined') { alert(t('cal.excel.err_lib')); return; }
+  if (!requirePermCarga()) return;
+
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array' });
+    const sheetName = wb.SheetNames.find(s => /resumen/i.test(s)) || wb.SheetNames[0];
+    if (!sheetName || !/resumen/i.test(sheetName)) {
+      // Si no hay hoja "Resumen", fallback: usar la primera hoja con Año/Empresa/Impuesto
+      const ok = wb.SheetNames.some(s => /resumen/i.test(s));
+      if (!ok) { alert(t('cal.excel.err_sheet')); return; }
+    }
+    const ws = wb.Sheets[sheetName];
+    // header:1 → array de arrays. defval:'' → celdas vacías como string vacío.
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+    if (!rows.length) { alert(t('cal.excel.err_empty')); return; }
+
+    // Encontrar la fila de headers (busca "Año", "Empresa", "Impuesto" en las primeras 3 filas)
+    let headerIdx = -1;
+    for (let i = 0; i < Math.min(3, rows.length); i++) {
+      const r = rows[i].map(c => String(c).toLowerCase().trim());
+      if (r.includes('año') && r.includes('empresa') && r.some(c => c.includes('impuesto'))) {
+        headerIdx = i; break;
+      }
+    }
+    if (headerIdx < 0) { alert(t('cal.excel.err_empty')); return; }
+
+    const headers = rows[headerIdx].map(c => String(c).trim());
+    // Mapear índices de columnas conocidas
+    const colAnio = headers.findIndex(h => /^año$/i.test(h));
+    const colEmp  = headers.findIndex(h => /^empresa$/i.test(h));
+    const colImp  = headers.findIndex(h => /impuesto/i.test(h) && !/año/i.test(h));
+    const colTotal = headers.findIndex(h => /^total$/i.test(h));
+    // Columnas de meses: buscar por nombre EN o ES
+    const colMeses = MESES_EN.map((mEn, i) => {
+      const idx = headers.findIndex(h => new RegExp(`^${mEn}$`, 'i').test(h) || new RegExp(`^${MESES_ES[i]}$`, 'i').test(h));
+      return idx;
+    });
+
+    // Recorrer filas de datos
+    const obligaciones = [];
+    const cxcRegistros = [];
+    const cxcKeys = new Set(); // dedup (anio+empresa+categoria)
+    const empresasSet = new Set();
+    const aniosSet = new Set();
+
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || !r.length) continue;
+      const anio = parseInt(r[colAnio], 10);
+      const empresa = String(r[colEmp] || '').trim();
+      const impuestoRaw = String(r[colImp] || '').trim();
+      if (!anio || !empresa || !impuestoRaw) continue;
+
+      const mapeo = excelMapImpuesto(impuestoRaw);
+      if (!mapeo) continue; // impuesto no reconocido, ignorar
+
+      const totalRow = parseFloat(r[colTotal]) || 0;
+      // Si el total es 0, ignoramos la fila completa
+      if (totalRow <= 0) continue;
+
+      empresasSet.add(empresa);
+      aniosSet.add(anio);
+
+      // ─── Derivación 1: OBLIGACIONES MENSUALES ────────
+      for (let m = 0; m < 12; m++) {
+        const idx = colMeses[m];
+        if (idx < 0) continue;
+        const monto = parseFloat(r[idx]) || 0;
+        if (monto <= 0) continue;
+        const periodo = `${anio}-${String(m+1).padStart(2,'0')}`;
+        obligaciones.push({
+          concepto: `${mapeo.categoria} — ${empresa} (${periodo})`,
+          periodicidad: 'Mensual',
+          fecha_limite: excelFechaLimiteSAT(anio, m),
+          // NOTA: si la tabla fiscal_obligaciones no tiene estas columnas
+          // extras, Supabase las ignorará silenciosamente o dará error.
+          // Se dejan por si el usuario amplió el esquema.
+          monto: monto,
+          empresa: empresa,
+          categoria: mapeo.categoria,
+          periodo: periodo,
+          origen: 'excel',
+        });
+      }
+
+      // ─── Derivación 2: CxC ANUAL ────────
+      const key = `${anio}|${empresa}|${mapeo.categoria}`;
+      if (cxcKeys.has(key)) {
+        // Ya existe (posible por duplicados en el Excel): sumar montos
+        const existente = cxcRegistros.find(x => `${x.anio_inicio}|${x.empresa}|${x.categoria}` === key);
+        if (existente) existente.monto = Number(existente.monto) + totalRow;
+      } else {
+        cxcKeys.add(key);
+        cxcRegistros.push({
+          empresa: empresa,
+          categoria: mapeo.categoria,
+          monto: totalRow,
+          anio_inicio: anio,
+          anio_fin: anio,
+          fiduciario: mapeo.fiduciario,
+          estatus: 'Pendiente',
+          origen: 'excel',
+        });
+      }
+    }
+
+    if (obligaciones.length === 0 && cxcRegistros.length === 0) {
+      alert(t('cal.excel.err_empty'));
+      return;
+    }
+
+    excelParsedObligaciones = obligaciones;
+    excelParsedCxc = cxcRegistros;
+    excelRenderPreview(aniosSet, empresasSet);
+  } catch (e) {
+    console.error('excelProcessFile error:', e);
+    alert('❌ ' + (e.message || e));
+  }
+}
+
+function excelRenderPreview(aniosSet, empresasSet){
+  const el = document.getElementById('excelPreview');
+  if (!el) return;
+  const anios = Array.from(aniosSet).sort();
+  const empresas = Array.from(empresasSet).sort();
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="excel-preview">
+      <h3>${t('cal.excel.preview_title')}</h3>
+      <div class="stats">
+        <div class="stat"><div class="lbl">${t('cal.excel.stat.anios')}</div><div class="val">${anios.length}</div></div>
+        <div class="stat"><div class="lbl">${t('cal.excel.stat.empresas')}</div><div class="val">${empresas.length}</div></div>
+        <div class="stat"><div class="lbl">${t('cal.excel.stat.oblig')}</div><div class="val">${excelParsedObligaciones.length}</div></div>
+        <div class="stat"><div class="lbl">${t('cal.excel.stat.cxc')}</div><div class="val">${excelParsedCxc.length}</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">
+        ${anios.length ? anios[0]+'–'+anios[anios.length-1] : ''} · ${empresas.join(', ')}
+      </div>
+      <div class="excel-warn">${t('cal.excel.warn')}</div>
+      <div class="excel-actions">
+        <button class="btn btn-secondary" onclick="excelCancelar()">${t('cal.excel.btn_cancel')}</button>
+        <button class="btn-danger" onclick="excelConfirmarYAplicar()">${t('cal.excel.btn_apply')}</button>
+      </div>
+    </div>
+  `;
+}
+
+function excelCancelar(){
+  excelParsedObligaciones = null;
+  excelParsedCxc = null;
+  const el = document.getElementById('excelPreview');
+  if (el) { el.style.display='none'; el.innerHTML=''; }
+  const inp = document.getElementById('excelInput');
+  if (inp) inp.value = '';
+}
+
+/* Permiso: solo admin_master puede cargar el Excel (reemplaza todo el histórico) */
+function requirePermCarga(){
+  if (!currentUser || currentUser.rol !== 'admin_master') {
+    alert('🔒 Solo admin_master puede cargar el Excel (reemplaza todo el histórico).');
+    return false;
+  }
+  return true;
+}
+
+async function excelConfirmarYAplicar(){
+  if (!requirePermCarga()) return;
+  if (!excelParsedObligaciones || !excelParsedCxc) return;
+  if (!confirm(t('cal.excel.confirm_msg'))) return;
+
+  const preview = document.getElementById('excelPreview');
+  const setEstado = (txt) => {
+    if (preview) preview.querySelector('.excel-actions')?.insertAdjacentHTML('beforebegin',
+      `<div id="excelStatus" style="color:var(--accent);font-size:13px;margin-top:8px">⏳ ${txt}</div>`);
+    const st = document.getElementById('excelStatus');
+    if (st) st.textContent = '⏳ ' + txt;
+  };
+  try {
+    setEstado(t('cal.excel.uploading'));
+
+    // 1) DELETE ALL en ambas tablas.
+    // Supabase requiere una condición WHERE. Usamos "id NOT NULL" que matchea todo.
+    const del1 = await sb.from('fiscal_cxc_impuestos').delete().not('id', 'is', null);
+    if (del1.error) throw del1.error;
+    const del2 = await sb.from('fiscal_obligaciones').delete().not('id', 'is', null);
+    if (del2.error) throw del2.error;
+
+    // 2) INSERT en batches. Supabase soporta insert masivo pero conviene lotes.
+    const BATCH = 500;
+    // Preparar payload obligaciones — usar solo columnas conocidas del esquema
+    // actual (concepto, periodicidad, fecha_limite). Si la tabla se amplió con
+    // monto/empresa/categoria/periodo/origen, también las envía; Supabase
+    // ignora columnas inexistentes solo si están en el schema; si no, dará
+    // error. Para robustez, primero intenta con schema extendido; si falla,
+    // reintenta con schema mínimo.
+    async function insertBatched(table, rows){
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const slice = rows.slice(i, i + BATCH);
+        const { error } = await sb.from(table).insert(slice);
+        if (error) throw error;
+      }
+    }
+
+    // Obligaciones: intentar schema extendido; si error de columna, retry con mínimo
+    try {
+      await insertBatched('fiscal_obligaciones', excelParsedObligaciones);
+    } catch (e) {
+      console.warn('Obligaciones con schema extendido falló, retry con mínimo:', e.message);
+      const minimal = excelParsedObligaciones.map(o => ({
+        concepto: o.concepto,
+        periodicidad: o.periodicidad,
+        fecha_limite: o.fecha_limite,
+      }));
+      await insertBatched('fiscal_obligaciones', minimal);
+    }
+
+    // CxC: mismo patrón, intentar con "origen"; fallback sin ella
+    try {
+      await insertBatched('fiscal_cxc_impuestos', excelParsedCxc);
+    } catch (e) {
+      console.warn('CxC con schema extendido falló, retry sin origen:', e.message);
+      const minimalCxc = excelParsedCxc.map(c => ({
+        empresa: c.empresa,
+        categoria: c.categoria,
+        monto: c.monto,
+        anio_inicio: c.anio_inicio,
+        anio_fin: c.anio_fin,
+        fiduciario: c.fiduciario,
+        estatus: c.estatus,
+      }));
+      await insertBatched('fiscal_cxc_impuestos', minimalCxc);
+    }
+
+    setEstado(t('cal.excel.ok'));
+    // Recargar ambos datasets
+    await Promise.all([cargarObligaciones(), cargarCxc()]);
+    setTimeout(() => excelCancelar(), 1500);
+  } catch (e) {
+    console.error('excelConfirmarYAplicar error:', e);
+    const st = document.getElementById('excelStatus');
+    if (st) { st.textContent = '❌ ' + (e.message || e); st.style.color = 'var(--red)'; }
+    else alert('❌ ' + (e.message || e));
   }
 }
 
@@ -790,17 +1292,20 @@ function renderObligaciones(){
   const tbody = document.getElementById('tblObligaciones');
   tbody.innerHTML = obligaciones.map((o)=>{
     const dr = diasRestantes(o.fecha_limite);
-    let badge = 'badge-green', txt = 'A tiempo';
-    if(dr < 0){ badge='badge-red'; txt='Vencida'; }
-    else if(dr <= 3){ badge='badge-red'; txt='Urgente'; }
-    else if(dr <= 7){ badge='badge-yellow'; txt='Próxima'; }
+    let badge = 'badge-green', txt = t('obl.on_time');
+    if(dr < 0){ badge='badge-red'; txt=t('obl.overdue'); }
+    else if(dr <= 3){ badge='badge-red'; txt=t('obl.urgent'); }
+    else if(dr <= 7){ badge='badge-yellow'; txt=t('obl.soon'); }
+    // Traducir periodicidad si tiene clave conocida
+    const perKey = 'periodicidad.' + (o.periodicidad === 'Única' ? 'Unica' : (o.periodicidad || ''));
+    const perTxt = t(perKey) !== perKey ? t(perKey) : (o.periodicidad || '');
     return `<tr>
-      <td>${o.concepto}</td><td>${o.periodicidad}</td><td>${o.fecha_limite}</td>
+      <td>${o.concepto}</td><td>${perTxt}</td><td>${o.fecha_limite}</td>
       <td>${dr}</td>
       <td><span class="badge ${badge}">${txt}</span></td>
-      <td><button class="btn-secondary btn" style="padding:4px 10px;font-size:11px" onclick="eliminarObligacion('${o.id}')">Quitar</button></td>
+      <td><button class="btn-secondary btn" style="padding:4px 10px;font-size:11px" onclick="eliminarObligacion('${o.id}')">${t('obl.remove')}</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin obligaciones registradas.</td></tr>';
+  }).join('') || `<tr><td colspan="6" style="color:var(--muted)">${t('obl.empty')}</td></tr>`;
 
   if(obligaciones.length){
     const prox = obligaciones[0];
