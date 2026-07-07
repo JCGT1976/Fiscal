@@ -212,25 +212,12 @@ tr:last-child td{border-bottom:none}
       <div class="kpi-value" id="kpiImpuestoMes">$0</div>
       <div class="kpi-sub" data-i18n="kpi.impuesto_mes.sub">ISR + IVA estimados</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label" data-i18n="kpi.cfdi_pend">CFDI pendientes de conciliar</div>
-      <div class="kpi-value" id="kpiCfdiPend">0</div>
-      <div class="kpi-sub"><span data-i18n="kpi.cfdi_pend.of">de</span> <span id="kpiCfdiTotal">0</span> <span data-i18n="kpi.cfdi_pend.regs">registrados</span></div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label" data-i18n="kpi.deuda">Deuda fiscal actualizada</div>
-      <div class="kpi-value" id="kpiDeudaTotal">$0</div>
-      <div class="kpi-sub" data-i18n="kpi.deuda.sub">Incluye recargos y actualización</div>
-    </div>
   </div>
 
   <div class="nav-tabs">
     <button class="nav-tab active" data-view="calendario" onclick="showView('calendario')" data-i18n="tab.calendario">📅 Calendario SAT</button>
     <button class="nav-tab" data-view="cxc" onclick="showView('cxc')" data-i18n="tab.cxc">🚦 CxC Fiscal</button>
     <button class="nav-tab" data-view="impuestos" onclick="showView('impuestos')" data-i18n="tab.impuestos">🧮 Cálculo de Impuestos</button>
-    <button class="nav-tab" data-view="cfdi" onclick="showView('cfdi')" data-i18n="tab.cfdi">🧾 Control de CFDI</button>
-    <button class="nav-tab" data-view="provisiones" onclick="showView('provisiones')" data-i18n="tab.provisiones">💰 Provisiones y Pagos</button>
-    <button class="nav-tab" data-view="deuda" onclick="showView('deuda')" data-i18n="tab.deuda">⚠️ Deuda Fiscal</button>
   </div>
 
   <!-- ===================== CALENDARIO SAT ===================== -->
@@ -369,115 +356,6 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
   </div>
-
-  <!-- ===================== CFDI ===================== -->
-  <div class="view" id="view-cfdi">
-    <div class="card">
-      <h2>Registrar CFDI</h2>
-      <div class="grid-3">
-        <div class="field"><label>Tipo</label>
-          <select id="cfdiTipo"><option>Emitido</option><option>Recibido</option></select>
-        </div>
-        <div class="field"><label>RFC contraparte</label><input id="cfdiRfc" placeholder="XAXX010101000"></div>
-        <div class="field"><label>Folio fiscal (UUID)</label><input id="cfdiFolio" placeholder="UUID"></div>
-      </div>
-      <div class="grid-3">
-        <div class="field"><label>Fecha</label><input id="cfdiFecha" type="date"></div>
-        <div class="field"><label>Monto total</label><input id="cfdiMonto" type="number" step="0.01" placeholder="0.00"></div>
-        <div class="field"><label>Estatus</label>
-          <select id="cfdiEstatus"><option>Pendiente</option><option>Conciliado</option><option>Cancelado</option></select>
-        </div>
-      </div>
-      <button class="btn" id="btnAgregarCfdi" onclick="agregarCfdi()">+ Registrar CFDI</button>
-    </div>
-    <div class="card">
-      <h2>Comprobantes registrados</h2>
-      <div class="desc">Concilia contra los gastos/ingresos del módulo de Flujo y Gastos para detectar CFDI faltantes o duplicados. Haz clic en el estatus para cambiarlo.</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Tipo</th><th>RFC</th><th>Folio</th><th>Fecha</th><th>Monto</th><th>Estatus</th></tr></thead>
-          <tbody id="tblCfdi"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== PROVISIONES Y PAGOS ===================== -->
-  <div class="view" id="view-provisiones">
-    <div class="card">
-      <h2>Registrar provisión / pago</h2>
-      <div class="grid-3">
-        <div class="field"><label>Concepto</label><input id="provConcepto" placeholder="Ej. ISR mensual"></div>
-        <div class="field"><label>Periodo</label><input id="provPeriodo" type="month"></div>
-        <div class="field"><label>Monto provisionado</label><input id="provProvisionado" type="number" step="0.01" placeholder="0.00"></div>
-      </div>
-      <div class="field" style="max-width:260px"><label>Monto pagado</label><input id="provPagado" type="number" step="0.01" placeholder="0.00"></div>
-      <button class="btn" id="btnAgregarProvision" onclick="agregarProvision()">+ Registrar</button>
-    </div>
-    <div class="card">
-      <h2>Provisiones vs pagos realizados</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Concepto</th><th>Periodo</th><th>Provisionado</th><th>Pagado</th><th>Diferencia</th><th>Estatus</th></tr></thead>
-          <tbody id="tblProvisiones"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== DEUDA FISCAL ===================== -->
-  <div class="view" id="view-deuda">
-    <div class="card">
-      <h2>Calculadora de deuda fiscal (actualización + recargos + multa)</h2>
-      <div class="desc">Metodología CFF: la actualización se aplica primero sobre el monto histórico; los recargos se calculan sobre el monto ya actualizado.</div>
-      <div class="grid-3">
-        <div class="field"><label>Concepto / obligación</label><input id="deuConcepto" placeholder="Ej. IVA marzo 2025"></div>
-        <div class="field"><label>Monto histórico del adeudo</label><input id="deuMonto" type="number" step="0.01" placeholder="0.00"></div>
-        <div class="field"><label>Fecha en que debió pagarse</label><input id="deuFechaVenc" type="date"></div>
-      </div>
-      <div class="grid-3">
-        <div class="field"><label>Fecha de pago (o de hoy)</label><input id="deuFechaPago" type="date"></div>
-        <div class="field"><label>INPC del mes anterior al vencimiento</label><input id="deuInpcIni" type="number" step="0.0001" placeholder="Ej. 128.5432"></div>
-        <div class="field"><label>INPC del mes anterior al pago</label><input id="deuInpcFin" type="number" step="0.0001" placeholder="Ej. 134.1200"></div>
-      </div>
-      <div class="grid-3">
-        <div class="field"><label>Tipo de recargo</label>
-          <select id="deuTipoRecargo" onchange="actualizarTasaRecargo()">
-            <option value="1.38">Prórroga — 1.38% mensual</option>
-            <option value="2.07" selected>Mora — 2.07% mensual</option>
-            <option value="1.42">Pago a plazos ≤12 meses — 1.42% mensual</option>
-            <option value="1.63">Pago a plazos 13–24 meses — 1.63% mensual</option>
-            <option value="1.97">Pago a plazos ≥25 meses / diferido — 1.97% mensual</option>
-          </select>
-        </div>
-        <div class="field"><label>Tasa de recargo mensual (%) — editable</label><input id="deuTasaRecargo" type="number" step="0.01" value="2.07"></div>
-        <div class="field"><label>Multa aplicable (opcional)</label><input id="deuMulta" type="number" step="0.01" placeholder="0.00"></div>
-      </div>
-      <button class="btn" id="btnCalcularDeuda" onclick="calcularDeuda()">Calcular deuda actualizada</button>
-
-      <div class="result-box" id="deuResultado" style="display:none">
-        <div class="result-row"><span class="muted">Meses transcurridos (para recargos)</span><span id="dMeses">0</span></div>
-        <div class="result-row"><span class="muted">Factor de actualización</span><span id="dFactor">1.0000</span></div>
-        <div class="result-row"><span class="muted">Monto actualizado</span><span id="dMontoAct">$0</span></div>
-        <div class="result-row"><span class="muted">Recargos generados</span><span id="dRecargos">$0</span></div>
-        <div class="result-row"><span class="muted">Multa</span><span id="dMulta">$0</span></div>
-        <div class="result-row total"><span>Total a pagar</span><span id="dTotal">$0</span></div>
-      </div>
-      <div class="note">
-        <b>Fuentes de referencia (verificar vigencia antes de usar en producción):</b> tasa de recargos por mora 2026 = 2.07% mensual; prórroga = 1.38% mensual; pagos a plazos = 1.42% / 1.63% / 1.97% según parcialidades. Factor de actualización = INPC del mes anterior al pago ÷ INPC del mes anterior al vencimiento. Multas por declaración extemporánea del ISR: rango general aproximado de $2,050 a $50,710 por obligación (Art. 82 CFF) — ingrésala manualmente según el caso. Confirma siempre contra el <a href="https://www.sat.gob.mx" target="_blank" style="color:var(--accent)">simulador oficial del SAT</a> o con tu contador antes de pagar.
-      </div>
-    </div>
-    <div class="card">
-      <h2>Adeudos registrados</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Concepto</th><th>Monto histórico</th><th>Actualizado</th><th>Recargos</th><th>Multa</th><th>Total</th></tr></thead>
-          <tbody id="tblDeudas"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
 </div>
 
 <script>
@@ -491,7 +369,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.07.3';
+const APP_VERSION = '2026.07.07.4';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -610,18 +488,10 @@ const translations = {
   'kpi.proximo':              { es:'Próximo vencimiento',                            en:'Next due date' },
   'kpi.impuesto_mes':         { es:'Impuesto estimado del mes',                     en:'Estimated tax this month' },
   'kpi.impuesto_mes.sub':     { es:'ISR + IVA estimados',                            en:'Estimated ISR + IVA' },
-  'kpi.cfdi_pend':            { es:'CFDI pendientes de conciliar',                   en:'CFDI pending reconciliation' },
-  'kpi.cfdi_pend.of':         { es:'de',                                             en:'of' },
-  'kpi.cfdi_pend.regs':       { es:'registrados',                                    en:'registered' },
-  'kpi.deuda':                { es:'Deuda fiscal actualizada',                       en:'Updated tax debt' },
-  'kpi.deuda.sub':            { es:'Incluye recargos y actualización',               en:'Includes surcharges and inflation adjustment' },
   // Tabs
   'tab.calendario':           { es:'📅 Calendario SAT',                              en:'📅 SAT Calendar' },
   'tab.cxc':                  { es:'🚦 CxC Fiscal',                                  en:'🚦 Tax Receivables' },
   'tab.impuestos':            { es:'🧮 Cálculo de Impuestos',                        en:'🧮 Tax Calculation' },
-  'tab.cfdi':                 { es:'🧾 Control de CFDI',                             en:'🧾 CFDI Control' },
-  'tab.provisiones':          { es:'💰 Provisiones y Pagos',                         en:'💰 Provisions & Payments' },
-  'tab.deuda':                { es:'⚠️ Deuda Fiscal',                                 en:'⚠️ Tax Debt' },
   // Banner update
   'update.msg':               { es:'🔄 Hay una nueva versión del módulo Fiscal disponible. Recárgala para verla.',
                                 en:'🔄 A new version of the Tax module is available. Reload to see it.' },
@@ -679,9 +549,6 @@ async function cargarTodo(){
     cargarObligaciones(),
     cargarCxc(),
     cargarImpuestos(),
-    cargarCfdi(),
-    cargarProvisiones(),
-    cargarDeudas(),
   ]);
 }
 
@@ -993,162 +860,6 @@ function renderImpuestos(){
       <td>${c.periodo}</td><td>${fmtMoney(c.utilidad)}</td><td>${fmtMoney(c.isr)}</td>
       <td>${fmtMoney(c.iva_cargo)}</td><td>${fmtMoney(c.total)}</td>
     </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">Sin cálculos registrados.</td></tr>';
-}
-
-/* ================= CFDI ================= */
-async function cargarCfdi(){
-  const { data, error } = await sb.from('fiscal_cfdi').select('*').order('fecha', { ascending: false });
-  if (error) { console.error(error); setSyncError('Error leyendo CFDI'); return; }
-  cfdis = data || [];
-  renderCfdi();
-}
-async function agregarCfdi(){
-  const tipo = document.getElementById('cfdiTipo').value;
-  const rfc = document.getElementById('cfdiRfc').value.trim();
-  const folio = document.getElementById('cfdiFolio').value.trim();
-  const fecha = document.getElementById('cfdiFecha').value;
-  const monto = parseFloat(document.getElementById('cfdiMonto').value)||0;
-  const estatus = document.getElementById('cfdiEstatus').value;
-  if(!rfc || !folio || !fecha){ alert('Completa RFC, folio y fecha.'); return; }
-
-  const btn = document.getElementById('btnAgregarCfdi');
-  btn.disabled = true;
-  const { error } = await sb.from('fiscal_cfdi').insert({
-    tipo, rfc, folio_uuid: folio, fecha, monto, estatus, creado_por: currentUserId
-  });
-  btn.disabled = false;
-  if (error) { alert('No se pudo guardar el CFDI: ' + error.message); return; }
-
-  ['cfdiRfc','cfdiFolio','cfdiFecha','cfdiMonto'].forEach(id=>document.getElementById(id).value='');
-  await cargarCfdi();
-}
-async function cambiarEstatusCfdi(id, estatusActual){
-  const orden = ['Pendiente','Conciliado','Cancelado'];
-  const siguiente = orden[(orden.indexOf(estatusActual)+1)%orden.length];
-  const { error } = await sb.from('fiscal_cfdi').update({ estatus: siguiente }).eq('id', id);
-  if (error) { alert('No se pudo actualizar: ' + error.message); return; }
-  await cargarCfdi();
-}
-function renderCfdi(){
-  const tbody = document.getElementById('tblCfdi');
-  tbody.innerHTML = cfdis.map((c)=>{
-    const badge = c.estatus==='Conciliado'?'badge-green':c.estatus==='Cancelado'?'badge-red':'badge-yellow';
-    return `<tr>
-      <td>${c.tipo}</td><td>${c.rfc}</td><td style="font-size:10.5px">${c.folio_uuid}</td><td>${c.fecha}</td>
-      <td>${fmtMoney(c.monto)}</td>
-      <td><span class="badge ${badge}" style="cursor:pointer" onclick="cambiarEstatusCfdi('${c.id}','${c.estatus}')">${c.estatus}</span></td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin CFDI registrados.</td></tr>';
-
-  document.getElementById('kpiCfdiTotal').textContent = cfdis.length;
-  document.getElementById('kpiCfdiPend').textContent = cfdis.filter(c=>c.estatus==='Pendiente').length;
-}
-
-/* ================= PROVISIONES ================= */
-async function cargarProvisiones(){
-  const { data, error } = await sb.from('fiscal_provisiones').select('*').order('periodo', { ascending: false });
-  if (error) { console.error(error); setSyncError('Error leyendo provisiones'); return; }
-  provisiones = data || [];
-  renderProvisiones();
-}
-async function agregarProvision(){
-  const concepto = document.getElementById('provConcepto').value.trim();
-  const periodo = document.getElementById('provPeriodo').value;
-  const provisionado = parseFloat(document.getElementById('provProvisionado').value)||0;
-  const pagado = parseFloat(document.getElementById('provPagado').value)||0;
-  if(!concepto || !periodo){ alert('Completa concepto y periodo.'); return; }
-
-  const btn = document.getElementById('btnAgregarProvision');
-  btn.disabled = true;
-  const { error } = await sb.from('fiscal_provisiones').insert({
-    concepto, periodo, monto_provisionado: provisionado, monto_pagado: pagado, creado_por: currentUserId
-  });
-  btn.disabled = false;
-  if (error) { alert('No se pudo guardar: ' + error.message); return; }
-
-  ['provConcepto','provPeriodo','provProvisionado','provPagado'].forEach(id=>document.getElementById(id).value='');
-  await cargarProvisiones();
-}
-function renderProvisiones(){
-  const tbody = document.getElementById('tblProvisiones');
-  tbody.innerHTML = provisiones.map(p=>{
-    const dif = p.monto_provisionado - p.monto_pagado;
-    const estatus = dif<=0 ? '<span class="badge badge-green">Cubierto</span>' : '<span class="badge badge-yellow">Pendiente</span>';
-    return `<tr>
-      <td>${p.concepto}</td><td>${p.periodo}</td><td>${fmtMoney(p.monto_provisionado)}</td>
-      <td>${fmtMoney(p.monto_pagado)}</td><td>${fmtMoney(dif)}</td><td>${estatus}</td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin provisiones registradas.</td></tr>';
-}
-
-/* ================= DEUDA FISCAL ================= */
-function actualizarTasaRecargo(){
-  const sel = document.getElementById('deuTipoRecargo');
-  document.getElementById('deuTasaRecargo').value = sel.value;
-}
-function mesesEntre(f1,f2){
-  const d1 = new Date(f1+"T00:00:00"), d2 = new Date(f2+"T00:00:00");
-  let meses = (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
-  if(d2.getDate() >= d1.getDate()) meses += 1;
-  return Math.max(meses,0);
-}
-async function cargarDeudas(){
-  const { data, error } = await sb.from('fiscal_deudas').select('*').order('creado_en', { ascending: false });
-  if (error) { console.error(error); setSyncError('Error leyendo deudas'); return; }
-  deudas = data || [];
-  renderDeudas();
-}
-async function calcularDeuda(){
-  const concepto = document.getElementById('deuConcepto').value.trim() || 'Adeudo sin nombre';
-  const monto = parseFloat(document.getElementById('deuMonto').value)||0;
-  const fVenc = document.getElementById('deuFechaVenc').value;
-  const fPago = document.getElementById('deuFechaPago').value || new Date().toISOString().slice(0,10);
-  const inpcIni = parseFloat(document.getElementById('deuInpcIni').value)||0;
-  const inpcFin = parseFloat(document.getElementById('deuInpcFin').value)||0;
-  const tasaRecargo = parseFloat(document.getElementById('deuTasaRecargo').value)||0;
-  const multa = parseFloat(document.getElementById('deuMulta').value)||0;
-
-  if(!monto || !fVenc){ alert('Captura al menos el monto y la fecha de vencimiento.'); return; }
-
-  const meses = mesesEntre(fVenc, fPago);
-  let factor = 1;
-  if(inpcIni > 0 && inpcFin > 0){
-    factor = inpcFin / inpcIni;
-    if(factor < 1) factor = 1;
-  }
-  const montoActualizado = monto * factor;
-  const recargos = montoActualizado * (tasaRecargo/100) * meses;
-  const total = montoActualizado + recargos + multa;
-
-  document.getElementById('dMeses').textContent = meses;
-  document.getElementById('dFactor').textContent = factor.toFixed(4);
-  document.getElementById('dMontoAct').textContent = fmtMoney(montoActualizado);
-  document.getElementById('dRecargos').textContent = fmtMoney(recargos);
-  document.getElementById('dMulta').textContent = fmtMoney(multa);
-  document.getElementById('dTotal').textContent = fmtMoney(total);
-  document.getElementById('deuResultado').style.display = 'block';
-
-  const btn = document.getElementById('btnCalcularDeuda');
-  btn.disabled = true;
-  const { error } = await sb.from('fiscal_deudas').insert({
-    concepto, monto_historico: monto, fecha_vencimiento: fVenc, fecha_pago: fPago,
-    inpc_inicial: inpcIni || null, inpc_final: inpcFin || null, tasa_recargo: tasaRecargo,
-    meses, factor_actualizacion: factor, monto_actualizado: montoActualizado,
-    recargos, multa, total, creado_por: currentUserId
-  });
-  btn.disabled = false;
-  if (error) { alert('No se pudo guardar el adeudo: ' + error.message); return; }
-  await cargarDeudas();
-}
-function renderDeudas(){
-  const tbody = document.getElementById('tblDeudas');
-  tbody.innerHTML = deudas.map(d=>`<tr>
-      <td>${d.concepto}</td><td>${fmtMoney(d.monto_historico)}</td><td>${fmtMoney(d.monto_actualizado)}</td>
-      <td>${fmtMoney(d.recargos)}</td><td>${fmtMoney(d.multa)}</td><td><b>${fmtMoney(d.total)}</b></td>
-    </tr>`).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin adeudos registrados.</td></tr>';
-
-  const totalDeuda = deudas.reduce((s,d)=>s+Number(d.total||0),0);
-  document.getElementById('kpiDeudaTotal').textContent = fmtMoney(totalDeuda);
 }
 
 /* ══════════════════════════════════════════
