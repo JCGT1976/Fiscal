@@ -405,7 +405,26 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
     <div class="card">
-      <h2>Historial de cálculos</h2>
+      <h2>🔄 Actualizar impuestos de CxC Fiscal a la fecha actual</h2>
+      <div class="desc">
+        Selecciona uno, varios o todos los conceptos de <b>CxC Fiscal</b>. El sistema calcula <b>actualización (INPC)</b> + <b>recargos</b> según la ley que le aplica a cada tipo de impuesto (CFF para ISR/IVA, LSS para IMSS, Ley del INFONAVIT, o Código Fiscal del Estado de BC para ISN), y simula el efecto de una <b>condonación</b> según lo que cada ley permite.
+        <br><span style="color:var(--red);font-weight:600">⚠️ Esto es una herramienta de apoyo interno, no una determinación oficial. Antes de pagar o presentar cualquier trámite de reducción/condonación, valídalo con el fiscalista de MI Global.</span>
+      </div>
+      <div style="margin:10px 0">
+        <button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px" onclick="calcSeleccionarTodos(true)">Seleccionar todos</button>
+        <button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px" onclick="calcSeleccionarTodos(false)">Ninguno</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Empresa</th><th>Categoría</th><th>Régimen</th><th>Monto histórico</th><th>Vigencia</th></tr></thead>
+          <tbody id="tblCalcSelector"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <button class="btn" id="btnCalcularActualizacion" onclick="calcAbrirINPC()" style="margin-top:10px">Calcular actualización a hoy</button>
+      <div id="calcInpcForm" style="display:none;margin-top:14px"></div>
+      <div id="calcPreview" style="display:none;margin-top:14px"></div>
+    </div>
+
       <div class="table-wrap">
         <table>
           <thead><tr><th>Periodo</th><th>Utilidad fiscal</th><th>ISR</th><th>IVA a cargo</th><th>Total</th></tr></thead>
@@ -427,7 +446,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.08.2';
+const APP_VERSION = '2026.07.08.3';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -939,6 +958,262 @@ function renderCxc(){
   } else {
     notaEl.style.display = 'none';
   }
+  if (typeof calcRenderSelector === 'function') calcRenderSelector();
+}
+
+/* ══════════════════════════════════════════
+   CÁLCULO DE IMPUESTOS — Actualización a hoy + recargos + condonación
+   Fundamento legal por régimen: ver skill fiscal-recargos-mx.
+   IMPORTANTE: multa estimada y % de condonación son valores que
+   captura el usuario/fiscalista — el sistema NO los determina solo,
+   solo aplica correctamente la ley a lo que el usuario indique.
+   ══════════════════════════════════════════ */
+
+const REGIMEN_POR_CATEGORIA = {
+  'ISR Propio':               { key:'CFF',          label:'CFF (federal)' },
+  'IVA':                      { key:'CFF',          label:'CFF (federal)' },
+  'ISR Retenido a Empleados': { key:'CFF_RETENIDO', label:'CFF — retenido ⚠️' },
+  'ISR Retenido a Terceros':  { key:'CFF_RETENIDO', label:'CFF — retenido ⚠️' },
+  'IVA Retenido a Terceros':  { key:'CFF_RETENIDO', label:'CFF — retenido ⚠️' },
+  'IMSS / Seguridad Social':  { key:'IMSS',          label:'LSS (IMSS)' },
+  'INFONAVIT / RCV':          { key:'INFONAVIT',     label:'Ley INFONAVIT' },
+  'ISN Estatal':              { key:'BC_ISN',        label:'Cód. Fiscal BC (estatal)' },
+};
+function calcRegimenPorCategoria(cat){
+  return REGIMEN_POR_CATEGORIA[cat] || { key:'CFF', label:'CFF (default)' };
+}
+
+/* Tasas mensuales de recargos por mora, vigentes 2026 — verificar
+   anualmente (LIF federal / Ley de Ingresos del Estado de BC). */
+const TASA_RECARGO_MORA = { CFF:0.0207, CFF_RETENIDO:0.0207, IMSS:0.0207, INFONAVIT:0.0207, BC_ISN:0.0225 };
+
+const CONDONACION_INFO = {
+  CFF:          { maxPct:1.00, nota:'Art. 74 CFF: el SAT puede reducir hasta 100% de la MULTA (no del capital ni recargos, salvo estímulo LIF). Trámite "Reducción de Multas art. 74 CFF" en el portal del SAT.' },
+  CFF_RETENIDO: { maxPct:0.00, nota:'⚠️ Retenido no enterado: la condonación normalmente NO procede (Art. 70-A fracc. VII CFF) y hay riesgo de defraudación fiscal equiparada (Art. 108-109 CFF). Revisar con fiscalista antes de cualquier trámite.' },
+  IMSS:         { maxPct:0.00, nota:'Art. 40-F LSS: el IMSS NO puede condonar actualización ni recargos de cuotas, bajo ninguna circunstancia. Multas administrativas se reducen por vía separada (no calculada aquí).' },
+  INFONAVIT:    { maxPct:0.90, nota:'Programa "Cumplamos Juntos" INFONAVIT: 50%–90% sobre MULTAS y su actualización (no sobre el capital). Confirma % y vigencia en el Portal Empresarial INFONAVIT.' },
+  BC_ISN:       { maxPct:0.00, nota:'Sin decreto estatal de condonación confirmado para ISN 2026. Verificar Periódico Oficial de BC antes de asumir beneficio.' },
+};
+
+let calcSeleccionIds = new Set();
+let calcOrigenesCache = {};
+let calcResultados = [];
+
+function calcRenderSelector(){
+  const tbody = document.getElementById('tblCalcSelector');
+  if (!tbody) return;
+  tbody.innerHTML = cxcImpuestos.map(r=>{
+    const regimen = calcRegimenPorCategoria(r.categoria);
+    const vigencia = r.anio_inicio === r.anio_fin ? r.anio_inicio : `${r.anio_inicio}–${r.anio_fin}`;
+    return `<tr>
+      <td><input type="checkbox" class="calc-chk" data-id="${r.id}" onchange="calcSincronizarSeleccion()"></td>
+      <td>${r.empresa}</td>
+      <td>${catT(r.categoria)}</td>
+      <td>${regimen.label}</td>
+      <td>${fmtMoney(r.monto)}</td>
+      <td>${vigencia}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="6" style="color:var(--muted)">Sin conceptos en CxC Fiscal.</td></tr>`;
+}
+
+function calcSeleccionarTodos(marcar){
+  document.querySelectorAll('.calc-chk').forEach(cb=>{ cb.checked = marcar; });
+  calcSincronizarSeleccion();
+}
+function calcSincronizarSeleccion(){
+  calcSeleccionIds = new Set(Array.from(document.querySelectorAll('.calc-chk:checked')).map(cb=>String(cb.dataset.id)));
+}
+
+/* Busca en fiscal_obligaciones (desglose mensual real, si ya se migró
+   y recargó el Excel) el período más antiguo de esta empresa+categoría
+   dentro del año de inicio. Si no existe, aproxima al 1-enero y lo marca
+   como estimado — ver skill fiscal-recargos-mx sección 7. */
+function calcObtenerFechaOrigen(row){
+  const candidatos = obligaciones.filter(o =>
+    o.empresa === row.empresa && o.categoria === row.categoria &&
+    o.periodo && o.periodo.startsWith(String(row.anio_inicio))
+  ).sort((a,b)=> a.periodo.localeCompare(b.periodo));
+  if (candidatos.length) {
+    return { periodo: candidatos[0].periodo, fecha: candidatos[0].periodo + '-01', estimado: false };
+  }
+  const periodo = `${row.anio_inicio}-01`;
+  return { periodo, fecha: periodo + '-01', estimado: true };
+}
+
+function calcMesActualPeriodo(){
+  const hoy = new Date();
+  return `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+}
+
+/* "Por cada mes o fracción que transcurra" (art. 21 CFF): una fracción
+   de mes cuenta como mes completo para efectos de recargos. */
+function calcMesesMora(fechaOrigenISO){
+  const d1 = new Date(fechaOrigenISO+'T00:00:00');
+  const d2 = new Date();
+  let meses = (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
+  if (d2.getDate() > d1.getDate()) meses += 1;
+  return Math.max(meses, 0);
+}
+
+function calcAbrirINPC(){
+  calcSincronizarSeleccion();
+  if (!calcSeleccionIds.size) { alert('Selecciona al menos un concepto de CxC Fiscal.'); return; }
+  const seleccionados = cxcImpuestos.filter(r => calcSeleccionIds.has(String(r.id)));
+  const mesActual = calcMesActualPeriodo();
+  const periodosNecesarios = new Set([mesActual]);
+  const origenes = {};
+  seleccionados.forEach(r=>{
+    const o = calcObtenerFechaOrigen(r);
+    origenes[r.id] = o;
+    periodosNecesarios.add(o.periodo);
+  });
+  calcOrigenesCache = origenes;
+
+  let cache = {};
+  try { cache = JSON.parse(localStorage.getItem('fiscal_inpc_cache') || '{}'); } catch(e) { cache = {}; }
+  const faltantes = Array.from(periodosNecesarios).filter(p => !(p in cache)).sort();
+
+  const formEl = document.getElementById('calcInpcForm');
+  if (faltantes.length) {
+    formEl.style.display = 'block';
+    formEl.innerHTML = `
+      <div class="excel-preview">
+        <h3>📐 Captura los valores de INPC necesarios</h3>
+        <div class="desc">Se necesita el Índice Nacional de Precios al Consumidor (INEGI, o Anexo de la RMF vigente) de estos meses para calcular la actualización real. Se guardan en este navegador para no volver a pedirlos.</div>
+        <div class="grid-3">
+          ${faltantes.map(p => `<div class="field"><label>INPC ${p}${p===mesActual?' (mes actual)':''}</label><input type="number" step="0.00001" id="inpc_${p.replace('-','_')}" placeholder="Ej. 132.37300"></div>`).join('')}
+        </div>
+        <button class="btn" onclick="calcGuardarInpcYCalcular()" style="margin-top:10px">Guardar y calcular</button>
+      </div>`;
+  } else {
+    formEl.style.display = 'none';
+    calcCalcularTodo();
+  }
+}
+
+function calcGuardarInpcYCalcular(){
+  let cache = {};
+  try { cache = JSON.parse(localStorage.getItem('fiscal_inpc_cache') || '{}'); } catch(e) { cache = {}; }
+  document.querySelectorAll('#calcInpcForm input[type="number"]').forEach(inp=>{
+    const periodo = inp.id.replace('inpc_','').replace('_','-');
+    const val = parseFloat(inp.value);
+    if (!isNaN(val) && val > 0) cache[periodo] = val;
+  });
+  localStorage.setItem('fiscal_inpc_cache', JSON.stringify(cache));
+  document.getElementById('calcInpcForm').style.display = 'none';
+  calcCalcularTodo();
+}
+
+function calcCalcularTodo(){
+  calcSincronizarSeleccion();
+  const seleccionados = cxcImpuestos.filter(r => calcSeleccionIds.has(String(r.id)));
+  let cache = {};
+  try { cache = JSON.parse(localStorage.getItem('fiscal_inpc_cache') || '{}'); } catch(e) { cache = {}; }
+  const mesActual = calcMesActualPeriodo();
+  const inpcHoy = cache[mesActual];
+  if (!inpcHoy) { alert('Falta el INPC del mes actual ('+mesActual+'). Captúralo para continuar.'); calcAbrirINPC(); return; }
+
+  calcResultados = seleccionados.map(r=>{
+    const regimen = calcRegimenPorCategoria(r.categoria);
+    const origen = calcOrigenesCache[r.id] || calcObtenerFechaOrigen(r);
+    const inpcOrigen = cache[origen.periodo];
+    const mesesMora = calcMesesMora(origen.fecha);
+    const actualizacionAplicada = !!inpcOrigen;
+    const factorActualizacion = inpcOrigen ? (inpcHoy / inpcOrigen) : 1;
+    const montoActualizado = Number(r.monto) * factorActualizacion;
+    const tasa = TASA_RECARGO_MORA[regimen.key];
+    const recargos = montoActualizado * tasa * mesesMora;
+    const total = montoActualizado + recargos;
+    const cond = CONDONACION_INFO[regimen.key];
+    return {
+      id: r.id, empresa: r.empresa, categoria: r.categoria, regimen: regimen.key, regimenLabel: regimen.label,
+      montoHistorico: Number(r.monto), origenPeriodo: origen.periodo, estimado: origen.estimado,
+      mesesMora, factorActualizacion, actualizacionAplicada, montoActualizado, recargos, total,
+      multaEstimada: 0, pctCondonacion: 0, maxPctCondonacion: cond.maxPct, notaCondonacion: cond.nota,
+      estimuloLif: false, montoConCondonacion: total
+    };
+  });
+  calcRenderPreview();
+}
+
+function calcRenderPreview(){
+  const el = document.getElementById('calcPreview');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="excel-preview">
+      <h3>📊 Resultado — actualización, recargos y condonación</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Empresa</th><th>Categoría</th><th>Histórico</th><th>Actualizado</th><th>Recargos</th><th>Meses mora</th>
+            <th>Multa estimada</th><th>% Condonación</th><th>Estímulo LIF 2026</th><th>Total con condonación</th>
+          </tr></thead>
+          <tbody>
+            ${calcResultados.map((res,i)=>`
+              <tr>
+                <td>${res.empresa}${res.estimado?' <span title="Sin período mensual real; se usó 1-enero del año fiscal como aproximación" style="cursor:help">⚠️</span>':''}</td>
+                <td>${catT(res.categoria)}<div style="font-size:10px;color:var(--muted)">${res.regimenLabel}</div></td>
+                <td>${fmtMoney(res.montoHistorico)}</td>
+                <td>${fmtMoney(res.montoActualizado)}${!res.actualizacionAplicada?' <span title="Falta INPC de '+res.origenPeriodo+'; no se aplicó actualización" style="cursor:help">⚠️</span>':''}</td>
+                <td>${fmtMoney(res.recargos)}</td>
+                <td>${res.mesesMora}</td>
+                <td><input type="number" step="0.01" value="${res.multaEstimada}" style="width:100px" onchange="calcActualizarFila(${i}, 'multaEstimada', this.value)"></td>
+                <td>
+                  <input type="number" step="1" min="0" max="${Math.round(res.maxPctCondonacion*100)}" value="0" style="width:70px" ${res.maxPctCondonacion===0?'disabled':''} onchange="calcActualizarFila(${i}, 'pctCondonacion', this.value)">%
+                  <div style="font-size:10px;color:var(--muted);max-width:220px">${res.notaCondonacion}</div>
+                </td>
+                <td>${(res.regimen==='CFF'||res.regimen==='CFF_RETENIDO') ? `<input type="checkbox" onchange="calcActualizarFila(${i}, 'estimuloLif', this.checked)">` : '—'}</td>
+                <td><b>${fmtMoney(res.montoConCondonacion)}</b></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="excel-warn" style="margin-top:10px">⚠️ La multa estimada y el % de condonación los captura el usuario/fiscalista — el sistema NO determina multas reales ni garantiza que la autoridad otorgue la condonación. El estímulo LIF 2026 requiere validar ingresos 2024 ≤ $300M MXN y crédito firme/consentido.</div>
+      <div class="excel-actions">
+        <button class="btn-secondary btn" onclick="document.getElementById('calcPreview').style.display='none'">Cerrar</button>
+        <button class="btn-danger" onclick="calcGuardarEnSupabase()">Guardar en Supabase</button>
+      </div>
+    </div>`;
+}
+
+function calcActualizarFila(i, campo, valor){
+  const res = calcResultados[i];
+  if (campo === 'multaEstimada') res.multaEstimada = parseFloat(valor) || 0;
+  if (campo === 'pctCondonacion') res.pctCondonacion = Math.min(Math.max(parseFloat(valor)||0, 0), res.maxPctCondonacion*100) / 100;
+  if (campo === 'estimuloLif') res.estimuloLif = !!valor;
+
+  res.montoConCondonacion = res.estimuloLif
+    ? res.montoActualizado /* estímulo transitorio LIF 2026: 100% multas+recargos+gastos ejecución */
+    : res.total + res.multaEstimada * (1 - res.pctCondonacion);
+  calcRenderPreview();
+}
+
+async function calcGuardarEnSupabase(){
+  if (!calcResultados.length) return;
+  const hoy = new Date().toISOString().slice(0,10);
+  let errores = 0;
+  for (const res of calcResultados) {
+    const { error } = await sb.from('fiscal_cxc_impuestos').update({
+      monto_actualizado: res.montoActualizado,
+      recargos_calculados: res.recargos,
+      meses_mora: res.mesesMora,
+      calculo_estimado: res.estimado,
+      fecha_ultimo_calculo: hoy,
+      multa_estimada: res.multaEstimada,
+      pct_condonacion: res.pctCondonacion,
+      estimulo_lif_2026: res.estimuloLif,
+      monto_con_condonacion: res.montoConCondonacion
+    }).eq('id', res.id);
+    if (error) { console.error(error); errores++; }
+  }
+  if (errores) {
+    alert(`Se guardaron ${calcResultados.length-errores} de ${calcResultados.length}. ${errores} fallaron — revisa que hayas corrido fiscal-actualizacion-migration.sql en Supabase.`);
+  } else {
+    alert(`✅ Actualizado en Supabase: ${calcResultados.length} concepto(s).`);
+  }
+  document.getElementById('calcPreview').style.display = 'none';
+  await cargarCxc();
 }
 
 /* ══════════════════════════════════════════
