@@ -453,35 +453,6 @@ tr:last-child td{border-bottom:none}
   <!-- ===================== CALCULO DE IMPUESTOS ===================== -->
   <div class="view" id="view-impuestos">
     <div class="card">
-      <h2>Simulador de ISR / IVA del periodo</h2>
-      <div class="desc">Estimación simplificada de pago provisional. No sustituye el cálculo oficial de tu contador — úsalo como control preventivo.</div>
-      <div class="grid-3">
-        <div class="field"><label>Periodo</label><input id="impPeriodo" type="month"></div>
-        <div class="field"><label>Ingresos gravables</label><input id="impIngresos" type="number" step="0.01" placeholder="0.00"></div>
-        <div class="field"><label>Deducciones autorizadas</label><input id="impDeducciones" type="number" step="0.01" placeholder="0.00"></div>
-      </div>
-      <div class="grid-3">
-        <div class="field"><label>Tasa ISR aplicable (%)</label><input id="impTasaIsr" type="number" step="0.01" value="30"></div>
-        <div class="field"><label>Tasa IVA (%)</label><input id="impTasaIva" type="number" step="0.01" value="16"></div>
-        <div class="field"><label>IVA acreditable del periodo</label><input id="impIvaAcreditable" type="number" step="0.01" placeholder="0.00"></div>
-      </div>
-      <button class="btn" id="btnCalcularImpuesto" onclick="calcularImpuesto()">Calcular y guardar en historial</button>
-      <div class="result-box" id="impResultado" style="display:none">
-        <div class="result-row"><span class="muted">Utilidad fiscal (ingresos − deducciones)</span><span id="rUtilidad">$0</span></div>
-        <div class="result-row"><span class="muted">ISR estimado</span><span id="rIsr">$0</span></div>
-        <div class="result-row"><span class="muted">IVA trasladado</span><span id="rIvaTrasladado">$0</span></div>
-        <div class="result-row"><span class="muted">IVA a favor / a cargo</span><span id="rIvaCargo">$0</span></div>
-        <div class="result-row total"><span>Total estimado a pagar</span><span id="rTotal">$0</span></div>
-      </div>
-    </div>
-    <div class="card">
-      <h2>📐 Tabla de INPC (para actualización fiscal)</h2>
-      <div class="desc">Serie histórica del <b>Índice Nacional de Precios al Consumidor</b> (INEGI, base 2ª quincena julio 2018 = 100) precargada en Supabase desde enero 2020. Se usa automáticamente para calcular el factor de actualización del art. 17-A del CFF. Si el INPC de un mes nuevo aún no aparece (INEGI lo publica en el DOF entre el día 8 y 10 de cada mes), puedes cargarlo con el Excel de abajo o capturarlo cuando el sistema te lo pida al calcular. Formato: <b>Periodo</b> (AAAA-MM) e <b>INPC</b> (número).</div>
-      <input type="file" id="inpcExcelInput" accept=".xlsx,.xls" style="display:none" onchange="inpcExcelHandleInput(event)">
-      <button class="btn" onclick="document.getElementById('inpcExcelInput').click()">Cargar Excel de INPC (opcional)</button>
-      <div id="inpcResumen" style="margin-top:12px;font-size:12.5px;color:var(--muted)">Cargando…</div>
-    </div>
-    <div class="card">
       <h2>🔄 Actualizar impuestos de CxC Fiscal a la fecha actual</h2>
       <div class="desc">
         Selecciona uno, varios o todos los conceptos de <b>CxC Fiscal</b>, agrupados como prefieras. El sistema calcula <b>actualización (INPC)</b> + <b>recargos</b> según la ley que le aplica a cada tipo de impuesto (CFF para ISR/IVA, LSS para IMSS, Ley del INFONAVIT, o Código Fiscal del Estado de BC para ISN), y simula el efecto de una <b>condonación</b> según lo que cada ley permite.
@@ -494,12 +465,42 @@ tr:last-child td{border-bottom:none}
       <div id="calcPreview" style="display:none;margin-top:14px"></div>
     </div>
 
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Periodo</th><th>Utilidad fiscal</th><th>ISR</th><th>IVA a cargo</th><th>Total</th></tr></thead>
-          <tbody id="tblImpuestos"><tr><td colspan="5" style="color:var(--muted)">Cargando…</td></tr></tbody>
-        </table>
+    <div class="card">
+      <h2>🧮 Simulador de actualización y recargos (monto libre)</h2>
+      <div class="desc">
+        Captura <b>cualquier monto histórico</b> (no tiene que estar en CxC Fiscal) y el sistema calcula, con la misma lógica que la actualización de arriba: <b>actualización por INPC</b> + <b>recargos por mora</b> + <b>multa</b> + <b>condonación</b> + <b>estímulo LIF 2026</b>, con desglose legal completo. Úsalo para simular escenarios "¿y si…?" antes de negociar con la autoridad o el fiscalista.
+        <br><span style="color:var(--red);font-weight:600">⚠️ Simulación de apoyo — no sustituye la determinación oficial del fiscalista.</span>
       </div>
+      <div class="grid-3">
+        <div class="field"><label>Empresa (opcional)</label><input id="simEmpresa" type="text" placeholder="Simulación"></div>
+        <div class="field"><label>Tipo de impuesto</label>
+          <select id="simCategoria">
+            <option value="ISR Propio">ISR Propio</option>
+            <option value="IVA">IVA</option>
+            <option value="ISR Retenido a Empleados">ISR Retenido a Empleados</option>
+            <option value="ISR Retenido a Terceros">ISR Retenido a Terceros</option>
+            <option value="IVA Retenido a Terceros">IVA Retenido a Terceros</option>
+            <option value="IMSS / Seguridad Social">IMSS / Seguridad Social</option>
+            <option value="INFONAVIT / RCV">INFONAVIT / RCV</option>
+            <option value="ISN Estatal">ISN Estatal</option>
+          </select>
+        </div>
+        <div class="field"><label>Periodo origen</label><input id="simPeriodoOrigen" type="month"></div>
+      </div>
+      <div class="grid-3">
+        <div class="field"><label>Monto histórico</label><input id="simMonto" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label>Multa base estimada (opcional)</label><input id="simMulta" type="number" step="0.01" value="0"></div>
+        <div class="field"><label>% Condonación de multa (opcional)</label><input id="simCondonacion" type="number" step="1" min="0" max="100" value="0"></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px">
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input id="simEstimuloLif" type="checkbox"> Aplicar estímulo LIF 2026 (100% multas+recargos, solo CFF/CFF retenido)
+        </label>
+      </div>
+      <button class="btn" id="btnSimular" onclick="simularActualizacion()" style="margin-top:10px">Simular actualización y recargos</button>
+
+      <div id="simInpcForm" style="display:none;margin-top:14px"></div>
+      <div id="simPreview" style="display:none;margin-top:14px"></div>
     </div>
   </div>
 </div>
@@ -526,7 +527,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.08.6';
+const APP_VERSION = '2026.07.08.7';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -596,7 +597,6 @@ function setSyncOk(){
 
 /* ---------- Estado en memoria (espejo de las tablas fiscal_*) ---------- */
 let obligaciones = [];
-let calculosImpuestos = [];
 let cfdis = [];
 let provisiones = [];
 let deudas = [];
@@ -828,7 +828,6 @@ async function cargarTodo(){
   await Promise.all([
     cargarObligaciones(),
     cargarCxc(),
-    cargarImpuestos(),
     cargarInpc(),
   ]);
 }
@@ -1261,7 +1260,8 @@ async function inpcGuardarMasivo(registros){
 }
 
 /* Interpreta la celda de "Periodo" en varios formatos comunes:
-   AAAA-MM, AAAA/MM, MM-AAAA, MM/AAAA, "Enero 2024", o fecha serial de Excel. */
+   AAAA-MM, AAAA/MM, MM-AAAA, MM/AAAA, "Enero 2024", o fecha serial de Excel.
+   (Se conserva por si en el futuro se re-agrega carga masiva desde otro flujo). */
 function inpcNormalizarPeriodo(valorCelda){
   if (valorCelda === null || valorCelda === undefined || valorCelda === '') return null;
   if (typeof valorCelda === 'number') {
@@ -1280,52 +1280,6 @@ function inpcNormalizarPeriodo(valorCelda){
   m = s.toLowerCase().match(/([a-záéíóúñ]+)\D+(\d{4})/);
   if (m && meses[m[1]]) return `${m[2]}-${String(meses[m[1]]).padStart(2,'0')}`;
   return null;
-}
-
-async function inpcProcessFile(file){
-  if (typeof XLSX === 'undefined') { alert('❌ La librería SheetJS no está cargada.'); return; }
-  try {
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type:'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
-    if (!rows.length) { alert('El archivo está vacío.'); return; }
-
-    let headerIdx = -1, colPeriodo = -1, colValor = -1;
-    for (let i = 0; i < Math.min(5, rows.length); i++) {
-      const r = rows[i].map(c => String(c).toLowerCase().trim());
-      const cp = r.findIndex(h => /periodo|mes|fecha/.test(h));
-      const cv = r.findIndex(h => /inpc|valor|indice|índice/.test(h));
-      if (cp >= 0 && cv >= 0) { headerIdx = i; colPeriodo = cp; colValor = cv; break; }
-    }
-    if (headerIdx < 0) { alert('No encontré columnas de Periodo e INPC/Valor en las primeras filas. Usa encabezados como "Periodo" y "INPC".'); return; }
-
-    const registros = [];
-    let saltadas = 0;
-    for (let i = headerIdx + 1; i < rows.length; i++) {
-      const r = rows[i];
-      if (!r || !r.length) continue;
-      const periodo = inpcNormalizarPeriodo(r[colPeriodo]);
-      const valor = parseFloat(r[colValor]);
-      if (!periodo || isNaN(valor) || valor <= 0) { saltadas++; continue; }
-      registros.push({ periodo, valor });
-    }
-    if (!registros.length) { alert('No se pudo interpretar ninguna fila. Revisa el formato (Periodo: AAAA-MM, Valor: número).'); return; }
-
-    const ok = await inpcGuardarMasivo(registros);
-    if (ok) {
-      alert(`✅ INPC cargado: ${registros.length} periodo(s) guardado(s)${saltadas?`, ${saltadas} fila(s) omitida(s) por formato`:''}.`);
-      document.getElementById('inpcExcelInput').value = '';
-    }
-  } catch (e) {
-    console.error('inpcProcessFile error:', e);
-    alert('❌ ' + (e.message || e));
-  }
-}
-function inpcExcelHandleInput(ev){
-  const f = ev.target.files && ev.target.files[0];
-  if (!f) return;
-  inpcProcessFile(f);
 }
 
 function calcAbrirINPC(){
@@ -1349,7 +1303,7 @@ function calcAbrirINPC(){
     formEl.innerHTML = `
       <div class="excel-preview">
         <h3>📐 Captura los valores de INPC que faltan</h3>
-        <div class="desc">No están en la tabla de INPC cargada. Puedes capturarlos aquí (se guardan en Supabase para todos) o cargar el Excel de INPC arriba y volver a intentar.</div>
+        <div class="desc">No están en la tabla de INPC cargada. Captúralos aquí (se guardan en Supabase para todo el equipo).</div>
         <div class="grid-3">
           ${faltantes.map(p => `<div class="field"><label>INPC ${p}${p===mesActual?' (mes actual)':''}</label><input type="number" step="0.00001" id="inpc_${p.replace('-','_')}" placeholder="Ej. 132.37300"></div>`).join('')}
         </div>
@@ -1460,8 +1414,8 @@ function calcActualizarFila(i, campo, valor){
    Modal de desglose detallado del cálculo fiscal
    Muestra el paso a paso con fundamento legal.
    ══════════════════════════════════════════ */
-function calcVerDetalle(i){
-  const res = calcResultados[i];
+function calcVerDetalle(iOrRes){
+  const res = (typeof iOrRes === 'object' && iOrRes !== null) ? iOrRes : calcResultados[iOrRes];
   if (!res) return;
   const mesActual = calcMesActualPeriodo();
   const inpcOrigen = inpcCache[res.origenPeriodo];
@@ -2000,53 +1954,145 @@ function renderObligaciones(){
 }
 
 /* ================= IMPUESTOS ================= */
-async function cargarImpuestos(){
-  const { data, error } = await sb.from('fiscal_calculos_impuestos').select('*').order('creado_en', { ascending: false });
-  if (error) { console.error(error); setSyncError('Error leyendo cálculos de impuestos'); return; }
-  calculosImpuestos = data || [];
-  renderImpuestos();
-  if (calculosImpuestos.length) {
-    document.getElementById('kpiImpuestoMes').textContent = fmtMoney(calculosImpuestos[0].total);
+/* ══════════════════════════════════════════
+   SIMULADOR DE ACTUALIZACIÓN Y RECARGOS (monto libre)
+   Reusa la misma lógica legal que la actualización de CxC Fiscal:
+   INPC (art. 17-A CFF) + recargos (art. 21 CFF / LSS / INFONAVIT / BC)
+   + multa opcional + condonación + estímulo LIF 2026.
+   ══════════════════════════════════════════ */
+let simResultado = null;
+
+async function simularActualizacion(){
+  const empresa = (document.getElementById('simEmpresa').value || 'Simulación').trim() || 'Simulación';
+  const categoria = document.getElementById('simCategoria').value;
+  const periodoOrigen = document.getElementById('simPeriodoOrigen').value;
+  const monto = parseFloat(document.getElementById('simMonto').value) || 0;
+  const multaEstimada = parseFloat(document.getElementById('simMulta').value) || 0;
+  const pctCondCap = Math.max(0, Math.min(100, parseFloat(document.getElementById('simCondonacion').value) || 0));
+  const estimuloLif = document.getElementById('simEstimuloLif').checked;
+
+  if (!periodoOrigen) { alert('Selecciona el periodo de origen (mes en que debió pagarse).'); return; }
+  if (monto <= 0) { alert('Captura un monto histórico mayor a 0.'); return; }
+
+  const mesActual = calcMesActualPeriodo();
+  // Verificar/pedir INPCs faltantes (mes origen y mes actual)
+  const faltantes = [periodoOrigen, mesActual].filter(p => !inpcCache[p]);
+  if (faltantes.length) {
+    simRenderInpcForm(faltantes, () => simularActualizacion());
+    return;
   }
+  document.getElementById('simInpcForm').style.display = 'none';
+
+  const regimen = calcRegimenPorCategoria(categoria);
+  const cond = CONDONACION_INFO[regimen.key];
+  const inpcOrigen = inpcCache[periodoOrigen];
+  const inpcHoy = inpcCache[mesActual];
+  const factorActualizacion = inpcHoy / inpcOrigen;
+  const montoActualizado = monto * factorActualizacion;
+
+  // Meses de mora: fracción cuenta como mes completo (art. 21 CFF).
+  // Como origen es un mes YYYY-MM, tomamos día 1 y contamos hasta hoy.
+  const fechaOrigenISO = `${periodoOrigen}-01`;
+  const mesesMora = calcMesesMora(fechaOrigenISO);
+  const tasa = TASA_RECARGO_MORA[regimen.key];
+  const recargos = montoActualizado * tasa * mesesMora;
+
+  // Condonación: se topa al máximo legal por régimen
+  const maxPct = cond.maxPct;
+  const pctCondonacion = Math.min(pctCondCap/100, maxPct);
+  const lifAplica = estimuloLif && (regimen.key === 'CFF' || regimen.key === 'CFF_RETENIDO');
+
+  const total = montoActualizado + recargos;
+  const montoConCondonacion = lifAplica
+    ? montoActualizado /* estímulo LIF 2026: 100% multas+recargos+gastos ejecución */
+    : total + multaEstimada * (1 - pctCondonacion);
+
+  simResultado = {
+    empresa, categoria, regimen: regimen.key, regimenLabel: regimen.label,
+    montoHistorico: monto, origenPeriodo: periodoOrigen, estimado: false,
+    mesesMora, factorActualizacion, actualizacionAplicada: true,
+    montoActualizado, recargos, total,
+    multaEstimada, pctCondonacion, maxPctCondonacion: maxPct, notaCondonacion: cond.nota,
+    estimuloLif: lifAplica, montoConCondonacion
+  };
+
+  simRenderPreview();
+  // Refleja el resultado en el KPI del encabezado como referencia rápida
+  const kpi = document.getElementById('kpiImpuestoMes');
+  if (kpi) kpi.textContent = fmtMoney(montoConCondonacion);
 }
-async function calcularImpuesto(){
-  const periodo = document.getElementById('impPeriodo').value || '—';
-  const ingresos = parseFloat(document.getElementById('impIngresos').value)||0;
-  const deducciones = parseFloat(document.getElementById('impDeducciones').value)||0;
-  const tasaIsr = parseFloat(document.getElementById('impTasaIsr').value)||0;
-  const tasaIva = parseFloat(document.getElementById('impTasaIva').value)||0;
-  const ivaAcreditable = parseFloat(document.getElementById('impIvaAcreditable').value)||0;
 
-  const utilidad = Math.max(ingresos - deducciones, 0);
-  const isr = utilidad * (tasaIsr/100);
-  const ivaTrasladado = ingresos * (tasaIva/100);
-  const ivaCargo = Math.max(ivaTrasladado - ivaAcreditable, 0);
-  const total = isr + ivaCargo;
-
-  document.getElementById('rUtilidad').textContent = fmtMoney(utilidad);
-  document.getElementById('rIsr').textContent = fmtMoney(isr);
-  document.getElementById('rIvaTrasladado').textContent = fmtMoney(ivaTrasladado);
-  document.getElementById('rIvaCargo').textContent = fmtMoney(ivaCargo);
-  document.getElementById('rTotal').textContent = fmtMoney(total);
-  document.getElementById('impResultado').style.display = 'block';
-
-  const btn = document.getElementById('btnCalcularImpuesto');
-  btn.disabled = true;
-  const { error } = await sb.from('fiscal_calculos_impuestos').insert({
-    periodo, ingresos, deducciones, tasa_isr: tasaIsr, tasa_iva: tasaIva,
-    iva_acreditable: ivaAcreditable, utilidad, isr, iva_cargo: ivaCargo, total,
-    creado_por: currentUserId
-  });
-  btn.disabled = false;
-  if (error) { alert('No se pudo guardar el cálculo: ' + error.message); return; }
-  await cargarImpuestos();
+function simRenderInpcForm(faltantes, onDone){
+  const el = document.getElementById('simInpcForm');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="excel-preview">
+      <h3>📐 Captura los valores de INPC que faltan</h3>
+      <div class="desc">No están en la tabla de INPC cargada. Captúralos aquí (se guardan en Supabase para todo el equipo).</div>
+      <div class="grid-3" style="margin-top:8px">
+        ${faltantes.map(p => `<div class="field"><label>INPC ${p}</label><input type="number" step="0.00001" id="siminpc_${p.replace('-','_')}" placeholder="Ej. 132.37300"></div>`).join('')}
+      </div>
+      <div class="excel-actions" style="margin-top:10px">
+        <button class="btn-secondary btn" onclick="document.getElementById('simInpcForm').style.display='none'">Cancelar</button>
+        <button class="btn" onclick="simGuardarInpcYReintentar(${JSON.stringify(faltantes)})">Guardar INPC y reintentar</button>
+      </div>
+    </div>`;
+  window._simRetry = onDone;
 }
-function renderImpuestos(){
-  const tbody = document.getElementById('tblImpuestos');
-  tbody.innerHTML = calculosImpuestos.map(c=>`<tr>
-      <td>${c.periodo}</td><td>${fmtMoney(c.utilidad)}</td><td>${fmtMoney(c.isr)}</td>
-      <td>${fmtMoney(c.iva_cargo)}</td><td>${fmtMoney(c.total)}</td>
-    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">Sin cálculos registrados.</td></tr>';
+
+async function simGuardarInpcYReintentar(faltantes){
+  const registros = [];
+  for (const p of faltantes) {
+    const v = parseFloat(document.getElementById(`siminpc_${p.replace('-','_')}`).value);
+    if (isNaN(v) || v <= 0) { alert(`Captura un INPC válido para ${p}.`); return; }
+    registros.push({ periodo: p, valor: v, fuente: 'Captura simulador' });
+  }
+  const ok = await inpcGuardarMasivo(registros);
+  if (!ok) return;
+  if (typeof window._simRetry === 'function') window._simRetry();
+}
+
+function simRenderPreview(){
+  const el = document.getElementById('simPreview');
+  if (!simResultado) { el.style.display='none'; return; }
+  el.style.display = 'block';
+  const r = simResultado;
+  el.innerHTML = `
+    <div class="excel-preview">
+      <h3>📊 Resultado de la simulación — actualización, recargos y condonación</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Empresa</th><th>Categoría</th><th>Histórico</th><th>Actualizado</th><th>Recargos</th><th>Meses mora</th>
+            <th>Multa</th><th>% Condonación</th><th>Estímulo LIF 2026</th><th>Total</th><th>Desglose</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td>${r.empresa}</td>
+              <td>${catT(r.categoria)}<div style="font-size:10px;color:var(--muted)">${r.regimenLabel}</div></td>
+              <td>${fmtMoney(r.montoHistorico)}</td>
+              <td>${fmtMoney(r.montoActualizado)}</td>
+              <td>${fmtMoney(r.recargos)}</td>
+              <td>${r.mesesMora}</td>
+              <td>${fmtMoney(r.multaEstimada)}</td>
+              <td>${(r.pctCondonacion*100).toFixed(0)}%<div style="font-size:10px;color:var(--muted)">máx. ${(r.maxPctCondonacion*100).toFixed(0)}%</div></td>
+              <td>${r.estimuloLif ? '✅ Sí' : '—'}</td>
+              <td><b>${fmtMoney(r.montoConCondonacion)}</b></td>
+              <td><button class="btn" style="padding:6px 10px;font-size:12px;white-space:nowrap" onclick="simVerDetalle()">🔍 Ver desglose</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="excel-warn" style="margin-top:10px">⚠️ Simulación de apoyo — el sistema no determina multas oficiales ni garantiza que la autoridad otorgue la condonación. Antes de pagar o negociar, valida con el fiscalista.</div>
+      <div class="excel-actions">
+        <button class="btn-secondary btn" onclick="document.getElementById('simPreview').style.display='none'">Cerrar</button>
+      </div>
+    </div>`;
+}
+
+function simVerDetalle(){
+  if (!simResultado) return;
+  calcVerDetalle(simResultado);
 }
 
 /* ══════════════════════════════════════════
