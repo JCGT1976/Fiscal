@@ -186,6 +186,76 @@ tr:last-child td{border-bottom:none}
   border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;
 }
 .btn-danger:hover{opacity:.9}
+
+/* ══════════ Modal de desglose del cálculo fiscal ══════════ */
+.calc-modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.65);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9999;padding:20px;overflow-y:auto;
+  animation:calcModalFadeIn .18s ease-out;
+}
+@keyframes calcModalFadeIn{from{opacity:0}to{opacity:1}}
+.calc-modal{
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:14px;max-width:920px;width:100%;
+  max-height:90vh;display:flex;flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+  animation:calcModalSlideIn .22s ease-out;
+}
+@keyframes calcModalSlideIn{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.calc-modal-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px 22px;border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(0,87,184,.08),rgba(0,40,85,.04));
+}
+.calc-modal-header h2{margin:0;font-size:17px;font-weight:600;color:var(--text)}
+.calc-modal-close{
+  background:none;border:none;font-size:28px;line-height:1;
+  color:var(--muted);cursor:pointer;padding:0 6px;
+  border-radius:6px;transition:all .15s;
+}
+.calc-modal-close:hover{background:var(--border);color:var(--text)}
+.calc-modal-body{padding:22px;overflow-y:auto;flex:1}
+.calc-step{
+  background:rgba(0,87,184,.04);border:1px solid var(--border);
+  border-radius:10px;padding:14px 16px;margin-bottom:12px;
+}
+[data-theme="light"] .calc-step{background:rgba(0,87,184,.03)}
+.calc-step-title{
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--muted);margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;
+}
+.calc-step-title .calc-step-num{
+  background:var(--primary,#0057B8);color:#fff;
+  width:20px;height:20px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;
+}
+.calc-formula{
+  font-family:'SF Mono','Monaco','Cascadia Code',monospace;
+  font-size:13px;background:var(--bg);border:1px solid var(--border);
+  border-radius:6px;padding:8px 12px;margin:6px 0;
+  color:var(--text);overflow-x:auto;
+}
+.calc-row{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;font-size:13.5px}
+.calc-row-label{color:var(--muted)}
+.calc-row-value{font-weight:600;color:var(--text)}
+.calc-row-value.big{font-size:16px;color:var(--primary,#0057B8)}
+.calc-row-value.total{font-size:20px;font-weight:700;color:var(--red)}
+.calc-legal{
+  font-size:11.5px;color:var(--muted);font-style:italic;
+  margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);
+}
+.calc-warn-box{
+  background:rgba(225,29,72,.08);border-left:3px solid var(--red);
+  padding:10px 14px;border-radius:6px;font-size:12.5px;
+  color:var(--text);margin-top:10px;
+}
+.calc-step-total{
+  background:linear-gradient(135deg,rgba(225,29,72,.12),rgba(225,29,72,.04));
+  border:2px solid var(--red);
+}
 </style>
 </head>
 <body>
@@ -434,6 +504,17 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- Modal de desglose detallado del cálculo fiscal -->
+<div id="calcDetalleModal" class="calc-modal-backdrop" style="display:none" onclick="calcCerrarDetalle(event)">
+  <div class="calc-modal" onclick="event.stopPropagation()">
+    <div class="calc-modal-header">
+      <h2 id="calcDetalleTitulo">Desglose del cálculo</h2>
+      <button class="calc-modal-close" onclick="calcCerrarDetalle()" aria-label="Cerrar">×</button>
+    </div>
+    <div class="calc-modal-body" id="calcDetalleBody"></div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    MÓDULO FISCAL — SIF · MI Global
@@ -445,7 +526,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.08.5';
+const APP_VERSION = '2026.07.08.6';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -1331,7 +1412,7 @@ function calcRenderPreview(){
         <table>
           <thead><tr>
             <th>Empresa</th><th>Categoría</th><th>Histórico</th><th>Actualizado</th><th>Recargos</th><th>Meses mora</th>
-            <th>Multa estimada</th><th>% Condonación</th><th>Estímulo LIF 2026</th><th>Total con condonación</th>
+            <th>Multa estimada</th><th>% Condonación</th><th>Estímulo LIF 2026</th><th>Total con condonación</th><th>Desglose</th>
           </tr></thead>
           <tbody>
             ${calcResultados.map((res,i)=>`
@@ -1349,6 +1430,7 @@ function calcRenderPreview(){
                 </td>
                 <td>${(res.regimen==='CFF'||res.regimen==='CFF_RETENIDO') ? `<input type="checkbox" onchange="calcActualizarFila(${i}, 'estimuloLif', this.checked)">` : '—'}</td>
                 <td><b>${fmtMoney(res.montoConCondonacion)}</b></td>
+                <td><button class="btn" style="padding:6px 10px;font-size:12px;white-space:nowrap" onclick="calcVerDetalle(${i})">🔍 Ver desglose</button></td>
               </tr>
             `).join('')}
           </tbody>
@@ -1373,6 +1455,132 @@ function calcActualizarFila(i, campo, valor){
     : res.total + res.multaEstimada * (1 - res.pctCondonacion);
   calcRenderPreview();
 }
+
+/* ══════════════════════════════════════════
+   Modal de desglose detallado del cálculo fiscal
+   Muestra el paso a paso con fundamento legal.
+   ══════════════════════════════════════════ */
+function calcVerDetalle(i){
+  const res = calcResultados[i];
+  if (!res) return;
+  const mesActual = calcMesActualPeriodo();
+  const inpcOrigen = inpcCache[res.origenPeriodo];
+  const inpcHoy = inpcCache[mesActual];
+  const tasaMensual = TASA_RECARGO_MORA[res.regimen] || 0;
+  const tasaPct = (tasaMensual*100).toFixed(2);
+
+  // Base legal por régimen
+  const baseLegal = {
+    CFF:          { actualizacion:'Art. 17-A CFF', recargos:'Art. 21 CFF + Art. 11 LIF 2026', autoridad:'SAT' },
+    CFF_RETENIDO: { actualizacion:'Art. 17-A CFF', recargos:'Art. 21 CFF + Art. 11 LIF 2026', autoridad:'SAT' },
+    IMSS:         { actualizacion:'Art. 40-A LSS (supletorio CFF)', recargos:'Art. 40-A LSS', autoridad:'IMSS' },
+    INFONAVIT:    { actualizacion:'Art. 30 Ley INFONAVIT (supletorio CFF)', recargos:'Art. 30 Ley INFONAVIT', autoridad:'INFONAVIT' },
+    BC_ISN:       { actualizacion:'Cód. Fiscal del Estado de BC', recargos:'Ley de Ingresos del Estado de BC 2026', autoridad:'Sría. de Hacienda BC' },
+  }[res.regimen] || { actualizacion:'Art. 17-A CFF', recargos:'Art. 21 CFF', autoridad:'SAT' };
+
+  // Determinar si es fiduciario (retenido a terceros)
+  const esFiduciario = res.regimen === 'CFF_RETENIDO' || /Retenido/i.test(res.categoria) || /IMSS|INFONAVIT/.test(res.regimen);
+
+  const html = `
+    <!-- PASO 1: Datos base -->
+    <div class="calc-step">
+      <div class="calc-step-title"><span class="calc-step-num">1</span>Datos base de la obligación</div>
+      <div class="calc-row"><span class="calc-row-label">Empresa</span><span class="calc-row-value">${res.empresa}</span></div>
+      <div class="calc-row"><span class="calc-row-label">Categoría</span><span class="calc-row-value">${catT(res.categoria)}</span></div>
+      <div class="calc-row"><span class="calc-row-label">Régimen aplicable</span><span class="calc-row-value">${res.regimenLabel}</span></div>
+      <div class="calc-row"><span class="calc-row-label">Autoridad</span><span class="calc-row-value">${baseLegal.autoridad}</span></div>
+      <div class="calc-row"><span class="calc-row-label">Naturaleza</span><span class="calc-row-value">${esFiduciario ? '⚠️ Fiduciario (retenido a terceros)' : 'No fiduciario'}</span></div>
+      <div class="calc-row"><span class="calc-row-label">Monto histórico</span><span class="calc-row-value big">${fmtMoney(res.montoHistorico)}</span></div>
+    </div>
+
+    <!-- PASO 2: Actualización por INPC -->
+    <div class="calc-step">
+      <div class="calc-step-title"><span class="calc-step-num">2</span>Actualización por inflación (INPC)</div>
+      ${res.actualizacionAplicada ? `
+        <div class="calc-row"><span class="calc-row-label">INPC del mes de origen (${res.origenPeriodo}${res.estimado?' — estimado':''})</span><span class="calc-row-value">${inpcOrigen.toFixed(5)}</span></div>
+        <div class="calc-row"><span class="calc-row-label">INPC del mes actual (${mesActual})</span><span class="calc-row-value">${inpcHoy.toFixed(5)}</span></div>
+        <div class="calc-formula">Factor = INPC(${mesActual}) ÷ INPC(${res.origenPeriodo}) = ${inpcHoy.toFixed(5)} ÷ ${inpcOrigen.toFixed(5)} = <b>${res.factorActualizacion.toFixed(6)}</b></div>
+        <div class="calc-formula">Monto actualizado = ${fmtMoney(res.montoHistorico)} × ${res.factorActualizacion.toFixed(6)} = <b>${fmtMoney(res.montoActualizado)}</b></div>
+        <div class="calc-row"><span class="calc-row-label">Incremento por inflación</span><span class="calc-row-value">${fmtMoney(res.montoActualizado - res.montoHistorico)} (${((res.factorActualizacion-1)*100).toFixed(2)}%)</span></div>
+        <div class="calc-legal">Fundamento: ${baseLegal.actualizacion} — El monto se actualiza multiplicándolo por el factor obtenido de dividir el INPC del mes anterior al pago entre el INPC del mes anterior al que debió pagarse.</div>
+      ` : `
+        <div class="calc-warn-box">⚠️ No se aplicó actualización — falta el INPC del mes de origen (${res.origenPeriodo}) en la tabla. Captúralo para calcular correctamente.</div>
+      `}
+      ${res.estimado ? `<div class="calc-warn-box">⚠️ El período de origen es <b>estimado</b> (se asumió 1 de enero del año fiscal). Para precisión total, expande el esquema de <code>fiscal_obligaciones</code> con período mensual real.</div>` : ''}
+    </div>
+
+    <!-- PASO 3: Recargos -->
+    <div class="calc-step">
+      <div class="calc-step-title"><span class="calc-step-num">3</span>Recargos por mora</div>
+      <div class="calc-row"><span class="calc-row-label">Meses completos transcurridos</span><span class="calc-row-value">${res.mesesMora}</span></div>
+      <div class="calc-row"><span class="calc-row-label">Tasa mensual aplicable</span><span class="calc-row-value">${tasaPct}% mensual</span></div>
+      <div class="calc-formula">Recargos = Monto actualizado × Tasa × Meses de mora
+Recargos = ${fmtMoney(res.montoActualizado)} × ${(tasaMensual).toFixed(4)} × ${res.mesesMora} = <b>${fmtMoney(res.recargos)}</b></div>
+      <div class="calc-legal">Fundamento: ${baseLegal.recargos} — Los recargos se causan por cada mes o fracción de mora, sobre el monto ya actualizado. Tope legal: 5 años de recargos (art. 21 CFF) salvo prescripción por otra causa.</div>
+    </div>
+
+    <!-- PASO 4: Multa y condonación (si aplica) -->
+    ${(res.multaEstimada > 0 || res.pctCondonacion > 0) ? `
+    <div class="calc-step">
+      <div class="calc-step-title"><span class="calc-step-num">4</span>Multa y condonación</div>
+      <div class="calc-row"><span class="calc-row-label">Multa estimada (capturada)</span><span class="calc-row-value">${fmtMoney(res.multaEstimada)}</span></div>
+      <div class="calc-row"><span class="calc-row-label">% de condonación aplicado</span><span class="calc-row-value">${(res.pctCondonacion*100).toFixed(0)}% (máx. permitido: ${(res.maxPctCondonacion*100).toFixed(0)}%)</span></div>
+      <div class="calc-formula">Multa después de condonación = ${fmtMoney(res.multaEstimada)} × (1 − ${res.pctCondonacion.toFixed(2)}) = <b>${fmtMoney(res.multaEstimada*(1-res.pctCondonacion))}</b></div>
+      <div class="calc-legal">${res.notaCondonacion}</div>
+    </div>
+    ` : ''}
+
+    <!-- PASO 5: Estímulo LIF 2026 (si aplica) -->
+    ${res.estimuloLif ? `
+    <div class="calc-step" style="background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.4)">
+      <div class="calc-step-title"><span class="calc-step-num" style="background:#22c55e">★</span>Estímulo fiscal LIF 2026 aplicado</div>
+      <div class="calc-formula">Con estímulo: se cubre solo el monto actualizado = <b>${fmtMoney(res.montoActualizado)}</b>
+Ahorro vs pago normal: <b>${fmtMoney(res.recargos + res.multaEstimada*(1-res.pctCondonacion))}</b></div>
+      <div class="calc-legal">Fundamento: Art. Vigésimo Segundo Transitorio LIF 2026 — Estímulo del 100% sobre multas, recargos y gastos de ejecución para contribuyentes con ingresos 2024 ≤ $300M MXN y créditos firmes/consentidos. NO aplica a listados 69-B/69-B Bis.</div>
+      <div class="calc-warn-box">⚠️ Antes de pagar, valida con el fiscalista: (a) ingresos 2024 ≤ $300M, (b) el crédito debe estar firme/consentido, (c) no haber usado programa de condonación anterior.</div>
+    </div>
+    ` : ''}
+
+    <!-- PASO FINAL: Total -->
+    <div class="calc-step calc-step-total">
+      <div class="calc-step-title"><span class="calc-step-num" style="background:var(--red)">✓</span>Total a pagar</div>
+      <div class="calc-row"><span class="calc-row-label">Monto actualizado</span><span class="calc-row-value">${fmtMoney(res.montoActualizado)}</span></div>
+      <div class="calc-row"><span class="calc-row-label">+ Recargos</span><span class="calc-row-value">${fmtMoney(res.recargos)}</span></div>
+      ${res.multaEstimada > 0 ? `<div class="calc-row"><span class="calc-row-label">+ Multa (con condonación)</span><span class="calc-row-value">${fmtMoney(res.multaEstimada*(1-res.pctCondonacion))}</span></div>` : ''}
+      ${res.estimuloLif ? `<div class="calc-row"><span class="calc-row-label">− Estímulo LIF 2026</span><span class="calc-row-value" style="color:#22c55e">−${fmtMoney(res.recargos + res.multaEstimada*(1-res.pctCondonacion))}</span></div>` : ''}
+      <div class="calc-row" style="border-top:1px solid var(--border);padding-top:8px;margin-top:6px"><span class="calc-row-label" style="font-size:15px;font-weight:600">TOTAL A PAGAR</span><span class="calc-row-value total">${fmtMoney(res.montoConCondonacion)}</span></div>
+    </div>
+
+    ${esFiduciario ? `
+    <div class="calc-warn-box">
+      <b>⚠️ Alerta legal — Concepto fiduciario:</b> Este monto corresponde a dinero retenido/descontado a terceros que la empresa debía enterar al fisco. El tratamiento legal es más estricto: la condonación normalmente no procede y existe riesgo de <b>responsabilidad penal por defraudación fiscal equiparada</b> (arts. 108–109 CFF). Prioriza el pago con el fiscalista antes que cualquier trámite de reducción.
+    </div>
+    ` : ''}
+
+    <div style="text-align:center;margin-top:14px;font-size:11.5px;color:var(--muted)">
+      Este desglose es una herramienta de apoyo interno de MI Global. NO sustituye la determinación oficial de la autoridad ni la asesoría de un fiscalista licenciado.<br>
+      Cálculo generado ${new Date().toLocaleString('es-MX')} · SIF Fiscal v${APP_VERSION}
+    </div>
+  `;
+
+  document.getElementById('calcDetalleTitulo').innerHTML = `🔍 Desglose: ${res.empresa} · ${catT(res.categoria)}`;
+  document.getElementById('calcDetalleBody').innerHTML = html;
+  document.getElementById('calcDetalleModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function calcCerrarDetalle(ev){
+  if (ev && ev.target !== ev.currentTarget && !ev.currentTarget.classList.contains('calc-modal-close')) return;
+  document.getElementById('calcDetalleModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && document.getElementById('calcDetalleModal') && document.getElementById('calcDetalleModal').style.display === 'flex') {
+    calcCerrarDetalle();
+  }
+});
 
 async function calcGuardarEnSupabase(){
   if (!calcResultados.length) return;
