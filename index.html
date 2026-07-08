@@ -445,7 +445,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.07.6';
+const APP_VERSION = '2026.07.08.1';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -461,6 +461,7 @@ sb.auth.onAuthStateChange((event) => {
 });
 
 let currentUserId = null;
+let currentUser = null; // objeto completo de la tabla 'usuarios' (incluye .rol) — usado por requirePermCarga()
 
 async function bootstrapAuth() {
   try {
@@ -474,6 +475,7 @@ async function bootstrapAuth() {
     try {
       const { data: user } = await sb.from('usuarios').select('*').eq('auth_id', session.user.id).maybeSingle();
       if (user) {
+        currentUser = user;
         document.getElementById('userName').textContent = user.nombre || user.username || '—';
         document.getElementById('userRole').textContent = user.rol || '—';
         document.getElementById('userAvatar').textContent = getInitials(user.nombre || user.username || '?');
@@ -1502,3 +1504,4 @@ bootstrapAuth();
 </script>
 </body>
 </html>
+
