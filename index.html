@@ -405,22 +405,21 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
     <div class="card">
+      <h2>📐 Tabla de INPC (para actualización fiscal)</h2>
+      <div class="desc">Carga aquí el histórico de INPC (Índice Nacional de Precios al Consumidor) para que "Actualizar impuestos de CxC Fiscal" calcule la actualización sin pedirte los valores uno por uno. Excel con 2 columnas: <b>Periodo</b> (formato AAAA-MM, ej. 2024-01) y <b>INPC</b> (valor numérico). Se guarda en Supabase — mismo dato para todo el equipo, no solo tu navegador.</div>
+      <input type="file" id="inpcExcelInput" accept=".xlsx,.xls" style="display:none" onchange="inpcExcelHandleInput(event)">
+      <button class="btn" onclick="document.getElementById('inpcExcelInput').click()">Cargar Excel de INPC</button>
+      <div id="inpcResumen" style="margin-top:12px;font-size:12.5px;color:var(--muted)">Cargando…</div>
+    </div>
+    <div class="card">
       <h2>🔄 Actualizar impuestos de CxC Fiscal a la fecha actual</h2>
       <div class="desc">
-        Selecciona uno, varios o todos los conceptos de <b>CxC Fiscal</b>. El sistema calcula <b>actualización (INPC)</b> + <b>recargos</b> según la ley que le aplica a cada tipo de impuesto (CFF para ISR/IVA, LSS para IMSS, Ley del INFONAVIT, o Código Fiscal del Estado de BC para ISN), y simula el efecto de una <b>condonación</b> según lo que cada ley permite.
+        Selecciona uno, varios o todos los conceptos de <b>CxC Fiscal</b>, agrupados como prefieras. El sistema calcula <b>actualización (INPC)</b> + <b>recargos</b> según la ley que le aplica a cada tipo de impuesto (CFF para ISR/IVA, LSS para IMSS, Ley del INFONAVIT, o Código Fiscal del Estado de BC para ISN), y simula el efecto de una <b>condonación</b> según lo que cada ley permite.
         <br><span style="color:var(--red);font-weight:600">⚠️ Esto es una herramienta de apoyo interno, no una determinación oficial. Antes de pagar o presentar cualquier trámite de reducción/condonación, valídalo con el fiscalista de MI Global.</span>
       </div>
-      <div style="margin:10px 0">
-        <button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px" onclick="calcSeleccionarTodos(true)">Seleccionar todos</button>
-        <button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px" onclick="calcSeleccionarTodos(false)">Ninguno</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th></th><th>Empresa</th><th>Categoría</th><th>Régimen</th><th>Monto histórico</th><th>Vigencia</th></tr></thead>
-          <tbody id="tblCalcSelector"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
-        </table>
-      </div>
+      <div id="tblCalcSelector">Cargando…</div>
       <button class="btn" id="btnCalcularActualizacion" onclick="calcAbrirINPC()" style="margin-top:10px">Calcular actualización a hoy</button>
+
       <div id="calcInpcForm" style="display:none;margin-top:14px"></div>
       <div id="calcPreview" style="display:none;margin-top:14px"></div>
     </div>
@@ -446,7 +445,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.08.3';
+const APP_VERSION = '2026.07.08.4';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -749,6 +748,7 @@ async function cargarTodo(){
     cargarObligaciones(),
     cargarCxc(),
     cargarImpuestos(),
+    cargarInpc(),
   ]);
 }
 
@@ -998,30 +998,105 @@ const CONDONACION_INFO = {
 let calcSeleccionIds = new Set();
 let calcOrigenesCache = {};
 let calcResultados = [];
+let calcAgrupacion = 'empresa'; // 'empresa' | 'categoria' | 'vigencia'
+let calcGruposExpandido = new Set();
 
-function calcRenderSelector(){
-  const tbody = document.getElementById('tblCalcSelector');
-  if (!tbody) return;
-  tbody.innerHTML = cxcImpuestos.map(r=>{
-    const regimen = calcRegimenPorCategoria(r.categoria);
-    const vigencia = r.anio_inicio === r.anio_fin ? r.anio_inicio : `${r.anio_inicio}–${r.anio_fin}`;
-    return `<tr>
-      <td><input type="checkbox" class="calc-chk" data-id="${r.id}" onchange="calcSincronizarSeleccion()"></td>
-      <td>${r.empresa}</td>
-      <td>${catT(r.categoria)}</td>
-      <td>${regimen.label}</td>
-      <td>${fmtMoney(r.monto)}</td>
-      <td>${vigencia}</td>
-    </tr>`;
-  }).join('') || `<tr><td colspan="6" style="color:var(--muted)">Sin conceptos en CxC Fiscal.</td></tr>`;
+function calcClaveGrupo(r){
+  if (calcAgrupacion === 'categoria') return r.categoria;
+  if (calcAgrupacion === 'vigencia') return r.anio_inicio === r.anio_fin ? String(r.anio_inicio) : `${r.anio_inicio}–${r.anio_fin}`;
+  return r.empresa;
 }
-
+function calcEtiquetaGrupo(clave){
+  return calcAgrupacion === 'categoria' ? catT(clave) : clave;
+}
+function calcSetAgrupacion(modo){
+  calcAgrupacion = modo;
+  calcGruposExpandido.clear();
+  calcRenderSelector();
+}
+function calcToggleGrupo(clave){
+  if (calcGruposExpandido.has(clave)) calcGruposExpandido.delete(clave); else calcGruposExpandido.add(clave);
+  calcRenderSelector();
+}
+function calcToggleGrupoSeleccion(clave, marcar){
+  cxcImpuestos.filter(r => calcClaveGrupo(r) === clave).forEach(r=>{
+    if (marcar) calcSeleccionIds.add(String(r.id)); else calcSeleccionIds.delete(String(r.id));
+  });
+  calcRenderSelector();
+}
+function calcToggleItemSeleccion(id, marcar){
+  if (marcar) calcSeleccionIds.add(String(id)); else calcSeleccionIds.delete(String(id));
+  calcRenderSelector();
+}
 function calcSeleccionarTodos(marcar){
-  document.querySelectorAll('.calc-chk').forEach(cb=>{ cb.checked = marcar; });
-  calcSincronizarSeleccion();
+  if (marcar) cxcImpuestos.forEach(r => calcSeleccionIds.add(String(r.id)));
+  else calcSeleccionIds.clear();
+  calcRenderSelector();
 }
-function calcSincronizarSeleccion(){
-  calcSeleccionIds = new Set(Array.from(document.querySelectorAll('.calc-chk:checked')).map(cb=>String(cb.dataset.id)));
+
+/* Selector tipo "tabla dinámica": tarjetas KPI desplegables agrupadas
+   por Empresa / Tipo de impuesto / Año, cada una con su propio checkbox
+   maestro (marca/desmarca todo el grupo) y total en pesos. */
+function calcRenderSelector(){
+  const cont = document.getElementById('tblCalcSelector');
+  if (!cont) return;
+  if (!cxcImpuestos.length) { cont.innerHTML = '<div style="color:var(--muted)">Sin conceptos en CxC Fiscal.</div>'; return; }
+
+  const grupos = {};
+  cxcImpuestos.forEach(r=>{
+    const clave = calcClaveGrupo(r);
+    (grupos[clave] = grupos[clave] || []).push(r);
+  });
+  const clavesOrdenadas = Object.keys(grupos).sort((a,b)=>a.localeCompare(b,'es'));
+
+  const barra = `
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      <span style="font-size:11.5px;color:var(--muted)">Agrupar por:</span>
+      ${['empresa','categoria','vigencia'].map(modo=>{
+        const label = modo==='empresa' ? 'Empresa' : modo==='categoria' ? 'Tipo de impuesto' : 'Año';
+        const activo = calcAgrupacion===modo;
+        return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="calcSetAgrupacion('${modo}')">${label}</button>`;
+      }).join('')}
+      <span style="flex:1"></span>
+      <button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px" onclick="calcSeleccionarTodos(true)">Seleccionar todos</button>
+      <button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px" onclick="calcSeleccionarTodos(false)">Ninguno</button>
+    </div>`;
+
+  const tarjetas = clavesOrdenadas.map(clave=>{
+    const items = grupos[clave];
+    const claveEsc = clave.replace(/'/g,"\\'");
+    const total = items.reduce((s,r)=>s+Number(r.monto||0),0);
+    const seleccionadosEnGrupo = items.filter(r=>calcSeleccionIds.has(String(r.id))).length;
+    const estado = seleccionadosEnGrupo===0 ? 'none' : (seleccionadosEnGrupo===items.length ? 'all' : 'some');
+    const expandido = calcGruposExpandido.has(clave);
+    return `
+      <div style="border:1px solid var(--border,#e2e2e2);border-radius:8px;margin-bottom:8px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-soft,#f7f8fa);cursor:pointer" onclick="calcToggleGrupo('${claveEsc}')">
+          <input type="checkbox" data-estado="${estado}" ${estado==='all'?'checked':''} onclick="event.stopPropagation()" onchange="calcToggleGrupoSeleccion('${claveEsc}', this.checked)">
+          <span style="font-size:12px;width:12px;display:inline-block">${expandido?'▾':'▸'}</span>
+          <div style="flex:1"><b>${calcEtiquetaGrupo(clave)}</b> <span style="color:var(--muted);font-size:11.5px">(${items.length} concepto${items.length===1?'':'s'})</span></div>
+          <div style="font-weight:600">${fmtMoney(total)}</div>
+        </div>
+        ${expandido ? `<div style="padding:4px 12px 10px 40px">
+          ${items.map(r=>{
+            const regimen = calcRegimenPorCategoria(r.categoria);
+            const vigencia = r.anio_inicio===r.anio_fin ? r.anio_inicio : `${r.anio_inicio}–${r.anio_fin}`;
+            const detalle = calcAgrupacion==='empresa' ? catT(r.categoria) : calcAgrupacion==='categoria' ? r.empresa : `${r.empresa} · ${catT(r.categoria)}`;
+            return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--border,#eee)">
+              <input type="checkbox" ${calcSeleccionIds.has(String(r.id))?'checked':''} onchange="calcToggleItemSeleccion('${r.id}', this.checked)">
+              <div style="flex:1">
+                <div style="font-size:12.5px">${detalle}</div>
+                <div style="font-size:10.5px;color:var(--muted)">${regimen.label} · vigencia ${vigencia}</div>
+              </div>
+              <div>${fmtMoney(r.monto)}</div>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
+      </div>`;
+  }).join('');
+
+  cont.innerHTML = barra + tarjetas;
+  cont.querySelectorAll('input[data-estado="some"]').forEach(cb=>cb.indeterminate=true);
 }
 
 /* Busca en fiscal_obligaciones (desglose mensual real, si ya se migró
@@ -1055,8 +1130,110 @@ function calcMesesMora(fechaOrigenISO){
   return Math.max(meses, 0);
 }
 
+/* ══════════════════════════════════════════
+   TABLA DE INPC — ahora vive en Supabase (fiscal_inpc), compartida
+   para todo el equipo, con carga masiva desde Excel (Periodo + INPC).
+   ══════════════════════════════════════════ */
+let inpcCache = {}; // { 'YYYY-MM': valor }
+
+async function cargarInpc(){
+  try {
+    const { data, error } = await sb.from('fiscal_inpc').select('*');
+    if (error) throw error;
+    inpcCache = {};
+    (data||[]).forEach(r => { inpcCache[r.periodo] = Number(r.valor); });
+  } catch(e) {
+    console.warn('fiscal_inpc no disponible (¿falta correr fiscal-actualizacion-migration.sql?):', e.message);
+    inpcCache = {};
+  }
+  renderInpcResumen();
+}
+
+function renderInpcResumen(){
+  const el = document.getElementById('inpcResumen');
+  if (!el) return;
+  const periodos = Object.keys(inpcCache).sort();
+  el.textContent = periodos.length
+    ? `${periodos.length} periodo(s) cargado(s): ${periodos[0]} a ${periodos[periodos.length-1]}.`
+    : 'Aún no hay valores de INPC cargados — cárgalos aquí o captúralos cuando el sistema te los pida al calcular.';
+}
+
+async function inpcGuardarMasivo(registros){
+  const { error } = await sb.from('fiscal_inpc').upsert(registros, { onConflict:'periodo' });
+  if (error) { alert('No se pudo guardar el INPC en Supabase: ' + error.message + ' — ¿corriste fiscal-actualizacion-migration.sql (tabla fiscal_inpc)?'); return false; }
+  await cargarInpc();
+  return true;
+}
+
+/* Interpreta la celda de "Periodo" en varios formatos comunes:
+   AAAA-MM, AAAA/MM, MM-AAAA, MM/AAAA, "Enero 2024", o fecha serial de Excel. */
+function inpcNormalizarPeriodo(valorCelda){
+  if (valorCelda === null || valorCelda === undefined || valorCelda === '') return null;
+  if (typeof valorCelda === 'number') {
+    const fecha = new Date(Math.round((valorCelda - 25569) * 86400 * 1000));
+    if (!isNaN(fecha.getTime()) && fecha.getUTCFullYear() > 1990) {
+      return `${fecha.getUTCFullYear()}-${String(fecha.getUTCMonth()+1).padStart(2,'0')}`;
+    }
+    return null;
+  }
+  const s = String(valorCelda).trim();
+  let m = s.match(/^(\d{4})[-\/](\d{1,2})$/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})[-\/](\d{4})$/);
+  if (m) return `${m[2]}-${String(m[1]).padStart(2,'0')}`;
+  const meses = {enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,setiembre:9,octubre:10,noviembre:11,diciembre:12};
+  m = s.toLowerCase().match(/([a-záéíóúñ]+)\D+(\d{4})/);
+  if (m && meses[m[1]]) return `${m[2]}-${String(meses[m[1]]).padStart(2,'0')}`;
+  return null;
+}
+
+async function inpcProcessFile(file){
+  if (typeof XLSX === 'undefined') { alert('❌ La librería SheetJS no está cargada.'); return; }
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+    if (!rows.length) { alert('El archivo está vacío.'); return; }
+
+    let headerIdx = -1, colPeriodo = -1, colValor = -1;
+    for (let i = 0; i < Math.min(5, rows.length); i++) {
+      const r = rows[i].map(c => String(c).toLowerCase().trim());
+      const cp = r.findIndex(h => /periodo|mes|fecha/.test(h));
+      const cv = r.findIndex(h => /inpc|valor|indice|índice/.test(h));
+      if (cp >= 0 && cv >= 0) { headerIdx = i; colPeriodo = cp; colValor = cv; break; }
+    }
+    if (headerIdx < 0) { alert('No encontré columnas de Periodo e INPC/Valor en las primeras filas. Usa encabezados como "Periodo" y "INPC".'); return; }
+
+    const registros = [];
+    let saltadas = 0;
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || !r.length) continue;
+      const periodo = inpcNormalizarPeriodo(r[colPeriodo]);
+      const valor = parseFloat(r[colValor]);
+      if (!periodo || isNaN(valor) || valor <= 0) { saltadas++; continue; }
+      registros.push({ periodo, valor });
+    }
+    if (!registros.length) { alert('No se pudo interpretar ninguna fila. Revisa el formato (Periodo: AAAA-MM, Valor: número).'); return; }
+
+    const ok = await inpcGuardarMasivo(registros);
+    if (ok) {
+      alert(`✅ INPC cargado: ${registros.length} periodo(s) guardado(s)${saltadas?`, ${saltadas} fila(s) omitida(s) por formato`:''}.`);
+      document.getElementById('inpcExcelInput').value = '';
+    }
+  } catch (e) {
+    console.error('inpcProcessFile error:', e);
+    alert('❌ ' + (e.message || e));
+  }
+}
+function inpcExcelHandleInput(ev){
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  inpcProcessFile(f);
+}
+
 function calcAbrirINPC(){
-  calcSincronizarSeleccion();
   if (!calcSeleccionIds.size) { alert('Selecciona al menos un concepto de CxC Fiscal.'); return; }
   const seleccionados = cxcImpuestos.filter(r => calcSeleccionIds.has(String(r.id)));
   const mesActual = calcMesActualPeriodo();
@@ -1069,17 +1246,15 @@ function calcAbrirINPC(){
   });
   calcOrigenesCache = origenes;
 
-  let cache = {};
-  try { cache = JSON.parse(localStorage.getItem('fiscal_inpc_cache') || '{}'); } catch(e) { cache = {}; }
-  const faltantes = Array.from(periodosNecesarios).filter(p => !(p in cache)).sort();
+  const faltantes = Array.from(periodosNecesarios).filter(p => !(p in inpcCache)).sort();
 
   const formEl = document.getElementById('calcInpcForm');
   if (faltantes.length) {
     formEl.style.display = 'block';
     formEl.innerHTML = `
       <div class="excel-preview">
-        <h3>📐 Captura los valores de INPC necesarios</h3>
-        <div class="desc">Se necesita el Índice Nacional de Precios al Consumidor (INEGI, o Anexo de la RMF vigente) de estos meses para calcular la actualización real. Se guardan en este navegador para no volver a pedirlos.</div>
+        <h3>📐 Captura los valores de INPC que faltan</h3>
+        <div class="desc">No están en la tabla de INPC cargada. Puedes capturarlos aquí (se guardan en Supabase para todos) o cargar el Excel de INPC arriba y volver a intentar.</div>
         <div class="grid-3">
           ${faltantes.map(p => `<div class="field"><label>INPC ${p}${p===mesActual?' (mes actual)':''}</label><input type="number" step="0.00001" id="inpc_${p.replace('-','_')}" placeholder="Ej. 132.37300"></div>`).join('')}
         </div>
@@ -1091,32 +1266,28 @@ function calcAbrirINPC(){
   }
 }
 
-function calcGuardarInpcYCalcular(){
-  let cache = {};
-  try { cache = JSON.parse(localStorage.getItem('fiscal_inpc_cache') || '{}'); } catch(e) { cache = {}; }
+async function calcGuardarInpcYCalcular(){
+  const registros = [];
   document.querySelectorAll('#calcInpcForm input[type="number"]').forEach(inp=>{
     const periodo = inp.id.replace('inpc_','').replace('_','-');
     const val = parseFloat(inp.value);
-    if (!isNaN(val) && val > 0) cache[periodo] = val;
+    if (!isNaN(val) && val > 0) registros.push({ periodo, valor: val });
   });
-  localStorage.setItem('fiscal_inpc_cache', JSON.stringify(cache));
+  if (registros.length) await inpcGuardarMasivo(registros);
   document.getElementById('calcInpcForm').style.display = 'none';
   calcCalcularTodo();
 }
 
 function calcCalcularTodo(){
-  calcSincronizarSeleccion();
   const seleccionados = cxcImpuestos.filter(r => calcSeleccionIds.has(String(r.id)));
-  let cache = {};
-  try { cache = JSON.parse(localStorage.getItem('fiscal_inpc_cache') || '{}'); } catch(e) { cache = {}; }
   const mesActual = calcMesActualPeriodo();
-  const inpcHoy = cache[mesActual];
+  const inpcHoy = inpcCache[mesActual];
   if (!inpcHoy) { alert('Falta el INPC del mes actual ('+mesActual+'). Captúralo para continuar.'); calcAbrirINPC(); return; }
 
   calcResultados = seleccionados.map(r=>{
     const regimen = calcRegimenPorCategoria(r.categoria);
     const origen = calcOrigenesCache[r.id] || calcObtenerFechaOrigen(r);
-    const inpcOrigen = cache[origen.periodo];
+    const inpcOrigen = inpcCache[origen.periodo];
     const mesesMora = calcMesesMora(origen.fecha);
     const actualizacionAplicada = !!inpcOrigen;
     const factorActualizacion = inpcOrigen ? (inpcHoy / inpcOrigen) : 1;
