@@ -406,9 +406,9 @@ tr:last-child td{border-bottom:none}
     </div>
     <div class="card">
       <h2>📐 Tabla de INPC (para actualización fiscal)</h2>
-      <div class="desc">Carga aquí el histórico de INPC (Índice Nacional de Precios al Consumidor) para que "Actualizar impuestos de CxC Fiscal" calcule la actualización sin pedirte los valores uno por uno. Excel con 2 columnas: <b>Periodo</b> (formato AAAA-MM, ej. 2024-01) y <b>INPC</b> (valor numérico). Se guarda en Supabase — mismo dato para todo el equipo, no solo tu navegador.</div>
+      <div class="desc">Serie histórica del <b>Índice Nacional de Precios al Consumidor</b> (INEGI, base 2ª quincena julio 2018 = 100) precargada en Supabase desde enero 2020. Se usa automáticamente para calcular el factor de actualización del art. 17-A del CFF. Si el INPC de un mes nuevo aún no aparece (INEGI lo publica en el DOF entre el día 8 y 10 de cada mes), puedes cargarlo con el Excel de abajo o capturarlo cuando el sistema te lo pida al calcular. Formato: <b>Periodo</b> (AAAA-MM) e <b>INPC</b> (número).</div>
       <input type="file" id="inpcExcelInput" accept=".xlsx,.xls" style="display:none" onchange="inpcExcelHandleInput(event)">
-      <button class="btn" onclick="document.getElementById('inpcExcelInput').click()">Cargar Excel de INPC</button>
+      <button class="btn" onclick="document.getElementById('inpcExcelInput').click()">Cargar Excel de INPC (opcional)</button>
       <div id="inpcResumen" style="margin-top:12px;font-size:12.5px;color:var(--muted)">Cargando…</div>
     </div>
     <div class="card">
@@ -445,7 +445,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.08.4';
+const APP_VERSION = '2026.07.08.5';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -1138,12 +1138,15 @@ let inpcCache = {}; // { 'YYYY-MM': valor }
 
 async function cargarInpc(){
   try {
-    const { data, error } = await sb.from('fiscal_inpc').select('*');
+    const { data, error } = await sb.from('fiscal_inpc').select('anio,mes,valor').order('anio',{ascending:true}).order('mes',{ascending:true});
     if (error) throw error;
     inpcCache = {};
-    (data||[]).forEach(r => { inpcCache[r.periodo] = Number(r.valor); });
+    (data||[]).forEach(r => {
+      const periodo = `${r.anio}-${String(r.mes).padStart(2,'0')}`;
+      inpcCache[periodo] = Number(r.valor);
+    });
   } catch(e) {
-    console.warn('fiscal_inpc no disponible (¿falta correr fiscal-actualizacion-migration.sql?):', e.message);
+    console.warn('fiscal_inpc no disponible (¿falta correr fiscal_inpc_migration_v2.sql?):', e.message);
     inpcCache = {};
   }
   renderInpcResumen();
@@ -1153,14 +1156,25 @@ function renderInpcResumen(){
   const el = document.getElementById('inpcResumen');
   if (!el) return;
   const periodos = Object.keys(inpcCache).sort();
-  el.textContent = periodos.length
-    ? `${periodos.length} periodo(s) cargado(s): ${periodos[0]} a ${periodos[periodos.length-1]}.`
-    : 'Aún no hay valores de INPC cargados — cárgalos aquí o captúralos cuando el sistema te los pida al calcular.';
+  if (!periodos.length) {
+    el.innerHTML = '<span style="color:var(--red)">⚠️ Aún no hay valores de INPC en Supabase — corre <code>fiscal_inpc_migration_v2.sql</code> para cargar la serie histórica desde enero 2020.</span>';
+    return;
+  }
+  const primero = periodos[0];
+  const ultimo = periodos[periodos.length-1];
+  const ultimoValor = inpcCache[ultimo];
+  el.innerHTML = `✅ <b>${periodos.length}</b> periodos cargados (${primero} → ${ultimo}). Último INPC: <b>${ultimoValor.toFixed(3)}</b> · Fuente: INEGI (base 2ª quincena julio 2018 = 100), publicado en DOF conforme al art. 20-Bis del CFF.`;
 }
 
 async function inpcGuardarMasivo(registros){
-  const { error } = await sb.from('fiscal_inpc').upsert(registros, { onConflict:'periodo' });
-  if (error) { alert('No se pudo guardar el INPC en Supabase: ' + error.message + ' — ¿corriste fiscal-actualizacion-migration.sql (tabla fiscal_inpc)?'); return false; }
+  // Convertir {periodo:'YYYY-MM', valor} → {anio, mes, valor, fuente} (nuevo schema)
+  const registrosNuevoSchema = registros.map(r=>{
+    const [a,m] = String(r.periodo).split('-');
+    return { anio: parseInt(a,10), mes: parseInt(m,10), valor: Number(r.valor), fuente: r.fuente || 'Manual' };
+  }).filter(r => !isNaN(r.anio) && r.mes>=1 && r.mes<=12 && r.valor>0);
+  if (!registrosNuevoSchema.length) { alert('Formato inválido de registros INPC.'); return false; }
+  const { error } = await sb.from('fiscal_inpc').upsert(registrosNuevoSchema, { onConflict:'anio,mes' });
+  if (error) { alert('No se pudo guardar el INPC en Supabase: ' + error.message + ' — ¿corriste fiscal_inpc_migration_v2.sql?'); return false; }
   await cargarInpc();
   return true;
 }
