@@ -309,6 +309,24 @@ tr:last-child td{border-bottom:none}
 
   <!-- ===================== CxC FISCAL (semáforo de riesgo) ===================== -->
   <div class="view" id="view-cxc">
+    <div class="card" id="cardCargaExcel_cxc">
+      <h2 data-i18n="cal.excel.title">📥 Carga masiva desde Excel</h2>
+      <div class="desc" data-i18n="cal.excel.desc">
+        Carga la Cédula Fiscal Corporativa (.xlsx) para sembrar el histórico de impuestos. Usa solo la hoja <b>Resumen</b>. <b style="color:var(--red)">Reemplaza todo</b> el histórico previo en Calendario SAT y CxC Fiscal.
+      </div>
+      <div id="excelDrop_cxc" class="excel-drop">
+        <input type="file" id="excelInput_cxc" accept=".xlsx,.xls" style="display:none" onchange="excelHandleInput(event)">
+        <div class="excel-drop-inner">
+          <div style="font-size:32px;line-height:1">📊</div>
+          <div style="margin-top:8px;font-weight:600" data-i18n="cal.excel.drop">Arrastra el archivo .xlsx aquí</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="cal.excel.or">o</div>
+          <button class="btn" onclick="document.getElementById('excelInput_cxc').click()" style="margin-top:8px" data-i18n="cal.excel.btn_pick">Elegir archivo</button>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px" data-i18n="cal.excel.hint">Sin password. Hoja: Resumen. Columnas: Año · Empresa · Impuesto · Enero…Diciembre · TOTAL.</div>
+        </div>
+      </div>
+      <div id="excelPreview_cxc" style="display:none;margin-top:14px"></div>
+    </div>
+
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-label" data-i18n="cxc.kpi.total">Cartera fiscal total</div>
@@ -427,7 +445,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.07.5';
+const APP_VERSION = '2026.07.07.6';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -991,28 +1009,34 @@ const MESES_EN = ['January','February','March','April','May','June','July','Augu
 /* Datos parseados en memoria mientras se muestra el preview */
 let excelParsedObligaciones = null; // array para fiscal_obligaciones
 let excelParsedCxc = null;          // array para fiscal_cxc_impuestos
+let excelActiveSuffix = '';         // '' (Calendario SAT) o '_cxc' (CxC Fiscal) — dónde renderizar el preview
 
-/* Drag & drop handlers para la zona de upload */
+/* Drag & drop handlers para las zonas de upload (Calendario SAT y CxC Fiscal) */
 document.addEventListener('DOMContentLoaded', () => {
-  const drop = document.getElementById('excelDrop');
-  if (!drop) return;
-  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
-  drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
-  drop.addEventListener('drop', e => {
-    e.preventDefault();
-    drop.classList.remove('drag');
-    if (e.dataTransfer.files.length) excelProcessFile(e.dataTransfer.files[0]);
+  ['excelDrop', 'excelDrop_cxc'].forEach(id => {
+    const drop = document.getElementById(id);
+    if (!drop) return;
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+    drop.addEventListener('drop', e => {
+      e.preventDefault();
+      drop.classList.remove('drag');
+      if (e.dataTransfer.files.length) excelProcessFile(e.dataTransfer.files[0], id === 'excelDrop_cxc' ? '_cxc' : '');
+    });
   });
 });
 
 function excelHandleInput(ev){
   const f = ev.target.files && ev.target.files[0];
-  if (f) excelProcessFile(f);
+  if (!f) return;
+  const suffix = ev.target.id === 'excelInput_cxc' ? '_cxc' : '';
+  excelProcessFile(f, suffix);
 }
 
-async function excelProcessFile(file){
+async function excelProcessFile(file, suffix=''){
   if (typeof XLSX === 'undefined') { alert(t('cal.excel.err_lib')); return; }
   if (!requirePermCarga()) return;
+  excelActiveSuffix = (suffix === '_cxc') ? '_cxc' : '';
 
   try {
     const buf = await file.arrayBuffer();
@@ -1133,8 +1157,11 @@ async function excelProcessFile(file){
 }
 
 function excelRenderPreview(aniosSet, empresasSet){
-  const el = document.getElementById('excelPreview');
+  const el = document.getElementById('excelPreview' + excelActiveSuffix);
   if (!el) return;
+  // Ocultar el otro preview por si estuviera abierto
+  const other = document.getElementById('excelPreview' + (excelActiveSuffix === '_cxc' ? '' : '_cxc'));
+  if (other) { other.style.display = 'none'; other.innerHTML = ''; }
   const anios = Array.from(aniosSet).sort();
   const empresas = Array.from(empresasSet).sort();
   el.style.display = 'block';
@@ -1162,10 +1189,13 @@ function excelRenderPreview(aniosSet, empresasSet){
 function excelCancelar(){
   excelParsedObligaciones = null;
   excelParsedCxc = null;
-  const el = document.getElementById('excelPreview');
-  if (el) { el.style.display='none'; el.innerHTML=''; }
-  const inp = document.getElementById('excelInput');
-  if (inp) inp.value = '';
+  ['', '_cxc'].forEach(sfx => {
+    const el = document.getElementById('excelPreview' + sfx);
+    if (el) { el.style.display='none'; el.innerHTML=''; }
+    const inp = document.getElementById('excelInput' + sfx);
+    if (inp) inp.value = '';
+  });
+  excelActiveSuffix = '';
 }
 
 /* Permiso: solo admin_master puede cargar el Excel (reemplaza todo el histórico) */
@@ -1182,7 +1212,7 @@ async function excelConfirmarYAplicar(){
   if (!excelParsedObligaciones || !excelParsedCxc) return;
   if (!confirm(t('cal.excel.confirm_msg'))) return;
 
-  const preview = document.getElementById('excelPreview');
+  const preview = document.getElementById('excelPreview' + excelActiveSuffix);
   const setEstado = (txt) => {
     if (preview) preview.querySelector('.excel-actions')?.insertAdjacentHTML('beforebegin',
       `<div id="excelStatus" style="color:var(--accent);font-size:13px;margin-top:8px">⏳ ${txt}</div>`);
