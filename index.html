@@ -707,7 +707,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.09.1';
+const APP_VERSION = '2026.07.09.2';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -1267,6 +1267,89 @@ let wizEstado = {
   resultados: [],            // objetos calculados editables
   inpcFaltantes: {}          // {periodo: valor} capturados por usuario
 };
+
+/* ══════════════════════════════════════════
+   HELPERS de cálculo (reutilizados por el wizard)
+   ══════════════════════════════════════════ */
+
+/* Busca en fiscal_obligaciones (desglose mensual real) el período más
+   antiguo de esta empresa+categoría dentro del año de inicio. Si no
+   existe, aproxima al 1-enero y lo marca como estimado. */
+function calcObtenerFechaOrigen(row){
+  const candidatos = (typeof obligaciones !== 'undefined' && Array.isArray(obligaciones) ? obligaciones : []).filter(o =>
+    o.empresa === row.empresa && o.categoria === row.categoria &&
+    o.periodo && o.periodo.startsWith(String(row.anio_inicio))
+  ).sort((a,b)=> a.periodo.localeCompare(b.periodo));
+  if (candidatos.length) {
+    return { periodo: candidatos[0].periodo, fecha: candidatos[0].periodo + '-01', estimado: false };
+  }
+  const periodo = `${row.anio_inicio}-01`;
+  return { periodo, fecha: periodo + '-01', estimado: true };
+}
+
+function calcMesActualPeriodo(){
+  const hoy = new Date();
+  return `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+}
+
+/* "Por cada mes o fracción que transcurra" (art. 21 CFF): una fracción
+   de mes cuenta como mes completo para efectos de recargos. */
+function calcMesesMora(fechaOrigenISO){
+  const d1 = new Date(fechaOrigenISO+'T00:00:00');
+  const d2 = new Date();
+  let meses = (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
+  if (d2.getDate() > d1.getDate()) meses += 1;
+  return Math.max(meses, 0);
+}
+
+/* ══════════════════════════════════════════
+   TABLA DE INPC — vive en Supabase (fiscal_inpc), compartida
+   para todo el equipo. Se carga automáticamente al arranque.
+   ══════════════════════════════════════════ */
+let inpcCache = {}; // { 'YYYY-MM': valor }
+
+async function cargarInpc(){
+  try {
+    const { data, error } = await sb.from('fiscal_inpc').select('anio,mes,valor').order('anio',{ascending:true}).order('mes',{ascending:true});
+    if (error) throw error;
+    inpcCache = {};
+    (data||[]).forEach(r => {
+      const periodo = `${r.anio}-${String(r.mes).padStart(2,'0')}`;
+      inpcCache[periodo] = Number(r.valor);
+    });
+  } catch(e) {
+    console.warn('fiscal_inpc no disponible (¿falta correr fiscal_inpc_migration_v2.sql?):', e.message);
+    inpcCache = {};
+  }
+  renderInpcResumen();
+}
+
+function renderInpcResumen(){
+  const el = document.getElementById('inpcResumen');
+  if (!el) return;
+  const periodos = Object.keys(inpcCache).sort();
+  if (!periodos.length) {
+    el.innerHTML = '<span style="color:var(--red)">⚠️ Aún no hay valores de INPC en Supabase — corre <code>fiscal_inpc_migration_v2.sql</code> para cargar la serie histórica desde enero 2020.</span>';
+    return;
+  }
+  const primero = periodos[0];
+  const ultimo = periodos[periodos.length-1];
+  const ultimoValor = inpcCache[ultimo];
+  el.innerHTML = `✅ <b>${periodos.length}</b> periodos cargados (${primero} → ${ultimo}). Último INPC: <b>${ultimoValor.toFixed(3)}</b> · Fuente: INEGI (base 2ª quincena julio 2018 = 100), publicado en DOF conforme al art. 20-Bis del CFF.`;
+}
+
+async function inpcGuardarMasivo(registros){
+  // Convertir {periodo:'YYYY-MM', valor} → {anio, mes, valor, fuente} (nuevo schema)
+  const registrosNuevoSchema = registros.map(r=>{
+    const [a,m] = String(r.periodo).split('-');
+    return { anio: parseInt(a,10), mes: parseInt(m,10), valor: Number(r.valor), fuente: r.fuente || 'Manual' };
+  }).filter(r => !isNaN(r.anio) && r.mes>=1 && r.mes<=12 && r.valor>0);
+  if (!registrosNuevoSchema.length) { alert('Formato inválido de registros INPC.'); return false; }
+  const { error } = await sb.from('fiscal_inpc').upsert(registrosNuevoSchema, { onConflict:'anio,mes' });
+  if (error) { alert('No se pudo guardar el INPC en Supabase: ' + error.message + ' — ¿corriste fiscal_inpc_migration_v2.sql?'); return false; }
+  await cargarInpc();
+  return true;
+}
 
 function calcClaveGrupo(r){
   if (calcAgrupacion === 'categoria') return r.categoria;
