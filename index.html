@@ -256,6 +256,173 @@ tr:last-child td{border-bottom:none}
   background:linear-gradient(135deg,rgba(225,29,72,.12),rgba(225,29,72,.04));
   border:2px solid var(--red);
 }
+
+/* ══════════ KPIs mini de Cálculo de Impuestos ══════════ */
+.kpi-agrupador-bar{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;
+  padding-bottom:12px;border-bottom:1px solid var(--border);
+}
+.kpi-agrupador-bar .lbl{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.kpi-chip{
+  padding:6px 14px;font-size:12px;border-radius:20px;cursor:pointer;
+  background:var(--bg-soft,#f7f8fa);border:1px solid var(--border);
+  color:var(--text);transition:all .15s;font-weight:500;
+}
+.kpi-chip:hover{border-color:var(--accent,#0057B8);color:var(--accent,#0057B8)}
+.kpi-chip.active{background:var(--accent,#0057B8);color:#fff;border-color:var(--accent,#0057B8)}
+.kpi-calc-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:12px;
+}
+.kpi-mini{
+  background:var(--bg);border:1px solid var(--border);border-radius:10px;
+  padding:14px;cursor:pointer;transition:all .18s;position:relative;
+  display:flex;flex-direction:column;gap:6px;min-height:120px;
+}
+.kpi-mini:hover{
+  border-color:var(--accent,#0057B8);transform:translateY(-2px);
+  box-shadow:0 6px 18px rgba(0,87,184,.15);
+}
+.kpi-mini-title{
+  font-size:13px;font-weight:600;color:var(--text);
+  display:flex;align-items:center;gap:6px;line-height:1.3;
+}
+.kpi-mini-count{font-size:11px;color:var(--muted)}
+.kpi-mini-total{font-size:17px;font-weight:700;color:var(--text);margin-top:auto}
+.kpi-mini-alert{
+  font-size:10.5px;padding:3px 8px;border-radius:12px;
+  background:rgba(225,29,72,.1);color:var(--red);
+  align-self:flex-start;font-weight:600;
+}
+.kpi-mini-arrow{
+  position:absolute;top:14px;right:14px;color:var(--muted);
+  font-size:14px;opacity:.5;transition:all .15s;
+}
+.kpi-mini:hover .kpi-mini-arrow{opacity:1;color:var(--accent,#0057B8);transform:translateX(3px)}
+
+/* ══════════ Wizard modal — asistente paso a paso ══════════ */
+.wizard-modal{
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:14px;max-width:1060px;width:100%;
+  max-height:92vh;display:flex;flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+  animation:calcModalSlideIn .22s ease-out;
+}
+.wizard-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px 22px;border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(0,87,184,.08),rgba(0,40,85,.04));
+}
+.wizard-header h2{margin:0;font-size:17px;font-weight:600;color:var(--text)}
+.wizard-header .subtitle{font-size:11.5px;color:var(--muted);margin-top:2px}
+.wizard-steps{
+  display:flex;align-items:center;gap:0;padding:14px 22px;
+  border-bottom:1px solid var(--border);background:var(--bg-soft,#f7f8fa);
+}
+.wizard-step-item{
+  display:flex;align-items:center;gap:8px;flex:1;font-size:12px;
+  color:var(--muted);position:relative;
+}
+.wizard-step-item .num{
+  width:26px;height:26px;border-radius:50%;background:var(--border);
+  color:var(--muted);display:flex;align-items:center;justify-content:center;
+  font-weight:600;font-size:12px;flex-shrink:0;transition:all .18s;
+}
+.wizard-step-item.active{color:var(--text);font-weight:600}
+.wizard-step-item.active .num{background:var(--accent,#0057B8);color:#fff}
+.wizard-step-item.done .num{background:#22c55e;color:#fff}
+.wizard-step-item.done::after,
+.wizard-step-item.active::after,
+.wizard-step-item::after{
+  content:'';flex:1;height:2px;background:var(--border);margin-left:8px;
+}
+.wizard-step-item:last-child::after{display:none}
+.wizard-step-item.done::after{background:#22c55e}
+.wizard-body{padding:22px;overflow-y:auto;flex:1}
+.wizard-nav{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 22px;border-top:1px solid var(--border);
+  background:var(--bg-soft,#f7f8fa);gap:10px;flex-wrap:wrap;
+}
+.wizard-nav .spacer{flex:1}
+.wizard-nav .info{font-size:12px;color:var(--muted)}
+
+.wiz-concept-card{
+  background:var(--bg);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;margin-bottom:10px;
+}
+.wiz-concept-card .head{
+  display:flex;align-items:center;gap:10px;margin-bottom:8px;
+  padding-bottom:8px;border-bottom:1px solid var(--border);
+}
+.wiz-concept-card .head b{font-size:13.5px}
+.wiz-concept-card .head .badge{
+  font-size:10.5px;padding:2px 8px;border-radius:10px;
+  background:var(--bg-soft,#f7f8fa);color:var(--muted);font-weight:500;
+}
+.wiz-concept-card .head .badge.fid{background:rgba(225,29,72,.1);color:var(--red)}
+.wiz-concept-card .row{
+  display:grid;grid-template-columns:1fr auto;gap:8px;
+  padding:5px 0;font-size:12.5px;align-items:center;
+}
+.wiz-concept-card .row.calc{color:var(--accent,#0057B8);font-weight:600}
+.wiz-concept-card .row .lbl{color:var(--muted);font-size:11.5px}
+.wiz-concept-card .row .val{font-weight:500}
+.wiz-concept-card .row .val.big{font-size:14px;font-weight:700}
+.wiz-concept-card .row input[type="number"],
+.wiz-concept-card .row input[type="month"]{
+  width:130px;padding:5px 8px;font-size:12.5px;
+  border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);
+}
+.wiz-concept-card .toggles{
+  display:flex;gap:14px;flex-wrap:wrap;padding-top:10px;margin-top:8px;
+  border-top:1px dashed var(--border);
+}
+.wiz-concept-card .toggles label{
+  display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;
+}
+.wiz-concept-card .cond-slider{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wiz-concept-card .cond-slider input[type="range"]{width:120px}
+.wiz-concept-card .cond-slider .pct{font-weight:600;color:var(--accent,#0057B8);min-width:34px}
+.wiz-inpc-input{
+  background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.4);
+  padding:6px 10px;border-radius:6px;font-size:11.5px;margin-top:6px;
+}
+.wiz-select-list{
+  max-height:52vh;overflow-y:auto;border:1px solid var(--border);
+  border-radius:8px;padding:6px;
+}
+.wiz-select-row{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;
+  border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;
+}
+.wiz-select-row:hover{background:var(--bg-soft,#f7f8fa)}
+.wiz-select-row:last-child{border-bottom:none}
+.wiz-select-row.selected{background:rgba(0,87,184,.05)}
+.wiz-select-row .info{flex:1;font-size:12.5px}
+.wiz-select-row .info .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.wiz-select-row .monto{font-weight:600;font-size:13px}
+.wiz-select-header{
+  display:flex;align-items:center;gap:10px;padding:8px 12px;
+  background:var(--bg-soft,#f7f8fa);border-radius:6px;margin-bottom:10px;
+  font-size:12px;
+}
+.wiz-summary-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.wiz-summary-table th{
+  text-align:left;padding:8px;font-weight:600;color:var(--muted);
+  border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+}
+.wiz-summary-table td{padding:9px 8px;border-bottom:1px solid var(--border)}
+.wiz-summary-table tfoot td{border-top:2px solid var(--text);border-bottom:none;font-weight:700;padding-top:12px}
+.wiz-summary-table .txt-right{text-align:right}
+.wiz-total-card{
+  background:linear-gradient(135deg,rgba(0,87,184,.1),rgba(0,40,85,.04));
+  border:2px solid var(--accent,#0057B8);border-radius:12px;
+  padding:18px;margin-top:16px;text-align:center;
+}
+.wiz-total-card .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.wiz-total-card .amount{font-size:28px;font-weight:700;color:var(--accent,#0057B8);margin-top:4px}
+.wiz-total-card .breakdown{font-size:11.5px;color:var(--muted);margin-top:6px}
 </style>
 </head>
 <body>
@@ -453,16 +620,13 @@ tr:last-child td{border-bottom:none}
   <!-- ===================== CALCULO DE IMPUESTOS ===================== -->
   <div class="view" id="view-impuestos">
     <div class="card">
-      <h2>🔄 Actualizar impuestos de CxC Fiscal a la fecha actual</h2>
+      <h2>🔄 Calcular actualización de impuestos</h2>
       <div class="desc">
-        Selecciona uno, varios o todos los conceptos de <b>CxC Fiscal</b>, agrupados como prefieras. El sistema calcula <b>actualización (INPC)</b> + <b>recargos</b> según la ley que le aplica a cada tipo de impuesto (CFF para ISR/IVA, LSS para IMSS, Ley del INFONAVIT, o Código Fiscal del Estado de BC para ISN), y simula el efecto de una <b>condonación</b> según lo que cada ley permite.
-        <br><span style="color:var(--red);font-weight:600">⚠️ Esto es una herramienta de apoyo interno, no una determinación oficial. Antes de pagar o presentar cualquier trámite de reducción/condonación, valídalo con el fiscalista de MI Global.</span>
+        Elige cómo agrupar los conceptos de <b>CxC Fiscal</b> y haz clic en cualquier tarjeta para abrir el asistente paso a paso: <b>selección → INPC → recargos y multas → total</b>. El sistema calcula automáticamente actualización (Art. 17-A CFF), recargos por régimen, multas y estímulo LIF 2026 — todo elegible.
+        <br><span style="color:var(--red);font-weight:600">⚠️ Herramienta de apoyo interno — valida con el fiscalista antes de pagar.</span>
       </div>
-      <div id="tblCalcSelector">Cargando…</div>
-      <button class="btn" id="btnCalcularActualizacion" onclick="calcAbrirINPC()" style="margin-top:10px">Calcular actualización a hoy</button>
-
-      <div id="calcInpcForm" style="display:none;margin-top:14px"></div>
-      <div id="calcPreview" style="display:none;margin-top:14px"></div>
+      <div id="calcAgrupadorBar" class="kpi-agrupador-bar"></div>
+      <div id="calcKpisGrid" class="kpi-calc-grid">Cargando…</div>
     </div>
 
     <div class="card">
@@ -516,6 +680,22 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- Wizard modal — asistente paso a paso para calcular actualización de impuestos -->
+<div id="calcWizardModal" class="calc-modal-backdrop" style="display:none" onclick="calcCerrarWizard(event)">
+  <div class="wizard-modal" onclick="event.stopPropagation()">
+    <div class="wizard-header">
+      <div>
+        <h2 id="wizTitulo">Asistente de cálculo</h2>
+        <div class="subtitle" id="wizSubtitulo">—</div>
+      </div>
+      <button class="calc-modal-close" onclick="calcCerrarWizard()" aria-label="Cerrar">×</button>
+    </div>
+    <div class="wizard-steps" id="wizSteps"></div>
+    <div class="wizard-body" id="wizBody"></div>
+    <div class="wizard-nav" id="wizNav"></div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    MÓDULO FISCAL — SIF · MI Global
@@ -527,7 +707,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.08.7';
+const APP_VERSION = '2026.07.09.1';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -1038,7 +1218,7 @@ function renderCxc(){
   } else {
     notaEl.style.display = 'none';
   }
-  if (typeof calcRenderSelector === 'function') calcRenderSelector();
+  if (typeof calcRenderKPIs === 'function') calcRenderKPIs();
 }
 
 /* ══════════════════════════════════════════
@@ -1075,11 +1255,18 @@ const CONDONACION_INFO = {
   BC_ISN:       { maxPct:0.00, nota:'Sin decreto estatal de condonación confirmado para ISN 2026. Verificar Periódico Oficial de BC antes de asumir beneficio.' },
 };
 
-let calcSeleccionIds = new Set();
-let calcOrigenesCache = {};
-let calcResultados = [];
 let calcAgrupacion = 'empresa'; // 'empresa' | 'categoria' | 'vigencia'
-let calcGruposExpandido = new Set();
+let calcResultados = []; // resultados finales (usados por calcVerDetalle y calcGuardarEnSupabase)
+
+/* Estado del wizard activo */
+let wizEstado = {
+  claveGrupo: null,
+  paso: 1,
+  conceptosDisponibles: [],  // conceptos del grupo elegido
+  seleccionados: new Set(),  // ids marcados
+  resultados: [],            // objetos calculados editables
+  inpcFaltantes: {}          // {periodo: valor} capturados por usuario
+};
 
 function calcClaveGrupo(r){
   if (calcAgrupacion === 'categoria') return r.categoria;
@@ -1091,324 +1278,527 @@ function calcEtiquetaGrupo(clave){
 }
 function calcSetAgrupacion(modo){
   calcAgrupacion = modo;
-  calcGruposExpandido.clear();
-  calcRenderSelector();
-}
-function calcToggleGrupo(clave){
-  if (calcGruposExpandido.has(clave)) calcGruposExpandido.delete(clave); else calcGruposExpandido.add(clave);
-  calcRenderSelector();
-}
-function calcToggleGrupoSeleccion(clave, marcar){
-  cxcImpuestos.filter(r => calcClaveGrupo(r) === clave).forEach(r=>{
-    if (marcar) calcSeleccionIds.add(String(r.id)); else calcSeleccionIds.delete(String(r.id));
-  });
-  calcRenderSelector();
-}
-function calcToggleItemSeleccion(id, marcar){
-  if (marcar) calcSeleccionIds.add(String(id)); else calcSeleccionIds.delete(String(id));
-  calcRenderSelector();
-}
-function calcSeleccionarTodos(marcar){
-  if (marcar) cxcImpuestos.forEach(r => calcSeleccionIds.add(String(r.id)));
-  else calcSeleccionIds.clear();
-  calcRenderSelector();
-}
-
-/* Selector tipo "tabla dinámica": tarjetas KPI desplegables agrupadas
-   por Empresa / Tipo de impuesto / Año, cada una con su propio checkbox
-   maestro (marca/desmarca todo el grupo) y total en pesos. */
-function calcRenderSelector(){
-  const cont = document.getElementById('tblCalcSelector');
-  if (!cont) return;
-  if (!cxcImpuestos.length) { cont.innerHTML = '<div style="color:var(--muted)">Sin conceptos en CxC Fiscal.</div>'; return; }
-
-  const grupos = {};
-  cxcImpuestos.forEach(r=>{
-    const clave = calcClaveGrupo(r);
-    (grupos[clave] = grupos[clave] || []).push(r);
-  });
-  const clavesOrdenadas = Object.keys(grupos).sort((a,b)=>a.localeCompare(b,'es'));
-
-  const barra = `
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
-      <span style="font-size:11.5px;color:var(--muted)">Agrupar por:</span>
-      ${['empresa','categoria','vigencia'].map(modo=>{
-        const label = modo==='empresa' ? 'Empresa' : modo==='categoria' ? 'Tipo de impuesto' : 'Año';
-        const activo = calcAgrupacion===modo;
-        return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="calcSetAgrupacion('${modo}')">${label}</button>`;
-      }).join('')}
-      <span style="flex:1"></span>
-      <button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px" onclick="calcSeleccionarTodos(true)">Seleccionar todos</button>
-      <button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px" onclick="calcSeleccionarTodos(false)">Ninguno</button>
-    </div>`;
-
-  const tarjetas = clavesOrdenadas.map(clave=>{
-    const items = grupos[clave];
-    const claveEsc = clave.replace(/'/g,"\\'");
-    const total = items.reduce((s,r)=>s+Number(r.monto||0),0);
-    const seleccionadosEnGrupo = items.filter(r=>calcSeleccionIds.has(String(r.id))).length;
-    const estado = seleccionadosEnGrupo===0 ? 'none' : (seleccionadosEnGrupo===items.length ? 'all' : 'some');
-    const expandido = calcGruposExpandido.has(clave);
-    return `
-      <div style="border:1px solid var(--border,#e2e2e2);border-radius:8px;margin-bottom:8px;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-soft,#f7f8fa);cursor:pointer" onclick="calcToggleGrupo('${claveEsc}')">
-          <input type="checkbox" data-estado="${estado}" ${estado==='all'?'checked':''} onclick="event.stopPropagation()" onchange="calcToggleGrupoSeleccion('${claveEsc}', this.checked)">
-          <span style="font-size:12px;width:12px;display:inline-block">${expandido?'▾':'▸'}</span>
-          <div style="flex:1"><b>${calcEtiquetaGrupo(clave)}</b> <span style="color:var(--muted);font-size:11.5px">(${items.length} concepto${items.length===1?'':'s'})</span></div>
-          <div style="font-weight:600">${fmtMoney(total)}</div>
-        </div>
-        ${expandido ? `<div style="padding:4px 12px 10px 40px">
-          ${items.map(r=>{
-            const regimen = calcRegimenPorCategoria(r.categoria);
-            const vigencia = r.anio_inicio===r.anio_fin ? r.anio_inicio : `${r.anio_inicio}–${r.anio_fin}`;
-            const detalle = calcAgrupacion==='empresa' ? catT(r.categoria) : calcAgrupacion==='categoria' ? r.empresa : `${r.empresa} · ${catT(r.categoria)}`;
-            return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--border,#eee)">
-              <input type="checkbox" ${calcSeleccionIds.has(String(r.id))?'checked':''} onchange="calcToggleItemSeleccion('${r.id}', this.checked)">
-              <div style="flex:1">
-                <div style="font-size:12.5px">${detalle}</div>
-                <div style="font-size:10.5px;color:var(--muted)">${regimen.label} · vigencia ${vigencia}</div>
-              </div>
-              <div>${fmtMoney(r.monto)}</div>
-            </div>`;
-          }).join('')}
-        </div>` : ''}
-      </div>`;
-  }).join('');
-
-  cont.innerHTML = barra + tarjetas;
-  cont.querySelectorAll('input[data-estado="some"]').forEach(cb=>cb.indeterminate=true);
-}
-
-/* Busca en fiscal_obligaciones (desglose mensual real, si ya se migró
-   y recargó el Excel) el período más antiguo de esta empresa+categoría
-   dentro del año de inicio. Si no existe, aproxima al 1-enero y lo marca
-   como estimado — ver skill fiscal-recargos-mx sección 7. */
-function calcObtenerFechaOrigen(row){
-  const candidatos = obligaciones.filter(o =>
-    o.empresa === row.empresa && o.categoria === row.categoria &&
-    o.periodo && o.periodo.startsWith(String(row.anio_inicio))
-  ).sort((a,b)=> a.periodo.localeCompare(b.periodo));
-  if (candidatos.length) {
-    return { periodo: candidatos[0].periodo, fecha: candidatos[0].periodo + '-01', estimado: false };
-  }
-  const periodo = `${row.anio_inicio}-01`;
-  return { periodo, fecha: periodo + '-01', estimado: true };
-}
-
-function calcMesActualPeriodo(){
-  const hoy = new Date();
-  return `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
-}
-
-/* "Por cada mes o fracción que transcurra" (art. 21 CFF): una fracción
-   de mes cuenta como mes completo para efectos de recargos. */
-function calcMesesMora(fechaOrigenISO){
-  const d1 = new Date(fechaOrigenISO+'T00:00:00');
-  const d2 = new Date();
-  let meses = (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
-  if (d2.getDate() > d1.getDate()) meses += 1;
-  return Math.max(meses, 0);
+  calcRenderKPIs();
 }
 
 /* ══════════════════════════════════════════
-   TABLA DE INPC — ahora vive en Supabase (fiscal_inpc), compartida
-   para todo el equipo, con carga masiva desde Excel (Periodo + INPC).
+   VISTA PRINCIPAL: barra de agrupador + grid de KPIs mini
+   Cada KPI es una tarjeta clickeable que abre el wizard.
    ══════════════════════════════════════════ */
-let inpcCache = {}; // { 'YYYY-MM': valor }
-
-async function cargarInpc(){
-  try {
-    const { data, error } = await sb.from('fiscal_inpc').select('anio,mes,valor').order('anio',{ascending:true}).order('mes',{ascending:true});
-    if (error) throw error;
-    inpcCache = {};
-    (data||[]).forEach(r => {
-      const periodo = `${r.anio}-${String(r.mes).padStart(2,'0')}`;
-      inpcCache[periodo] = Number(r.valor);
-    });
-  } catch(e) {
-    console.warn('fiscal_inpc no disponible (¿falta correr fiscal_inpc_migration_v2.sql?):', e.message);
-    inpcCache = {};
-  }
-  renderInpcResumen();
-}
-
-function renderInpcResumen(){
-  const el = document.getElementById('inpcResumen');
-  if (!el) return;
-  const periodos = Object.keys(inpcCache).sort();
-  if (!periodos.length) {
-    el.innerHTML = '<span style="color:var(--red)">⚠️ Aún no hay valores de INPC en Supabase — corre <code>fiscal_inpc_migration_v2.sql</code> para cargar la serie histórica desde enero 2020.</span>';
+function calcRenderKPIs(){
+  const barra = document.getElementById('calcAgrupadorBar');
+  const grid = document.getElementById('calcKpisGrid');
+  if (!barra || !grid) return;
+  if (!cxcImpuestos.length) {
+    barra.innerHTML = '';
+    grid.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Sin conceptos en CxC Fiscal.</div>';
     return;
   }
-  const primero = periodos[0];
-  const ultimo = periodos[periodos.length-1];
-  const ultimoValor = inpcCache[ultimo];
-  el.innerHTML = `✅ <b>${periodos.length}</b> periodos cargados (${primero} → ${ultimo}). Último INPC: <b>${ultimoValor.toFixed(3)}</b> · Fuente: INEGI (base 2ª quincena julio 2018 = 100), publicado en DOF conforme al art. 20-Bis del CFF.`;
-}
 
-async function inpcGuardarMasivo(registros){
-  // Convertir {periodo:'YYYY-MM', valor} → {anio, mes, valor, fuente} (nuevo schema)
-  const registrosNuevoSchema = registros.map(r=>{
-    const [a,m] = String(r.periodo).split('-');
-    return { anio: parseInt(a,10), mes: parseInt(m,10), valor: Number(r.valor), fuente: r.fuente || 'Manual' };
-  }).filter(r => !isNaN(r.anio) && r.mes>=1 && r.mes<=12 && r.valor>0);
-  if (!registrosNuevoSchema.length) { alert('Formato inválido de registros INPC.'); return false; }
-  const { error } = await sb.from('fiscal_inpc').upsert(registrosNuevoSchema, { onConflict:'anio,mes' });
-  if (error) { alert('No se pudo guardar el INPC en Supabase: ' + error.message + ' — ¿corriste fiscal_inpc_migration_v2.sql?'); return false; }
-  await cargarInpc();
-  return true;
-}
+  // Barra de chips
+  const modos = [
+    { key:'empresa',   label:'🏢 Por Empresa' },
+    { key:'categoria', label:'📋 Por Tipo de impuesto' },
+    { key:'vigencia',  label:'📅 Por Año' }
+  ];
+  barra.innerHTML = `<span class="lbl">Agrupar:</span>` +
+    modos.map(m => `<button class="kpi-chip ${calcAgrupacion===m.key?'active':''}" onclick="calcSetAgrupacion('${m.key}')">${m.label}</button>`).join('');
 
-/* Interpreta la celda de "Periodo" en varios formatos comunes:
-   AAAA-MM, AAAA/MM, MM-AAAA, MM/AAAA, "Enero 2024", o fecha serial de Excel.
-   (Se conserva por si en el futuro se re-agrega carga masiva desde otro flujo). */
-function inpcNormalizarPeriodo(valorCelda){
-  if (valorCelda === null || valorCelda === undefined || valorCelda === '') return null;
-  if (typeof valorCelda === 'number') {
-    const fecha = new Date(Math.round((valorCelda - 25569) * 86400 * 1000));
-    if (!isNaN(fecha.getTime()) && fecha.getUTCFullYear() > 1990) {
-      return `${fecha.getUTCFullYear()}-${String(fecha.getUTCMonth()+1).padStart(2,'0')}`;
-    }
-    return null;
-  }
-  const s = String(valorCelda).trim();
-  let m = s.match(/^(\d{4})[-\/](\d{1,2})$/);
-  if (m) return `${m[1]}-${String(m[2]).padStart(2,'0')}`;
-  m = s.match(/^(\d{1,2})[-\/](\d{4})$/);
-  if (m) return `${m[2]}-${String(m[1]).padStart(2,'0')}`;
-  const meses = {enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,setiembre:9,octubre:10,noviembre:11,diciembre:12};
-  m = s.toLowerCase().match(/([a-záéíóúñ]+)\D+(\d{4})/);
-  if (m && meses[m[1]]) return `${m[2]}-${String(meses[m[1]]).padStart(2,'0')}`;
-  return null;
-}
-
-function calcAbrirINPC(){
-  if (!calcSeleccionIds.size) { alert('Selecciona al menos un concepto de CxC Fiscal.'); return; }
-  const seleccionados = cxcImpuestos.filter(r => calcSeleccionIds.has(String(r.id)));
-  const mesActual = calcMesActualPeriodo();
-  const periodosNecesarios = new Set([mesActual]);
-  const origenes = {};
-  seleccionados.forEach(r=>{
-    const o = calcObtenerFechaOrigen(r);
-    origenes[r.id] = o;
-    periodosNecesarios.add(o.periodo);
+  // Agrupar conceptos
+  const grupos = {};
+  cxcImpuestos.forEach(r => {
+    const clave = calcClaveGrupo(r);
+    (grupos[clave] = grupos[clave] || []).push(r);
   });
-  calcOrigenesCache = origenes;
+  const clavesOrdenadas = Object.keys(grupos).sort((a,b) => a.localeCompare(b,'es'));
 
-  const faltantes = Array.from(periodosNecesarios).filter(p => !(p in inpcCache)).sort();
+  // Iconos por tipo de agrupación
+  const iconoAgr = { empresa:'🏢', categoria:'📋', vigencia:'📅' }[calcAgrupacion] || '📊';
 
-  const formEl = document.getElementById('calcInpcForm');
-  if (faltantes.length) {
-    formEl.style.display = 'block';
-    formEl.innerHTML = `
-      <div class="excel-preview">
-        <h3>📐 Captura los valores de INPC que faltan</h3>
-        <div class="desc">No están en la tabla de INPC cargada. Captúralos aquí (se guardan en Supabase para todo el equipo).</div>
-        <div class="grid-3">
-          ${faltantes.map(p => `<div class="field"><label>INPC ${p}${p===mesActual?' (mes actual)':''}</label><input type="number" step="0.00001" id="inpc_${p.replace('-','_')}" placeholder="Ej. 132.37300"></div>`).join('')}
-        </div>
-        <button class="btn" onclick="calcGuardarInpcYCalcular()" style="margin-top:10px">Guardar y calcular</button>
+  grid.innerHTML = clavesOrdenadas.map(clave => {
+    const items = grupos[clave];
+    const total = items.reduce((s,r) => s + Number(r.monto||0), 0);
+    const fiduciarios = items.filter(r => r.fiduciario === true || /Retenido|IMSS|INFONAVIT/i.test(r.categoria)).length;
+    const claveEsc = String(clave).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    return `
+      <div class="kpi-mini" onclick="calcAbrirWizard('${claveEsc}')" title="Abrir asistente de cálculo">
+        <span class="kpi-mini-arrow">→</span>
+        <div class="kpi-mini-title">${iconoAgr} ${calcEtiquetaGrupo(clave)}</div>
+        <div class="kpi-mini-count">${items.length} concepto${items.length===1?'':'s'}</div>
+        <div class="kpi-mini-total">${fmtMoney(total)}</div>
+        ${fiduciarios > 0 ? `<div class="kpi-mini-alert">⚠️ ${fiduciarios} fiduciario${fiduciarios===1?'':'s'}</div>` : ''}
       </div>`;
-  } else {
-    formEl.style.display = 'none';
-    calcCalcularTodo();
-  }
+  }).join('');
 }
 
-async function calcGuardarInpcYCalcular(){
-  const registros = [];
-  document.querySelectorAll('#calcInpcForm input[type="number"]').forEach(inp=>{
-    const periodo = inp.id.replace('inpc_','').replace('_','-');
-    const val = parseFloat(inp.value);
-    if (!isNaN(val) && val > 0) registros.push({ periodo, valor: val });
-  });
-  if (registros.length) await inpcGuardarMasivo(registros);
-  document.getElementById('calcInpcForm').style.display = 'none';
-  calcCalcularTodo();
+/* ══════════════════════════════════════════
+   WIZARD — asistente paso a paso
+   Paso 1: Selección de conceptos del grupo
+   Paso 2: Actualización INPC (auto, editable)
+   Paso 3: Recargos + Multas + Condonación + LIF (elegibles)
+   Paso 4: Resumen final + acciones
+   ══════════════════════════════════════════ */
+function calcAbrirWizard(claveGrupo){
+  const conceptos = cxcImpuestos.filter(r => calcClaveGrupo(r) === claveGrupo);
+  if (!conceptos.length) { alert('Este grupo no tiene conceptos.'); return; }
+
+  wizEstado = {
+    claveGrupo,
+    paso: 1,
+    conceptosDisponibles: conceptos,
+    seleccionados: new Set(conceptos.map(r => String(r.id))),  // por defecto, todos marcados
+    resultados: [],
+    inpcFaltantes: {}
+  };
+
+  document.getElementById('wizTitulo').innerHTML = `🧮 Asistente de cálculo: ${calcEtiquetaGrupo(claveGrupo)}`;
+  document.getElementById('wizSubtitulo').textContent = `${conceptos.length} concepto${conceptos.length===1?'':'s'} · Total ${fmtMoney(conceptos.reduce((s,r)=>s+Number(r.monto||0),0))}`;
+  document.getElementById('calcWizardModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  calcWizardIr(1);
 }
 
-function calcCalcularTodo(){
-  const seleccionados = cxcImpuestos.filter(r => calcSeleccionIds.has(String(r.id)));
-  const mesActual = calcMesActualPeriodo();
-  const inpcHoy = inpcCache[mesActual];
-  if (!inpcHoy) { alert('Falta el INPC del mes actual ('+mesActual+'). Captúralo para continuar.'); calcAbrirINPC(); return; }
+function calcCerrarWizard(ev){
+  if (ev && ev.target !== ev.currentTarget && !ev.currentTarget.classList.contains('calc-modal-close')) return;
+  document.getElementById('calcWizardModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
 
-  calcResultados = seleccionados.map(r=>{
+function calcWizardIr(paso){
+  wizEstado.paso = paso;
+  // Renderizar barra de pasos
+  const pasos = [
+    { n:1, label:'Selección' },
+    { n:2, label:'INPC' },
+    { n:3, label:'Recargos y multas' },
+    { n:4, label:'Resumen' }
+  ];
+  document.getElementById('wizSteps').innerHTML = pasos.map(p => {
+    const clase = p.n < paso ? 'done' : (p.n === paso ? 'active' : '');
+    const num = p.n < paso ? '✓' : p.n;
+    return `<div class="wizard-step-item ${clase}"><span class="num">${num}</span>${p.label}</div>`;
+  }).join('');
+
+  if (paso === 1) calcWizardPaso1();
+  else if (paso === 2) calcWizardPaso2();
+  else if (paso === 3) calcWizardPaso3();
+  else if (paso === 4) calcWizardPaso4();
+}
+
+/* ---------- PASO 1: Selección ---------- */
+function calcWizardPaso1(){
+  const body = document.getElementById('wizBody');
+  const items = wizEstado.conceptosDisponibles;
+  const totalSel = items.filter(r => wizEstado.seleccionados.has(String(r.id))).reduce((s,r)=>s+Number(r.monto||0),0);
+  const todosSel = items.every(r => wizEstado.seleccionados.has(String(r.id)));
+
+  body.innerHTML = `
+    <p style="margin:0 0 12px 0;font-size:13px;color:var(--muted)">Marca los conceptos que quieres incluir en el cálculo. Todos vienen marcados por defecto.</p>
+    <div class="wiz-select-header">
+      <input type="checkbox" id="wizSelAll" ${todosSel?'checked':''} onchange="calcWizardToggleAll(this.checked)">
+      <label for="wizSelAll" style="cursor:pointer;font-weight:600">${todosSel?'Deseleccionar todos':'Seleccionar todos'}</label>
+      <span style="flex:1"></span>
+      <span><b id="wizSelCount">${wizEstado.seleccionados.size}</b> de ${items.length} seleccionados</span>
+    </div>
+    <div class="wiz-select-list">
+      ${items.map(r => {
+        const marcado = wizEstado.seleccionados.has(String(r.id));
+        const regimen = calcRegimenPorCategoria(r.categoria);
+        const vigencia = r.anio_inicio === r.anio_fin ? r.anio_inicio : `${r.anio_inicio}–${r.anio_fin}`;
+        const detalle = calcAgrupacion === 'empresa' ? catT(r.categoria)
+                      : calcAgrupacion === 'categoria' ? r.empresa
+                      : `${r.empresa} · ${catT(r.categoria)}`;
+        const esFid = r.fiduciario === true || /Retenido|IMSS|INFONAVIT/i.test(r.categoria);
+        return `
+          <div class="wiz-select-row ${marcado?'selected':''}" onclick="calcWizardToggleConcepto('${r.id}')">
+            <input type="checkbox" ${marcado?'checked':''} onclick="event.stopPropagation();calcWizardToggleConcepto('${r.id}')">
+            <div class="info">
+              <div><b>${detalle}</b> ${esFid?'<span style="color:var(--red);font-size:11px">⚠️ Fiduciario</span>':''}</div>
+              <div class="sub">${regimen.label} · Vigencia ${vigencia}</div>
+            </div>
+            <div class="monto">${fmtMoney(r.monto)}</div>
+          </div>`;
+      }).join('')}
+    </div>`;
+
+  document.getElementById('wizNav').innerHTML = `
+    <button class="btn-secondary btn" onclick="calcCerrarWizard()">Cancelar</button>
+    <span class="spacer"></span>
+    <span class="info">Total seleccionado: <b id="wizTotalSel">${fmtMoney(totalSel)}</b></span>
+    <button class="btn" onclick="calcWizardPreparar()" ${wizEstado.seleccionados.size===0?'disabled':''}>Continuar →</button>`;
+}
+
+function calcWizardToggleConcepto(id){
+  const s = String(id);
+  if (wizEstado.seleccionados.has(s)) wizEstado.seleccionados.delete(s);
+  else wizEstado.seleccionados.add(s);
+  calcWizardPaso1();
+}
+function calcWizardToggleAll(marcar){
+  wizEstado.seleccionados.clear();
+  if (marcar) wizEstado.conceptosDisponibles.forEach(r => wizEstado.seleccionados.add(String(r.id)));
+  calcWizardPaso1();
+}
+
+/* Preparar resultados iniciales antes de ir al paso 2 */
+function calcWizardPreparar(){
+  if (wizEstado.seleccionados.size === 0) { alert('Selecciona al menos un concepto.'); return; }
+  const seleccionados = wizEstado.conceptosDisponibles.filter(r => wizEstado.seleccionados.has(String(r.id)));
+  wizEstado.resultados = seleccionados.map(r => {
     const regimen = calcRegimenPorCategoria(r.categoria);
-    const origen = calcOrigenesCache[r.id] || calcObtenerFechaOrigen(r);
-    const inpcOrigen = inpcCache[origen.periodo];
-    const mesesMora = calcMesesMora(origen.fecha);
-    const actualizacionAplicada = !!inpcOrigen;
-    const factorActualizacion = inpcOrigen ? (inpcHoy / inpcOrigen) : 1;
-    const montoActualizado = Number(r.monto) * factorActualizacion;
-    const tasa = TASA_RECARGO_MORA[regimen.key];
-    const recargos = montoActualizado * tasa * mesesMora;
-    const total = montoActualizado + recargos;
+    const origen = calcObtenerFechaOrigen(r);
     const cond = CONDONACION_INFO[regimen.key];
     return {
-      id: r.id, empresa: r.empresa, categoria: r.categoria, regimen: regimen.key, regimenLabel: regimen.label,
-      montoHistorico: Number(r.monto), origenPeriodo: origen.periodo, estimado: origen.estimado,
-      mesesMora, factorActualizacion, actualizacionAplicada, montoActualizado, recargos, total,
-      multaEstimada: 0, pctCondonacion: 0, maxPctCondonacion: cond.maxPct, notaCondonacion: cond.nota,
-      estimuloLif: false, montoConCondonacion: total
+      id: r.id, empresa: r.empresa, categoria: r.categoria,
+      regimen: regimen.key, regimenLabel: regimen.label,
+      montoHistorico: Number(r.monto),
+      origenPeriodo: origen.periodo, estimado: origen.estimado,
+      inpcOrigen: null, inpcHoy: null,
+      factorActualizacion: 1, actualizacionAplicada: false,
+      montoActualizado: Number(r.monto),
+      mesesMora: 0, recargos: 0, total: Number(r.monto),
+      // Elegibles (default: activados y máximos)
+      aplicarRecargos: true,
+      multaEstimada: 0, aplicarMulta: false,
+      pctCondonacion: 0, maxPctCondonacion: cond.maxPct, notaCondonacion: cond.nota,
+      estimuloLif: false,
+      montoConCondonacion: Number(r.monto)
     };
   });
-  calcRenderPreview();
+  // Recalcular cada uno con INPC actual + mora
+  wizEstado.resultados.forEach((_, i) => calcWizardRecalcular(i));
+  calcWizardIr(2);
 }
 
-function calcRenderPreview(){
-  const el = document.getElementById('calcPreview');
-  el.style.display = 'block';
-  el.innerHTML = `
-    <div class="excel-preview">
-      <h3>📊 Resultado — actualización, recargos y condonación</h3>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Empresa</th><th>Categoría</th><th>Histórico</th><th>Actualizado</th><th>Recargos</th><th>Meses mora</th>
-            <th>Multa estimada</th><th>% Condonación</th><th>Estímulo LIF 2026</th><th>Total con condonación</th><th>Desglose</th>
-          </tr></thead>
-          <tbody>
-            ${calcResultados.map((res,i)=>`
-              <tr>
-                <td>${res.empresa}${res.estimado?' <span title="Sin período mensual real; se usó 1-enero del año fiscal como aproximación" style="cursor:help">⚠️</span>':''}</td>
-                <td>${catT(res.categoria)}<div style="font-size:10px;color:var(--muted)">${res.regimenLabel}</div></td>
-                <td>${fmtMoney(res.montoHistorico)}</td>
-                <td>${fmtMoney(res.montoActualizado)}${!res.actualizacionAplicada?' <span title="Falta INPC de '+res.origenPeriodo+'; no se aplicó actualización" style="cursor:help">⚠️</span>':''}</td>
-                <td>${fmtMoney(res.recargos)}</td>
-                <td>${res.mesesMora}</td>
-                <td><input type="number" step="0.01" value="${res.multaEstimada}" style="width:100px" onchange="calcActualizarFila(${i}, 'multaEstimada', this.value)"></td>
-                <td>
-                  <input type="number" step="1" min="0" max="${Math.round(res.maxPctCondonacion*100)}" value="0" style="width:70px" ${res.maxPctCondonacion===0?'disabled':''} onchange="calcActualizarFila(${i}, 'pctCondonacion', this.value)">%
-                  <div style="font-size:10px;color:var(--muted);max-width:220px">${res.notaCondonacion}</div>
-                </td>
-                <td>${(res.regimen==='CFF'||res.regimen==='CFF_RETENIDO') ? `<input type="checkbox" onchange="calcActualizarFila(${i}, 'estimuloLif', this.checked)">` : '—'}</td>
-                <td><b>${fmtMoney(res.montoConCondonacion)}</b></td>
-                <td><button class="btn" style="padding:6px 10px;font-size:12px;white-space:nowrap" onclick="calcVerDetalle(${i})">🔍 Ver desglose</button></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+/* Recalcula el resultado i tomando en cuenta valores actuales de INPC, multas, condonación y LIF */
+function calcWizardRecalcular(i){
+  const res = wizEstado.resultados[i];
+  if (!res) return;
+  const mesActual = calcMesActualPeriodo();
+  const inpcOrig = wizEstado.inpcFaltantes[res.origenPeriodo] ?? inpcCache[res.origenPeriodo];
+  const inpcHoy  = wizEstado.inpcFaltantes[mesActual] ?? inpcCache[mesActual];
+  res.inpcOrigen = inpcOrig || null;
+  res.inpcHoy = inpcHoy || null;
+  res.actualizacionAplicada = !!(inpcOrig && inpcHoy);
+  res.factorActualizacion = res.actualizacionAplicada ? (inpcHoy / inpcOrig) : 1;
+  res.montoActualizado = res.montoHistorico * res.factorActualizacion;
+  res.mesesMora = calcMesesMora(res.origenPeriodo + '-01');
+  const tasa = TASA_RECARGO_MORA[res.regimen] || 0;
+  res.recargos = res.aplicarRecargos ? (res.montoActualizado * tasa * res.mesesMora) : 0;
+  const multa = res.aplicarMulta ? res.multaEstimada * (1 - res.pctCondonacion) : 0;
+  res.total = res.montoActualizado + res.recargos;
+  res.montoConCondonacion = res.estimuloLif
+    ? res.montoActualizado
+    : res.montoActualizado + res.recargos + multa;
+}
+
+/* ---------- PASO 2: Actualización INPC ---------- */
+function calcWizardPaso2(){
+  const body = document.getElementById('wizBody');
+  const mesActual = calcMesActualPeriodo();
+  // Detectar INPCs faltantes
+  const periodosNecesarios = new Set([mesActual]);
+  wizEstado.resultados.forEach(r => periodosNecesarios.add(r.origenPeriodo));
+  const faltantes = Array.from(periodosNecesarios).filter(p =>
+    !(p in inpcCache) && !(p in wizEstado.inpcFaltantes)
+  ).sort();
+
+  const inpcInputHTML = faltantes.length ? `
+    <div class="calc-warn-box" style="margin-bottom:14px">
+      <b>📐 Faltan INPCs en la tabla.</b> Captúralos aquí — se aplicarán al cálculo automáticamente. Al guardar se persistirán en Supabase.
+      <div class="grid-3" style="margin-top:10px">
+        ${faltantes.map(p => `
+          <div class="field"><label>INPC ${p}${p===mesActual?' (mes actual)':''}</label>
+            <input type="number" step="0.00001" placeholder="Ej. 132.37300"
+              onchange="calcWizardSetInpcFaltante('${p}', this.value)">
+          </div>
+        `).join('')}
       </div>
-      <div class="excel-warn" style="margin-top:10px">⚠️ La multa estimada y el % de condonación los captura el usuario/fiscalista — el sistema NO determina multas reales ni garantiza que la autoridad otorgue la condonación. El estímulo LIF 2026 requiere validar ingresos 2024 ≤ $300M MXN y crédito firme/consentido.</div>
-      <div class="excel-actions">
-        <button class="btn-secondary btn" onclick="document.getElementById('calcPreview').style.display='none'">Cerrar</button>
-        <button class="btn-danger" onclick="calcGuardarEnSupabase()">Guardar en Supabase</button>
+    </div>` : '';
+
+  body.innerHTML = `
+    <p style="margin:0 0 12px 0;font-size:13px;color:var(--muted)">
+      Actualización por inflación según <b>Art. 17-A CFF</b>. El sistema toma automáticamente el INPC del mes de origen y el del mes actual desde Supabase.
+      Puedes editar el <b>periodo de origen</b> si conoces la fecha real del vencimiento (por defecto se estima al 1° de enero del año fiscal).
+    </p>
+    ${inpcInputHTML}
+    <div id="wizPaso2Conceptos">
+      ${wizEstado.resultados.map((res, i) => calcWizardRenderConceptoINPC(res, i)).join('')}
+    </div>`;
+
+  document.getElementById('wizNav').innerHTML = `
+    <button class="btn-secondary btn" onclick="calcWizardIr(1)">← Atrás</button>
+    <span class="spacer"></span>
+    <button class="btn" onclick="calcWizardIr(3)">Continuar a recargos →</button>`;
+}
+
+function calcWizardRenderConceptoINPC(res, i){
+  const esFid = res.regimen === 'CFF_RETENIDO' || /Retenido/i.test(res.categoria) || /IMSS|INFONAVIT/.test(res.regimen);
+  return `
+    <div class="wiz-concept-card">
+      <div class="head">
+        <b>${res.empresa}</b>
+        <span class="badge">${catT(res.categoria)}</span>
+        <span class="badge">${res.regimenLabel}</span>
+        ${esFid ? '<span class="badge fid">⚠️ Fiduciario</span>' : ''}
+        ${res.estimado ? '<span class="badge" title="Periodo estimado al 1-ene del año fiscal">📍 Estimado</span>' : ''}
+        <span style="flex:1"></span>
+        <span style="font-weight:700">${fmtMoney(res.montoHistorico)}</span>
+      </div>
+      <div class="row">
+        <span class="lbl">Periodo de origen</span>
+        <input type="month" value="${res.origenPeriodo}" onchange="calcWizardSetPeriodoOrigen(${i}, this.value)">
+      </div>
+      <div class="row">
+        <span class="lbl">INPC origen (${res.origenPeriodo})</span>
+        <span class="val">${res.inpcOrigen ? res.inpcOrigen.toFixed(5) : '<span style="color:var(--red)">Falta</span>'}</span>
+      </div>
+      <div class="row">
+        <span class="lbl">INPC actual (${calcMesActualPeriodo()})</span>
+        <span class="val">${res.inpcHoy ? res.inpcHoy.toFixed(5) : '<span style="color:var(--red)">Falta</span>'}</span>
+      </div>
+      ${res.actualizacionAplicada ? `
+        <div class="row calc">
+          <span class="lbl">Factor de actualización</span>
+          <span class="val">× ${res.factorActualizacion.toFixed(6)}</span>
+        </div>
+        <div class="row calc">
+          <span class="lbl">Monto actualizado</span>
+          <span class="val big">${fmtMoney(res.montoActualizado)}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);padding-top:6px;border-top:1px dashed var(--border);margin-top:6px">
+          Incremento por inflación: <b>${fmtMoney(res.montoActualizado - res.montoHistorico)}</b> (${((res.factorActualizacion-1)*100).toFixed(2)}%)
+        </div>
+      ` : `<div class="wiz-inpc-input">⚠️ Sin INPC de origen o actual — no se aplicó actualización. Captura los valores arriba.</div>`}
+    </div>`;
+}
+
+function calcWizardSetPeriodoOrigen(i, valor){
+  if (!valor) return;
+  wizEstado.resultados[i].origenPeriodo = valor;
+  wizEstado.resultados[i].estimado = false;
+  calcWizardRecalcular(i);
+  calcWizardPaso2();
+}
+function calcWizardSetInpcFaltante(periodo, valor){
+  const v = parseFloat(valor);
+  if (isNaN(v) || v <= 0) { delete wizEstado.inpcFaltantes[periodo]; return; }
+  wizEstado.inpcFaltantes[periodo] = v;
+  wizEstado.resultados.forEach((_, i) => calcWizardRecalcular(i));
+  calcWizardPaso2();
+}
+
+/* ---------- PASO 3: Recargos + Multas + Condonación + LIF ---------- */
+function calcWizardPaso3(){
+  const body = document.getElementById('wizBody');
+  body.innerHTML = `
+    <p style="margin:0 0 12px 0;font-size:13px;color:var(--muted)">
+      Todo lo aplicable está <b>pre-calculado y activado</b> por defecto. Desactiva o ajusta lo que no aplique a tu caso.
+      Las <b>tasas de recargos</b> vienen automáticamente del régimen (Art. 21 CFF · Art. 40-A LSS · Ley INFONAVIT · CF BC).
+    </p>
+    <div id="wizPaso3Conceptos">
+      ${wizEstado.resultados.map((res, i) => calcWizardRenderConceptoRecargos(res, i)).join('')}
+    </div>`;
+
+  document.getElementById('wizNav').innerHTML = `
+    <button class="btn-secondary btn" onclick="calcWizardIr(2)">← Atrás</button>
+    <span class="spacer"></span>
+    <button class="btn" onclick="calcWizardIr(4)">Ver resumen →</button>`;
+}
+
+function calcWizardRenderConceptoRecargos(res, i){
+  const tasa = TASA_RECARGO_MORA[res.regimen] || 0;
+  const tasaPct = (tasa * 100).toFixed(2);
+  const esCFF = (res.regimen === 'CFF' || res.regimen === 'CFF_RETENIDO');
+  const maxCondPct = Math.round(res.maxPctCondonacion * 100);
+  return `
+    <div class="wiz-concept-card">
+      <div class="head">
+        <b>${res.empresa}</b>
+        <span class="badge">${catT(res.categoria)}</span>
+        <span class="badge">${res.regimenLabel}</span>
+        <span style="flex:1"></span>
+        <span style="font-weight:600;font-size:13px">${fmtMoney(res.montoActualizado)}</span>
+      </div>
+
+      <!-- Recargos -->
+      <div class="row">
+        <span class="lbl">Meses de mora (calculados)</span>
+        <span class="val">${res.mesesMora} · tasa ${tasaPct}%/mes</span>
+      </div>
+      <div class="row">
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" ${res.aplicarRecargos?'checked':''} onchange="calcWizardSetCampo(${i}, 'aplicarRecargos', this.checked)">
+          <span class="lbl" style="color:var(--text);font-weight:500">Aplicar recargos por mora</span>
+        </label>
+        <span class="val ${res.aplicarRecargos?'':'val'}" style="${res.aplicarRecargos?'color:var(--accent,#0057B8);font-weight:600':'color:var(--muted)'}">${fmtMoney(res.recargos)}</span>
+      </div>
+
+      <!-- Multa + Condonación -->
+      <div class="row" style="align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1">
+          <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" ${res.aplicarMulta?'checked':''} onchange="calcWizardSetCampo(${i}, 'aplicarMulta', this.checked)">
+            <span class="lbl" style="color:var(--text);font-weight:500">Aplicar multa</span>
+          </label>
+          ${res.aplicarMulta ? `
+            <div style="display:flex;gap:8px;align-items:center;padding-left:22px">
+              <span style="font-size:11px;color:var(--muted)">Monto:</span>
+              <input type="number" step="0.01" value="${res.multaEstimada}" style="width:120px"
+                onchange="calcWizardSetCampo(${i}, 'multaEstimada', this.value)">
+            </div>
+            ${maxCondPct > 0 ? `
+              <div class="cond-slider" style="padding-left:22px">
+                <span style="font-size:11px;color:var(--muted)">Condonación:</span>
+                <input type="range" min="0" max="${maxCondPct}" value="${Math.round(res.pctCondonacion*100)}"
+                  oninput="calcWizardSetCampo(${i}, 'pctCondonacion', this.value); document.getElementById('wizPct${i}').textContent = this.value + '%'">
+                <span class="pct" id="wizPct${i}">${Math.round(res.pctCondonacion*100)}%</span>
+                <span style="font-size:10.5px;color:var(--muted)">(máx. ${maxCondPct}%)</span>
+              </div>
+              <div style="font-size:10.5px;color:var(--muted);padding-left:22px;font-style:italic">${res.notaCondonacion}</div>
+            ` : `
+              <div style="font-size:10.5px;color:var(--muted);padding-left:22px;font-style:italic">
+                ⚠️ No procede condonación en este régimen. ${res.notaCondonacion}
+              </div>
+            `}
+          ` : ''}
+        </div>
+        <span class="val" style="${res.aplicarMulta?'color:var(--accent,#0057B8);font-weight:600':'color:var(--muted)'}">
+          ${res.aplicarMulta ? fmtMoney(res.multaEstimada * (1 - res.pctCondonacion)) : '—'}
+        </span>
+      </div>
+
+      <!-- Estímulo LIF 2026 -->
+      ${esCFF ? `
+        <div class="toggles">
+          <label>
+            <input type="checkbox" ${res.estimuloLif?'checked':''} onchange="calcWizardSetCampo(${i}, 'estimuloLif', this.checked)">
+            <span>⭐ Estímulo LIF 2026 <span style="font-size:10.5px;color:var(--muted)">(100% multas + recargos, si ingresos 2024 ≤ $300M y crédito firme)</span></span>
+          </label>
+        </div>
+      ` : ''}
+
+      <div class="row" style="border-top:2px solid var(--border);padding-top:8px;margin-top:8px">
+        <span class="lbl" style="font-size:13px;font-weight:600;color:var(--text)">Total del concepto</span>
+        <span class="val big" style="color:var(--accent,#0057B8)">${fmtMoney(res.montoConCondonacion)}</span>
       </div>
     </div>`;
 }
 
-function calcActualizarFila(i, campo, valor){
-  const res = calcResultados[i];
-  if (campo === 'multaEstimada') res.multaEstimada = parseFloat(valor) || 0;
-  if (campo === 'pctCondonacion') res.pctCondonacion = Math.min(Math.max(parseFloat(valor)||0, 0), res.maxPctCondonacion*100) / 100;
-  if (campo === 'estimuloLif') res.estimuloLif = !!valor;
-
-  res.montoConCondonacion = res.estimuloLif
-    ? res.montoActualizado /* estímulo transitorio LIF 2026: 100% multas+recargos+gastos ejecución */
-    : res.total + res.multaEstimada * (1 - res.pctCondonacion);
-  calcRenderPreview();
+function calcWizardSetCampo(i, campo, valor){
+  const res = wizEstado.resultados[i];
+  if (!res) return;
+  if (campo === 'aplicarRecargos') res.aplicarRecargos = !!valor;
+  else if (campo === 'aplicarMulta') { res.aplicarMulta = !!valor; if (!valor) { res.multaEstimada = 0; res.pctCondonacion = 0; } }
+  else if (campo === 'multaEstimada') res.multaEstimada = parseFloat(valor) || 0;
+  else if (campo === 'pctCondonacion') res.pctCondonacion = Math.min(Math.max(parseFloat(valor)||0, 0), res.maxPctCondonacion*100) / 100;
+  else if (campo === 'estimuloLif') res.estimuloLif = !!valor;
+  calcWizardRecalcular(i);
+  // Re-render selectivo: solo repaint total, evita recrear inputs (perdería focus)
+  if (campo === 'aplicarRecargos' || campo === 'aplicarMulta' || campo === 'estimuloLif') {
+    calcWizardPaso3();
+  } else {
+    // Solo actualizar totales visibles
+    calcWizardPaso3();
+  }
 }
+
+/* ---------- PASO 4: Resumen final ---------- */
+function calcWizardPaso4(){
+  const body = document.getElementById('wizBody');
+  const totales = wizEstado.resultados.reduce((acc, res) => {
+    acc.historico += res.montoHistorico;
+    acc.actualizado += res.montoActualizado;
+    acc.recargos += res.recargos;
+    acc.multaNeta += res.aplicarMulta ? res.multaEstimada * (1 - res.pctCondonacion) : 0;
+    acc.total += res.montoConCondonacion;
+    return acc;
+  }, { historico:0, actualizado:0, recargos:0, multaNeta:0, total:0 });
+
+  const ahorroLif = wizEstado.resultados
+    .filter(r => r.estimuloLif)
+    .reduce((s, r) => s + r.recargos + (r.aplicarMulta ? r.multaEstimada * (1 - r.pctCondonacion) : 0), 0);
+
+  // Guardar en calcResultados para que calcVerDetalle pueda leer
+  calcResultados = wizEstado.resultados.slice();
+
+  body.innerHTML = `
+    <p style="margin:0 0 12px 0;font-size:13px;color:var(--muted)">Resumen consolidado del cálculo. Puedes ver el desglose legal completo de cada concepto o guardar los montos actualizados en Supabase.</p>
+    <div class="table-wrap">
+      <table class="wiz-summary-table">
+        <thead>
+          <tr>
+            <th>Concepto</th>
+            <th class="txt-right">Histórico</th>
+            <th class="txt-right">Actualizado</th>
+            <th class="txt-right">Recargos</th>
+            <th class="txt-right">Multa neta</th>
+            <th class="txt-right">Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${wizEstado.resultados.map((res, i) => `
+            <tr>
+              <td>
+                <b>${res.empresa}</b> · ${catT(res.categoria)}
+                <div style="font-size:10.5px;color:var(--muted)">${res.regimenLabel}${res.estimuloLif?' · ⭐ LIF 2026':''}</div>
+              </td>
+              <td class="txt-right">${fmtMoney(res.montoHistorico)}</td>
+              <td class="txt-right">${fmtMoney(res.montoActualizado)}</td>
+              <td class="txt-right">${fmtMoney(res.recargos)}</td>
+              <td class="txt-right">${res.aplicarMulta ? fmtMoney(res.multaEstimada * (1 - res.pctCondonacion)) : '—'}</td>
+              <td class="txt-right"><b>${fmtMoney(res.montoConCondonacion)}</b></td>
+              <td class="txt-right"><button class="btn-secondary btn" style="padding:5px 10px;font-size:11.5px" onclick="calcVerDetalle(${i})">🔍 Desglose</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td>TOTAL (${wizEstado.resultados.length} concepto${wizEstado.resultados.length===1?'':'s'})</td>
+            <td class="txt-right">${fmtMoney(totales.historico)}</td>
+            <td class="txt-right">${fmtMoney(totales.actualizado)}</td>
+            <td class="txt-right">${fmtMoney(totales.recargos)}</td>
+            <td class="txt-right">${fmtMoney(totales.multaNeta)}</td>
+            <td class="txt-right" style="color:var(--accent,#0057B8);font-size:14px">${fmtMoney(totales.total)}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="wiz-total-card">
+      <div class="lbl">Total a pagar (con actualización, recargos y condonaciones aplicadas)</div>
+      <div class="amount">${fmtMoney(totales.total)}</div>
+      <div class="breakdown">
+        Incremento vs. histórico: <b>${fmtMoney(totales.total - totales.historico)}</b> (${totales.historico>0?((totales.total/totales.historico - 1)*100).toFixed(1):'0'}%)
+        ${ahorroLif > 0 ? ` · Ahorro por estímulo LIF 2026: <b style="color:#22c55e">${fmtMoney(ahorroLif)}</b>` : ''}
+      </div>
+    </div>
+    <div class="excel-warn" style="margin-top:12px">
+      ⚠️ Este cálculo es una herramienta de apoyo interno. La determinación oficial y cualquier trámite de reducción/condonación debe validarse con el fiscalista de MI Global antes de pagar.
+    </div>`;
+
+  const hayInpcNuevo = Object.keys(wizEstado.inpcFaltantes).length > 0;
+  document.getElementById('wizNav').innerHTML = `
+    <button class="btn-secondary btn" onclick="calcWizardIr(3)">← Atrás</button>
+    <span class="spacer"></span>
+    ${hayInpcNuevo ? `<span class="info">📐 ${Object.keys(wizEstado.inpcFaltantes).length} INPC nuevo(s) se guardarán en Supabase</span>` : ''}
+    <button class="btn-secondary btn" onclick="calcCerrarWizard()">Cerrar</button>
+    <button class="btn-danger" onclick="calcWizardGuardar()">💾 Guardar en Supabase</button>`;
+}
+
+async function calcWizardGuardar(){
+  // Primero persistir INPCs capturados
+  const inpcRegs = Object.entries(wizEstado.inpcFaltantes).map(([periodo, valor]) => ({ periodo, valor }));
+  if (inpcRegs.length) {
+    try { await inpcGuardarMasivo(inpcRegs); } catch(e){ console.warn('Error guardando INPCs:', e); }
+  }
+  // Luego persistir resultados (montos actualizados en fiscal_cxc_impuestos)
+  await calcGuardarEnSupabase();
+  calcCerrarWizard();
+  calcRenderKPIs();
+}
+
 
 /* ══════════════════════════════════════════
    Modal de desglose detallado del cálculo fiscal
@@ -1531,9 +1921,11 @@ function calcCerrarDetalle(ev){
 
 // Cerrar modal con ESC
 document.addEventListener('keydown', function(e){
-  if (e.key === 'Escape' && document.getElementById('calcDetalleModal') && document.getElementById('calcDetalleModal').style.display === 'flex') {
-    calcCerrarDetalle();
-  }
+  if (e.key !== 'Escape') return;
+  const detalleModal = document.getElementById('calcDetalleModal');
+  const wizardModal = document.getElementById('calcWizardModal');
+  if (detalleModal && detalleModal.style.display === 'flex') { calcCerrarDetalle(); return; }
+  if (wizardModal && wizardModal.style.display === 'flex') { calcCerrarWizard(); return; }
 });
 
 async function calcGuardarEnSupabase(){
@@ -1559,7 +1951,6 @@ async function calcGuardarEnSupabase(){
   } else {
     alert(`✅ Actualizado en Supabase: ${calcResultados.length} concepto(s).`);
   }
-  document.getElementById('calcPreview').style.display = 'none';
   await cargarCxc();
 }
 
