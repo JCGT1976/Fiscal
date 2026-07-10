@@ -480,6 +480,54 @@ tr:last-child td{border-bottom:none}
   font-size:11px;
 }
 
+/* Paso 1: tarjetas KPI seleccionables (mismo lenguaje visual que .kpi-mini) */
+.wiz-select-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(198px,1fr));
+  gap:10px;max-height:46vh;overflow-y:auto;padding:4px 2px;
+}
+.wiz-concept-kpi{
+  position:relative;overflow:hidden;
+  background:var(--bg);border:1px solid var(--border);border-radius:12px;
+  padding:12px 12px 10px;cursor:pointer;transition:all .18s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;gap:0;min-height:104px;
+}
+.wiz-concept-kpi::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#003876,#0057B8);
+  opacity:0;transition:opacity .18s;
+}
+.wiz-concept-kpi.selected::before{opacity:1}
+.wiz-concept-kpi.selected{border-color:rgba(0,87,184,.35);box-shadow:0 4px 14px rgba(0,87,184,.1)}
+.wiz-concept-kpi:not(.selected){opacity:.5}
+.wiz-concept-kpi:not(.selected):hover{opacity:.8}
+.wiz-concept-kpi:hover{transform:translateY(-2px)}
+.wiz-concept-kpi .kpi-icon{font-size:14px;margin-bottom:6px}
+.wiz-concept-kpi .kpi-check{
+  position:absolute;top:10px;right:10px;width:17px;height:17px;border-radius:6px;
+  border:1.5px solid var(--border);background:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#fff;
+  transition:all .18s;flex-shrink:0;
+}
+.wiz-concept-kpi.selected .kpi-check{background:linear-gradient(135deg,#003876,#0057B8);border-color:transparent}
+.wiz-concept-kpi .kpi-label{
+  font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;
+  font-weight:700;margin-bottom:3px;padding-right:20px;
+}
+.wiz-concept-kpi .kpi-title{
+  font-size:12.5px;font-weight:600;color:var(--text);line-height:1.25;
+  margin-bottom:5px;padding-right:20px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.wiz-concept-kpi .kpi-fid{
+  display:inline-flex;align-items:center;gap:3px;font-size:9px;padding:2px 6px;
+  border-radius:8px;background:rgba(225,29,72,.1);color:var(--red);font-weight:600;
+  border:1px solid rgba(225,29,72,.15);align-self:flex-start;margin-bottom:5px;
+}
+.wiz-concept-kpi .kpi-monto{
+  font-size:16px;font-weight:700;color:var(--text);margin-top:auto;
+  letter-spacing:-.3px;font-variant-numeric:tabular-nums;
+}
+
 /* Paso 4: lista compacta pro */
 .wiz-summary-list{display:flex;flex-direction:column;gap:8px}
 .wiz-summary-item{
@@ -824,7 +872,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.09.4';
+const APP_VERSION = '2026.07.09.5';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -1359,6 +1407,7 @@ const REGIMEN_POR_CATEGORIA = {
 function calcRegimenPorCategoria(cat){
   return REGIMEN_POR_CATEGORIA[cat] || { key:'CFF', label:'CFF (default)' };
 }
+const ICONO_REGIMEN = { CFF:'🧾', CFF_RETENIDO:'🔒', IMSS:'🏥', INFONAVIT:'🏠', BC_ISN:'🏛️' };
 
 /* Tasas mensuales de recargos por mora, vigentes 2026 — verificar
    anualmente (LIF federal / Ley de Ingresos del Estado de BC). */
@@ -1606,7 +1655,7 @@ function calcWizardPaso1(){
       <span style="flex:1"></span>
       <span class="counter">${wizEstado.seleccionados.size}/${items.length}</span>
     </div>
-    <div class="wiz-select-list">
+    <div class="wiz-select-grid">
       ${items.map(r => {
         const marcado = wizEstado.seleccionados.has(String(r.id));
         const regimen = calcRegimenPorCategoria(r.categoria);
@@ -1615,17 +1664,17 @@ function calcWizardPaso1(){
                       : calcAgrupacion === 'categoria' ? r.empresa
                       : `${r.empresa} · ${catT(r.categoria)}`;
         const esFid = r.fiduciario === true || /Retenido|IMSS|INFONAVIT/i.test(r.categoria);
+        const icono = ICONO_REGIMEN[regimen.key] || '📄';
         return `
-          <div class="wiz-select-row ${marcado?'selected':''}" onclick="calcWizardToggleConcepto('${r.id}')">
-            <input type="checkbox" ${marcado?'checked':''} onclick="event.stopPropagation();calcWizardToggleConcepto('${r.id}')">
-            <div class="info">
-              <div class="main">
-                <span>${detalle}</span>
-                ${esFid ? '<span class="fid-badge">⚠ Fiduciario</span>' : ''}
-              </div>
-              <div class="sub">${regimen.label} · Vigencia ${vigencia}</div>
-            </div>
-            <div class="monto">${fmtMoney(r.monto)}</div>
+          <div class="wiz-concept-kpi ${marcado?'selected':''}" role="checkbox" aria-checked="${marcado}" tabindex="0"
+               onclick="calcWizardToggleConcepto('${r.id}')"
+               onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();calcWizardToggleConcepto('${r.id}')}">
+            <span class="kpi-check">${marcado?'✓':''}</span>
+            <div class="kpi-icon">${icono}</div>
+            <div class="kpi-label">${regimen.label} · ${vigencia}</div>
+            <div class="kpi-title">${detalle}</div>
+            ${esFid ? '<span class="kpi-fid">⚠ Fiduciario</span>' : ''}
+            <div class="kpi-monto">${fmtMoney(r.monto)}</div>
           </div>`;
       }).join('')}
     </div>`;
