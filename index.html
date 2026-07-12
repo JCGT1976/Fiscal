@@ -920,7 +920,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.12.1';
+const APP_VERSION = '2026.07.12.2';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -939,9 +939,11 @@ let currentUserId = null;
 let currentUser = null; // objeto completo de la tabla 'usuarios' (incluye .rol) — usado por requirePermCarga()
 
 async function bootstrapAuth() {
+  console.log('[fiscal] bootstrapAuth iniciado, APP_VERSION=' + APP_VERSION);
   try {
     const { data: { session }, error } = await sb.auth.getSession();
     if (error || !session || !session.user) {
+      console.warn('[fiscal] Sin sesión válida, redirigiendo al portal');
       window.location.replace(PORTAL_URL);
       return;
     }
@@ -951,22 +953,43 @@ async function bootstrapAuth() {
       const { data: user } = await sb.from('usuarios').select('*').eq('auth_id', session.user.id).maybeSingle();
       if (user) {
         currentUser = user;
-        document.getElementById('userName').textContent = user.nombre || user.username || '—';
-        document.getElementById('userRole').textContent = user.rol || '—';
-        document.getElementById('userAvatar').textContent = getInitials(user.nombre || user.username || '?');
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        set('userName',   user.nombre || user.username || '—');
+        set('userRole',   user.rol || '—');
+        set('userAvatar', getInitials(user.nombre || user.username || '?'));
       }
     } catch (e) { console.warn('No se pudo cargar el usuario:', e); }
 
-    document.getElementById('bootLoader').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+    // Mostrar la app defensivamente (no reventar si algún nodo no existe)
+    const bootLoader = document.getElementById('bootLoader');
+    if (bootLoader) bootLoader.style.display = 'none';
+    const appEl = document.getElementById('app');
+    if (appEl) appEl.style.display = 'block';
 
     // Aplicar el idioma persistido a todo el chrome de la app (ES por defecto).
     try { applyI18n(); } catch(e) { console.warn('applyI18n:', e); }
 
-    await cargarTodo();
+    // Carga inicial de datos — si falla, NO redirigir al portal (evita loop portal↔fiscal).
+    // Cada cargar* ya tiene su propio manejo interno de errores; envolvemos por seguridad.
+    try {
+      await cargarTodo();
+    } catch (e) {
+      console.error('[fiscal] cargarTodo falló pero seguimos en la app:', e);
+      try { setSyncError && setSyncError('Error de carga inicial — revisa consola'); } catch(_) {}
+    }
+    console.log('[fiscal] bootstrapAuth completado OK');
   } catch (e) {
-    console.error('bootstrapAuth error:', e);
-    window.location.replace(PORTAL_URL);
+    console.error('bootstrapAuth error crítico:', e);
+    // Guard contra loop: solo redirigir al portal si NO acabamos de venir de él
+    // (evita ping-pong Portal↔Fiscal cuando algo del cliente está fallando)
+    const cameFromPortal = document.referrer && document.referrer.includes('/SIF-Portal');
+    if (cameFromPortal) {
+      console.warn('[fiscal] Error crítico pero venimos del portal — NO redirigimos para evitar loop');
+      const bootLoader = document.getElementById('bootLoader');
+      if (bootLoader) bootLoader.innerHTML = '<div style="padding:20px;color:#c00;text-align:center"><h3>Error al inicializar Fiscal</h3><p style="margin-top:10px;font-size:13px">Revisa la consola (F12). Si el problema persiste, cierra la pestaña y vuelve a abrir.</p><button onclick="window.location.replace(PORTAL_URL)" style="margin-top:16px;padding:8px 16px;cursor:pointer">Volver al Portal</button></div>';
+    } else {
+      window.location.replace(PORTAL_URL);
+    }
   }
 }
 function getInitials(nom){
@@ -2902,9 +2925,29 @@ function upExtraerVersion(html) {
 }
 
 /* Chequea si hay versión nueva en el servidor. Si la hay, muestra banner.
-   Cache-busting: query string único + header no-store. */
+   Cache-busting: query string único + header no-store.
+   Anti-loop guard: si ya se aplicaron 2+ updates en esta sesión, no revisar más
+   (protege contra loops de recarga por cache CDN que sirve versión vieja tras update). */
+const UPDATE_COUNT_KEY = 'sif_fiscal_update_count_session';
+const UPDATE_LAST_APPLY_KEY = 'sif_fiscal_last_update_apply_ts';
+
+function upContadorUpdates() {
+  return Number(sessionStorage.getItem(UPDATE_COUNT_KEY) || 0);
+}
+function upTsUltimoUpdate() {
+  return Number(sessionStorage.getItem(UPDATE_LAST_APPLY_KEY) || 0);
+}
+
 async function checkForUpdates() {
   try {
+    // Guard 1: si ya se aplicaron 2 updates en esta sesión, no revisar más
+    if (upContadorUpdates() >= 2) {
+      console.warn('[updater] Anti-loop: 2 updates ya aplicados en esta sesión. Check desactivado. Si sigues viendo la versión vieja, haz "Clear Site Data" + Cmd+Q y reabre.');
+      return;
+    }
+    // Guard 2: período de gracia de 60s tras aplicar un update (dar tiempo al CDN a propagar)
+    if (Date.now() - upTsUltimoUpdate() < 60000) return;
+
     const url = location.pathname.replace(/[^/]+$/, '') + 'index.html?_=' + Date.now();
     const res = await fetch(url, { cache: 'no-store', headers: { 'Cache-Control':'no-cache' } });
     if (!res.ok) return;
@@ -2939,8 +2982,19 @@ function showUpdateBanner(remotaVer) {
   }, 1000);
 }
 
-/* Aplica la actualización: limpia todo lo cacheable y recarga forzado */
+/* Aplica la actualización: limpia todo lo cacheable y recarga forzado.
+   Anti-loop: incrementa contador de sesión; si excede el tope, no recarga. */
 async function applyUpdate() {
+  const count = upContadorUpdates();
+  if (count >= 2) {
+    console.warn('[updater] Anti-loop: ya se aplicaron', count, 'updates en esta sesión. Cancelando reload. Si el problema persiste, haz "Clear Site Data" manual.');
+    _upBannerVisible = false;
+    const el = document.getElementById('updateBanner');
+    if (el) el.classList.remove('visible');
+    return;
+  }
+  sessionStorage.setItem(UPDATE_COUNT_KEY, String(count + 1));
+  sessionStorage.setItem(UPDATE_LAST_APPLY_KEY, String(Date.now()));
   try { await upBarrerResiduos(); } catch(e) {}
   try {
     // Reemplaza URL con timestamp para que ni el navegador ni el CDN sirvan el HTML viejo
