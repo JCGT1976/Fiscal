@@ -15,11 +15,13 @@
 :root{
   --bg:#0f1923; --surface:#161f2c; --surface2:#1d2a3a; --border:#243044;
   --accent:#00c2ff; --accent2:#0077b6; --green:#00e5a0; --red:#ff4d6d; --yellow:#ffd166;
+  --orange:#ff8f3f; --critical:#8b0000; --blue:#38bdf8;
   --text:#e8f0f8; --muted:#7a95b0; --radius:12px; --font:'Inter',system-ui,sans-serif;
 }
 [data-theme="light"]{
   --bg:#e6ecf3; --surface:#f7fafd; --surface2:#ebf1f8; --border:#c9d3e0;
   --accent:#0284c7; --accent2:#0369a1; --green:#059669; --red:#e11d48; --yellow:#d97706;
+  --orange:#ea580c; --critical:#7f1d1d; --blue:#0284c7;
   --text:#1e293b; --muted:#64748b;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -68,6 +70,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 /* KPI cards */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
 @media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr}}
+/* Grid de 6 zonas de riesgo (CxC Fiscal): 6 cols desktop → 3 cols tablet → 2 cols mobile */
+.kpi-grid-6{grid-template-columns:repeat(6,1fr) !important}
+@media(max-width:1100px){.kpi-grid-6{grid-template-columns:repeat(3,1fr) !important}}
+@media(max-width:640px){.kpi-grid-6{grid-template-columns:1fr 1fr !important}}
 .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
 .kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
 .kpi-value{font-size:22px;font-weight:700}
@@ -109,6 +115,10 @@ tr:last-child td{border-bottom:none}
 .badge-green{background:rgba(0,229,160,.15);color:var(--green)}
 .badge-red{background:rgba(255,77,109,.15);color:var(--red)}
 .badge-yellow{background:rgba(255,209,102,.15);color:var(--yellow)}
+.badge-orange{background:rgba(255,143,63,.15);color:var(--orange)}
+.badge-critical{background:rgba(139,0,0,.18);color:#fff;background:linear-gradient(135deg,rgba(139,0,0,.9),rgba(60,0,0,.9));font-weight:700}
+[data-theme="light"] .badge-critical{background:linear-gradient(135deg,#7f1d1d,#450a0a);color:#fff}
+.badge-blue{background:rgba(56,189,248,.15);color:var(--blue)}
 .badge-muted{background:rgba(122,149,176,.15);color:var(--muted)}
 
 .note{font-size:11.5px;color:var(--muted);background:var(--surface2);border:1px dashed var(--border);
@@ -717,38 +727,66 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 
-  <!-- ===================== CxC FISCAL (semáforo de riesgo) ===================== -->
+  <!-- ===================== CxC FISCAL (riesgo por antigüedad) ===================== -->
   <div class="view" id="view-cxc">
-    <div class="kpi-grid">
+    <!-- Banner de retenciones en riesgo penal (destacado) -->
+    <div id="cxcPenalBanner" style="display:none;background:linear-gradient(135deg,rgba(139,0,0,.12),rgba(225,29,72,.08));border:1px solid var(--red);border-left:4px solid var(--critical);border-radius:var(--radius);padding:14px 18px;margin-bottom:18px">
+      <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="font-size:22px;line-height:1">⚠️</div>
+        <div style="flex:1;min-width:240px">
+          <div style="font-weight:700;color:var(--critical);font-size:13.5px;letter-spacing:.02em" data-i18n="cxc.penal.title">RETENCIONES VENCIDAS — RIESGO PENAL</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-top:2px" data-i18n="cxc.penal.sub">Retenciones a empleados/terceros no enteradas · Arts. 108-109 CFF (defraudación fiscal equiparada)</div>
+        </div>
+        <div style="text-align:right">
+          <div id="kpiCxcPenal" style="font-size:22px;font-weight:800;color:var(--critical)">$0</div>
+          <div id="kpiCxcPenalSub" style="font-size:11px;color:var(--muted)">0 conceptos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid kpi-grid-6">
       <div class="kpi-card">
         <div class="kpi-label" data-i18n="cxc.kpi.total">Cartera fiscal total</div>
         <div class="kpi-value" id="kpiCxcTotal">$0</div>
-        <div class="kpi-sub" data-i18n="cxc.kpi.total.sub">Histórico 2023–2026 · cédula corporativa</div>
+        <div class="kpi-sub" id="kpiCxcTotalSub">0 conceptos</div>
+      </div>
+      <div class="kpi-card" style="border-color:var(--critical);border-width:2px">
+        <div class="kpi-label" data-i18n="cxc.kpi.embargo">⚫ Zona embargo · &gt;365 días</div>
+        <div class="kpi-value" id="kpiCxcEmbargo" style="color:var(--critical)">$0</div>
+        <div class="kpi-sub" id="kpiCxcEmbargoSub">0 conceptos · PAE activable</div>
       </div>
       <div class="kpi-card" style="border-color:var(--red)">
-        <div class="kpi-label" data-i18n="cxc.kpi.rojo">🔴 En riesgo (rojo)</div>
-        <div class="kpi-value" id="kpiCxcRojo" style="color:var(--red)">$0</div>
-        <div class="kpi-sub" id="kpiCxcRojoSub">0 conceptos</div>
+        <div class="kpi-label" data-i18n="cxc.kpi.csd">🔴 Restricción CSD · 181-365d</div>
+        <div class="kpi-value" id="kpiCxcCsd" style="color:var(--red)">$0</div>
+        <div class="kpi-sub" id="kpiCxcCsdSub">0 conceptos · Art. 17-H Bis</div>
+      </div>
+      <div class="kpi-card" style="border-color:var(--orange)">
+        <div class="kpi-label" data-i18n="cxc.kpi.requerimiento">🟠 Requerimiento · 91-180d</div>
+        <div class="kpi-value" id="kpiCxcReq" style="color:var(--orange)">$0</div>
+        <div class="kpi-sub" id="kpiCxcReqSub">0 conceptos · Art. 41 CFF</div>
       </div>
       <div class="kpi-card" style="border-color:var(--yellow)">
-        <div class="kpi-label" data-i18n="cxc.kpi.amarillo">🟡 En plan de pago / negociable</div>
-        <div class="kpi-value" id="kpiCxcAmarillo" style="color:var(--yellow)">$0</div>
-        <div class="kpi-sub" id="kpiCxcAmarilloSub">0 conceptos</div>
+        <div class="kpi-label" data-i18n="cxc.kpi.vigilancia">🟡 Vigilancia · 31-90d</div>
+        <div class="kpi-value" id="kpiCxcVig" style="color:var(--yellow)">$0</div>
+        <div class="kpi-sub" id="kpiCxcVigSub">0 conceptos · detección SAT</div>
       </div>
-      <div class="kpi-card" style="border-color:var(--green)">
-        <div class="kpi-label" data-i18n="cxc.kpi.verde">🟢 Pagado</div>
-        <div class="kpi-value" id="kpiCxcVerde" style="color:var(--green)">$0</div>
-        <div class="kpi-sub" id="kpiCxcVerdeSub">0 conceptos</div>
+      <div class="kpi-card" style="border-color:var(--blue)">
+        <div class="kpi-label" data-i18n="cxc.kpi.ventana">🔵 Ventana espontánea · ≤30d</div>
+        <div class="kpi-value" id="kpiCxcVentana" style="color:var(--blue)">$0</div>
+        <div class="kpi-sub" id="kpiCxcVentanaSub">0 conceptos · Art. 73 CFF</div>
       </div>
     </div>
 
     <div class="card">
-      <h2 data-i18n="cxc.title">Cuentas por cobrar de impuestos — por empresa / tipo de impuesto</h2>
+      <h2 data-i18n="cxc.title">Cuentas por cobrar de impuestos — riesgo por antigüedad del adeudo</h2>
       <div class="desc">
-        Semáforo basado en la estrategia de prioridad de pagos del corporativo:
-        <b style="color:var(--red)">rojo</b> = obligaciones fiduciarias (retenciones a empleados, IMSS) pendientes o cualquier concepto pendiente &gt; $2,000,000 — riesgo penal/laboral, cero tolerancia;
-        <b style="color:var(--yellow)">amarillo</b> = pendiente no fiduciario y negociable con el SAT, o ya dentro de un plan de pago activo;
-        <b style="color:var(--green)">verde</b> = liquidado. Cifras extraídas de la cédula fiscal corporativa (hoja "Resumen").
+        Zonas de riesgo calculadas por días de antigüedad desde la fecha de exigibilidad (31/mar del año siguiente a <code>anio_inicio</code>), con fundamento en el marco fiscal mexicano:
+        <b style="color:var(--critical)">⚫ Embargo</b> = &gt;365 días, procede embargo precautorio y PAE (arts. 145, 151, 156-Bis CFF);
+        <b style="color:var(--red)">🔴 Restricción CSD</b> = 181-365 días, riesgo de restricción temporal de sellos digitales (art. 17-H Bis CFF);
+        <b style="color:var(--orange)">🟠 Requerimiento</b> = 91-180 días, notificación de requerimiento probable (art. 41 CFF);
+        <b style="color:var(--yellow)">🟡 Vigilancia</b> = 31-90 días, detección SAT y opinión de cumplimiento en negativo;
+        <b style="color:var(--blue)">🔵 Ventana</b> = ≤30 días, pago espontáneo aún sin multa (art. 73 CFF).
+        <br><span style="color:var(--red);font-weight:600">⚠️ Los umbrales son referencia práctica; el riesgo real depende del expediente. Valida con el fiscalista.</span>
       </div>
 
       <div class="cxc-controls">
@@ -767,6 +805,8 @@ tr:last-child td{border-bottom:none}
         <div class="grp">
           <label style="margin-bottom:0" data-i18n="cxc.lbl.orden">Ordenar por</label>
           <select id="cxcOrden" onchange="cxcSetOrden(this.value)">
+            <option value="riesgo_desc" data-i18n="cxc.ord.riesgo_desc">Riesgo (mayor a menor)</option>
+            <option value="dias_desc" data-i18n="cxc.ord.dias_desc">Días vencidos (más a menos)</option>
             <option value="monto_desc" data-i18n="cxc.ord.monto_desc">Monto (mayor a menor)</option>
             <option value="monto_asc" data-i18n="cxc.ord.monto_asc">Monto (menor a mayor)</option>
             <option value="empresa" data-i18n="cxc.ord.empresa">Empresa (A-Z)</option>
@@ -779,7 +819,7 @@ tr:last-child td{border-bottom:none}
 
       <div class="table-wrap">
         <table>
-          <thead><tr><th data-i18n="cxc.th.empresa">Empresa</th><th data-i18n="cxc.th.tipo">Tipo de impuesto</th><th data-i18n="cxc.th.monto">Monto</th><th data-i18n="cxc.th.vigencia">Vigencia</th><th data-i18n="cxc.th.naturaleza">Naturaleza</th><th data-i18n="cxc.th.estatus">Estatus</th><th data-i18n="cxc.th.semaforo">Semáforo</th></tr></thead>
+          <thead><tr><th data-i18n="cxc.th.empresa">Empresa</th><th data-i18n="cxc.th.tipo">Tipo de impuesto</th><th data-i18n="cxc.th.monto">Monto</th><th data-i18n="cxc.th.vigencia">Vigencia</th><th data-i18n="cxc.th.dias">Días vencidos</th><th data-i18n="cxc.th.estatus">Estatus</th><th data-i18n="cxc.th.riesgo">Riesgo</th></tr></thead>
           <tbody id="tblCxc"><tr><td colspan="7" style="color:var(--muted)" data-i18n="loading">Cargando…</td></tr></tbody>
         </table>
       </div>
@@ -880,7 +920,7 @@ tr:last-child td{border-bottom:none}
 
 /* Marca de versión (bumpear en cada push) para que el auto-updater
    detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.10.1';
+const APP_VERSION = '2026.07.12.1';
 
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
@@ -957,7 +997,7 @@ let cxcImpuestos = [];
 let cxcFiltroEmpresa = 'Todas';
 let cxcFiltroCategoria = 'Todas';
 let cxcFiltroAnio = 'Todos';
-let cxcOrden = 'monto_desc';
+let cxcOrden = 'riesgo_desc';
 
 function fmtMoney(n){
   n = Number(n)||0;
@@ -1068,11 +1108,26 @@ const translations = {
   // === CxC FISCAL VIEW ===
   'cxc.kpi.total':            { es:'Cartera fiscal total',                            en:'Total tax portfolio' },
   'cxc.kpi.total.sub':        { es:'Histórico 2023–2026 · cédula corporativa',        en:'History 2023–2026 · corporate ledger' },
-  'cxc.kpi.rojo':             { es:'🔴 En riesgo (rojo)',                              en:'🔴 At risk (red)' },
-  'cxc.kpi.amarillo':         { es:'🟡 En plan de pago / negociable',                  en:'🟡 On payment plan / negotiable' },
-  'cxc.kpi.verde':            { es:'🟢 Pagado',                                        en:'🟢 Paid' },
+  'cxc.kpi.embargo':          { es:'⚫ Zona embargo · >365 días',                      en:'⚫ Seizure zone · >365 days' },
+  'cxc.kpi.csd':              { es:'🔴 Restricción CSD · 181-365d',                   en:'🔴 Digital seal freeze · 181-365d' },
+  'cxc.kpi.requerimiento':    { es:'🟠 Requerimiento · 91-180d',                       en:'🟠 Demand notice · 91-180d' },
+  'cxc.kpi.vigilancia':       { es:'🟡 Vigilancia · 31-90d',                           en:'🟡 Surveillance · 31-90d' },
+  'cxc.kpi.ventana':          { es:'🔵 Ventana espontánea · ≤30d',                    en:'🔵 Spontaneous window · ≤30d' },
   'cxc.kpi.conceptos':        { es:'conceptos',                                       en:'items' },
   'cxc.kpi.concepto':         { es:'concepto',                                        en:'item' },
+  'cxc.penal.title':          { es:'RETENCIONES VENCIDAS — RIESGO PENAL',              en:'OVERDUE WITHHOLDINGS — CRIMINAL RISK' },
+  'cxc.penal.sub':            { es:'Retenciones a empleados/terceros no enteradas · Arts. 108-109 CFF (defraudación fiscal equiparada)', en:'Employee/third-party withholdings not remitted · Arts. 108-109 CFF (equated tax fraud)' },
+  'cxc.zona.embargo':         { es:'Embargo/PAE',                                     en:'Seizure/PAE' },
+  'cxc.zona.csd':             { es:'Restricción CSD',                                 en:'Seal freeze' },
+  'cxc.zona.requerimiento':   { es:'Requerimiento',                                   en:'Demand notice' },
+  'cxc.zona.vigilancia':      { es:'Vigilancia',                                      en:'Surveillance' },
+  'cxc.zona.ventana':         { es:'Ventana espontánea',                              en:'Spontaneous window' },
+  'cxc.zona.no_vencido':      { es:'No vencido',                                      en:'Not due' },
+  'cxc.zona.pagado':          { es:'Pagado',                                          en:'Paid' },
+  'cxc.dias.no_vencido':      { es:'—',                                               en:'—' },
+  'cxc.dias.dias':            { es:'días',                                            en:'days' },
+  'cxc.ord.riesgo_desc':      { es:'Riesgo (mayor a menor)',                          en:'Risk (highest to lowest)' },
+  'cxc.ord.dias_desc':        { es:'Días vencidos (más a menos)',                     en:'Days overdue (most to least)' },
   'cxc.title':                { es:'Cuentas por cobrar de impuestos — por empresa / tipo de impuesto',
                                 en:'Tax receivables — by company / tax type' },
   'cxc.lbl.empresa':          { es:'Empresa',                                         en:'Company' },
@@ -1089,9 +1144,9 @@ const translations = {
   'cxc.th.tipo':              { es:'Tipo de impuesto',                                en:'Tax type' },
   'cxc.th.monto':             { es:'Monto',                                           en:'Amount' },
   'cxc.th.vigencia':          { es:'Vigencia',                                        en:'Period' },
-  'cxc.th.naturaleza':        { es:'Naturaleza',                                      en:'Nature' },
+  'cxc.th.dias':              { es:'Días vencidos',                                   en:'Days overdue' },
   'cxc.th.estatus':           { es:'Estatus',                                         en:'Status' },
-  'cxc.th.semaforo':          { es:'Semáforo',                                        en:'Signal' },
+  'cxc.th.riesgo':            { es:'Riesgo',                                          en:'Risk' },
   'cxc.chip.todas':           { es:'Todas',                                           en:'All' },
   'cxc.chip.todos':           { es:'Todos',                                           en:'All' },
   'cxc.empty':                { es:'Sin conceptos registrados.',                      en:'No records.' },
@@ -1247,18 +1302,52 @@ async function cargarCxc(){
   renderCxc();
 }
 
-/* Regla de semáforo (ver tarjeta de explicación en la vista):
-   - Pagado                              → verde
-   - Pendiente + fiduciario              → rojo   (retenciones empleados / IMSS: cero tolerancia)
-   - Pendiente + monto > $2,000,000      → rojo   (materialidad alta aunque no sea fiduciario)
-   - Pendiente (resto) / En plan de pago → amarillo */
-function cxcSemaforo(row){
-  if (row.estatus === 'Pagado') return { clase:'badge-green', texto:'🟢 ' + t('sem.pagado') };
-  if (row.estatus === 'Pendiente' && (row.fiduciario || Number(row.monto) > 2000000)) {
-    return { clase:'badge-red', texto: row.fiduciario ? '🔴 ' + t('sem.fiduciario') : '🔴 ' + t('sem.monto_critico') };
+/* ── Riesgo por antigüedad del adeudo ────────────────────────────────
+   Fecha de exigibilidad = 31 de marzo del año siguiente a anio_inicio
+   (fecha canónica de cierre fiscal — la parte más antigua del rango
+   consolidado ya es exigible desde ese momento).
+
+   Zonas y fundamento legal (marco fiscal MX vigente 2026):
+   - Pagado                → 🟢 Pagado
+   - No vencido (hoy<exig) → ⚪ No vencido
+   - 0-30 días             → 🔵 Ventana espontánea (art. 73 CFF: sin multa)
+   - 31-90 días            → 🟡 Vigilancia (detección SAT, opinión negativa)
+   - 91-180 días           → 🟠 Requerimiento (art. 41 CFF)
+   - 181-365 días          → 🔴 Restricción CSD (art. 17-H Bis CFF)
+   - >365 días             → ⚫ Embargo/PAE (arts. 145, 151, 156-Bis CFF)
+   Los umbrales son referencia práctica; el riesgo real depende del
+   expediente. Los conceptos marcados como fiduciarios (retenciones)
+   suman al banner de riesgo penal (arts. 108-109 CFF). */
+
+function cxcFechaExigibilidad(row){
+  // 31 de marzo del año siguiente a anio_inicio (mes 2 = marzo en JS, día 31)
+  return new Date(Number(row.anio_inicio) + 1, 2, 31);
+}
+
+function cxcDiasVencidos(row){
+  if (row.estatus === 'Pagado') return null;
+  const hoy = new Date();
+  const exig = cxcFechaExigibilidad(row);
+  const diff = Math.floor((hoy - exig) / (1000*60*60*24));
+  return diff; // negativo = aún no vence
+}
+
+// Prioridad numérica para ordenar por riesgo (mayor = más urgente)
+const CXC_ZONA_PRIO = { embargo:6, csd:5, requerimiento:4, vigilancia:3, ventana:2, no_vencido:1, pagado:0 };
+
+function cxcRiesgo(row){
+  if (row.estatus === 'Pagado') {
+    return { zona:'pagado', prio:0, dias:null, clase:'badge-green', texto:'🟢 ' + t('cxc.zona.pagado') };
   }
-  if (row.estatus === 'En plan de pago') return { clase:'badge-yellow', texto:'🟡 ' + t('sem.en_plan') };
-  return { clase:'badge-yellow', texto:'🟡 ' + t('sem.pendiente') };
+  const dias = cxcDiasVencidos(row);
+  if (dias === null || dias < 0) {
+    return { zona:'no_vencido', prio:1, dias, clase:'badge-muted', texto:'⚪ ' + t('cxc.zona.no_vencido') };
+  }
+  if (dias > 365)  return { zona:'embargo',       prio:6, dias, clase:'badge-critical',  texto:'⚫ ' + t('cxc.zona.embargo') };
+  if (dias > 180)  return { zona:'csd',           prio:5, dias, clase:'badge-red',       texto:'🔴 ' + t('cxc.zona.csd') };
+  if (dias > 90)   return { zona:'requerimiento', prio:4, dias, clase:'badge-orange',    texto:'🟠 ' + t('cxc.zona.requerimiento') };
+  if (dias > 30)   return { zona:'vigilancia',    prio:3, dias, clase:'badge-yellow',    texto:'🟡 ' + t('cxc.zona.vigilancia') };
+  return              { zona:'ventana',       prio:2, dias, clase:'badge-blue',      texto:'🔵 ' + t('cxc.zona.ventana') };
 }
 
 async function cxcCambiarEstatus(id, nuevoEstatus){
@@ -1293,8 +1382,11 @@ function cxcSetOrden(valor){
 
 /* Comparadores de orden. El orden por Empresa/Tipo de impuesto usa
    el monto (desc) como criterio secundario para mantener las filas
-   legibles dentro de cada grupo. */
+   legibles dentro de cada grupo. El default es por riesgo (más urgente
+   primero) → días vencidos → monto. */
 const CXC_ORDENADORES = {
+  riesgo_desc:(a,b)=> (cxcRiesgo(b).prio - cxcRiesgo(a).prio) || ((cxcDiasVencidos(b)??-9999)-(cxcDiasVencidos(a)??-9999)) || (Number(b.monto)-Number(a.monto)),
+  dias_desc:  (a,b)=> ((cxcDiasVencidos(b)??-9999)-(cxcDiasVencidos(a)??-9999)) || (Number(b.monto)-Number(a.monto)),
   monto_desc: (a,b)=> Number(b.monto)-Number(a.monto),
   monto_asc:  (a,b)=> Number(a.monto)-Number(b.monto),
   empresa:    (a,b)=> a.empresa.localeCompare(b.empresa, 'es') || Number(b.monto)-Number(a.monto),
@@ -1349,19 +1441,35 @@ function renderCxc(){
   const tbody = document.getElementById('tblCxc');
   const ESTATUS_OPCIONES = ['Pendiente','En plan de pago','Pagado'];
   tbody.innerHTML = ordenadas.map(r=>{
-    const sem = cxcSemaforo(r);
+    const riesgo = cxcRiesgo(r);
     const vigencia = r.anio_inicio === r.anio_fin ? r.anio_inicio : `${r.anio_inicio}–${r.anio_fin}`;
     const estatusSelect = `<select style="width:auto;font-size:11.5px;padding:5px 8px" onchange="cxcCambiarEstatus('${r.id}', this.value)" ${cxcModoSoloLectura?'disabled':''}>
         ${ESTATUS_OPCIONES.map(op=>`<option value="${op}" ${op===r.estatus?'selected':''}>${estT(op)}</option>`).join('')}
       </select>`;
+    // Días vencidos: número + etiqueta "días" cuando aplica; "—" si pagado o no vencido
+    let diasCell;
+    if (riesgo.zona === 'pagado') {
+      diasCell = `<span style="color:var(--muted)">—</span>`;
+    } else if (riesgo.zona === 'no_vencido') {
+      diasCell = `<span style="color:var(--muted)">${riesgo.dias} ${t('cxc.dias.dias')}</span>`;
+    } else {
+      const color = riesgo.zona === 'embargo' ? 'var(--critical)'
+                 : riesgo.zona === 'csd' ? 'var(--red)'
+                 : riesgo.zona === 'requerimiento' ? 'var(--orange)'
+                 : riesgo.zona === 'vigilancia' ? 'var(--yellow)'
+                 : 'var(--blue)';
+      diasCell = `<b style="color:${color}">${riesgo.dias.toLocaleString('es-MX')}</b> <span style="color:var(--muted);font-size:11px">${t('cxc.dias.dias')}</span>`;
+    }
+    // Marca visual ⚠️ discreta si es retención (mantengo el dato interno sin volver a mostrar la columna Naturaleza)
+    const fidTag = r.fiduciario ? ` <span title="Retención — riesgo penal (arts. 108-109 CFF)" style="color:var(--critical);font-size:11px;margin-left:4px">⚠</span>` : '';
     return `<tr>
       <td>${r.empresa}</td>
-      <td>${catT(r.categoria)}</td>
+      <td>${catT(r.categoria)}${fidTag}</td>
       <td><b>${fmtMoney(r.monto)}</b></td>
       <td>${vigencia}</td>
-      <td>${r.fiduciario ? `<span class="badge badge-red">${natT(true)}</span>` : `<span class="badge badge-muted">${natT(false)}</span>`}</td>
+      <td>${diasCell}</td>
       <td>${estatusSelect}</td>
-      <td><span class="badge ${sem.clase}">${sem.texto}</span></td>
+      <td><span class="badge ${riesgo.clase}">${riesgo.texto}</span></td>
     </tr>`;
   }).join('') || `<tr><td colspan="7" style="color:var(--muted)">${t('cxc.empty')}</td></tr>`;
 
@@ -1369,20 +1477,45 @@ function renderCxc(){
   // KPIs recalculados sobre las FILAS FILTRADAS (Empresa + Tipo de impuesto + Año).
   // Cuando todos los chips están en "Todas/Todos", `filas` === `cxcImpuestos` y
   // los totales coinciden con el histórico global. Cualquier chip seleccionado
-  // restringe los 4 KPIs a esa intersección.
+  // restringe los KPIs a esa intersección.
+  //
+  // Clasificación por zona de riesgo (basada en días de antigüedad desde fecha
+  // de exigibilidad = 31/mar del año siguiente a anio_inicio). Un adeudo Pagado
+  // no cuenta en ninguna zona; un adeudo aún no exigible (dias<0) tampoco.
   const total = sum(filas);
-  const rojos     = filas.filter(r=>r.estatus==='Pendiente' && (r.fiduciario || Number(r.monto)>2000000));
-  const amarillos = filas.filter(r=>r.estatus!=='Pagado' && !rojos.includes(r));
-  const verdes    = filas.filter(r=>r.estatus==='Pagado');
+  const porZona = { embargo:[], csd:[], requerimiento:[], vigilancia:[], ventana:[] };
+  filas.forEach(r => {
+    const z = cxcRiesgo(r).zona;
+    if (porZona[z]) porZona[z].push(r);
+  });
+  // Retenciones vencidas (fiduciario:true con estatus distinto de Pagado y en zona de riesgo real)
+  const penales = filas.filter(r => r.fiduciario && r.estatus !== 'Pagado' && (cxcDiasVencidos(r) ?? -1) >= 0);
 
   const nLabel = (n) => n===1 ? t('cxc.kpi.concepto') : t('cxc.kpi.conceptos');
   document.getElementById('kpiCxcTotal').textContent = fmtMoney(total);
-  document.getElementById('kpiCxcRojo').textContent = fmtMoney(sum(rojos));
-  document.getElementById('kpiCxcRojoSub').textContent = `${rojos.length} ${nLabel(rojos.length)}`;
-  document.getElementById('kpiCxcAmarillo').textContent = fmtMoney(sum(amarillos));
-  document.getElementById('kpiCxcAmarilloSub').textContent = `${amarillos.length} ${nLabel(amarillos.length)}`;
-  document.getElementById('kpiCxcVerde').textContent = fmtMoney(sum(verdes));
-  document.getElementById('kpiCxcVerdeSub').textContent = `${verdes.length} ${nLabel(verdes.length)}`;
+  document.getElementById('kpiCxcTotalSub').textContent = `${filas.length} ${nLabel(filas.length)}`;
+  document.getElementById('kpiCxcEmbargo').textContent = fmtMoney(sum(porZona.embargo));
+  document.getElementById('kpiCxcEmbargoSub').textContent = `${porZona.embargo.length} ${nLabel(porZona.embargo.length)} · PAE activable`;
+  document.getElementById('kpiCxcCsd').textContent = fmtMoney(sum(porZona.csd));
+  document.getElementById('kpiCxcCsdSub').textContent = `${porZona.csd.length} ${nLabel(porZona.csd.length)} · Art. 17-H Bis`;
+  document.getElementById('kpiCxcReq').textContent = fmtMoney(sum(porZona.requerimiento));
+  document.getElementById('kpiCxcReqSub').textContent = `${porZona.requerimiento.length} ${nLabel(porZona.requerimiento.length)} · Art. 41 CFF`;
+  document.getElementById('kpiCxcVig').textContent = fmtMoney(sum(porZona.vigilancia));
+  document.getElementById('kpiCxcVigSub').textContent = `${porZona.vigilancia.length} ${nLabel(porZona.vigilancia.length)} · detección SAT`;
+  document.getElementById('kpiCxcVentana').textContent = fmtMoney(sum(porZona.ventana));
+  document.getElementById('kpiCxcVentanaSub').textContent = `${porZona.ventana.length} ${nLabel(porZona.ventana.length)} · Art. 73 CFF`;
+
+  // Banner de retenciones en riesgo penal (arts. 108-109 CFF)
+  const bannerEl = document.getElementById('cxcPenalBanner');
+  if (bannerEl) {
+    if (penales.length > 0) {
+      bannerEl.style.display = 'block';
+      document.getElementById('kpiCxcPenal').textContent = fmtMoney(sum(penales));
+      document.getElementById('kpiCxcPenalSub').textContent = `${penales.length} ${nLabel(penales.length)}`;
+    } else {
+      bannerEl.style.display = 'none';
+    }
+  }
 
   const notaEl = document.getElementById('cxcNota');
   if (cxcModoSoloLectura) {
