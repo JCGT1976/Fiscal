@@ -342,31 +342,29 @@ sb.auth.onAuthStateChange((event) => {
 let currentUserId = null;
 
 async function bootstrapAuth() {
+  /* MODO BYPASS — muestra la app sin bloquear por sesión SSO */
   try {
-    const { data: { session }, error } = await sb.auth.getSession();
-    if (error || !session || !session.user) {
-      window.location.replace(PORTAL_URL);
-      return;
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      currentUserId = session.user.id;
+      try {
+        const { data: user } = await sb.from('usuarios').select('*').eq('auth_id', session.user.id).maybeSingle();
+        if (user) {
+          document.getElementById('userName').textContent = user.nombre || user.username || 'Usuario';
+          document.getElementById('userRole').textContent = user.rol || '—';
+          const av = document.getElementById('userAvatar');
+          if (av) av.textContent = getInitials(user.nombre || user.username || '?');
+        }
+      } catch(e) { console.warn('Sin datos de usuario:', e); }
+    } else {
+      document.getElementById('userName').textContent = 'MI Global';
+      document.getElementById('userRole').textContent = 'Fiscal';
     }
-    currentUserId = session.user.id;
+  } catch(e) { console.warn('Sin sesión activa, modo libre:', e); }
 
-    try {
-      const { data: user } = await sb.from('usuarios').select('*').eq('auth_id', session.user.id).maybeSingle();
-      if (user) {
-        document.getElementById('userName').textContent = user.nombre || user.username || '—';
-        document.getElementById('userRole').textContent = user.rol || '—';
-        document.getElementById('userAvatar') && (document.getElementById('userAvatar').textContent = getInitials(user.nombre || user.username || '?');
-      }
-    } catch (e) { console.warn('No se pudo cargar el usuario:', e); }
-
-    document.getElementById('bootLoader').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-
-    await cargarTodo();
-  } catch (e) {
-    console.error('bootstrapAuth error:', e);
-    window.location.replace(PORTAL_URL);
-  }
+  document.getElementById('bootLoader').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  await cargarTodo();
 }
 function getInitials(nom){
   const parts = String(nom).trim().split(/\s+/);
