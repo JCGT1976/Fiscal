@@ -159,7 +159,7 @@ tr:last-child td{border-bottom:none}
   <div class="topbar">
     <div class="topbar-left">
       <h1>Módulo Fiscal</h1>
-      <div class="sub">SIF · MI Global — Obligaciones SAT, impuestos, CFDI, provisiones y deuda fiscal</div>
+      <div class="sub">SIF · MI Global — CxC Fiscal · Cálculo de Impuestos</div>
     </div>
     <div class="topbar-right">
       <span class="sync-badge" id="syncBadge"><span class="sync-dot" id="syncDot"></span><span id="syncTxt">Conectado a Supabase</span></span>
@@ -200,153 +200,40 @@ tr:last-child td{border-bottom:none}
   </div>
 
   <div class="nav-tabs">
-    <button class="nav-tab active" data-view="calendario" onclick="showView('calendario')">📅 Calendario SAT</button>
-    <button class="nav-tab" data-view="cxc" onclick="showView('cxc')">🚦 CxC Fiscal</button>
+    <button class="nav-tab active" data-view="cxc" onclick="showView('cxc')">🚦 CxC Fiscal</button>
     <button class="nav-tab" data-view="impuestos" onclick="showView('impuestos')">🧮 Cálculo de Impuestos</button>
-    <button class="nav-tab" data-view="cfdi" onclick="showView('cfdi')">🧾 Control de CFDI</button>
-    <button class="nav-tab" data-view="provisiones" onclick="showView('provisiones')">💰 Provisiones y Pagos</button>
-    <button class="nav-tab" data-view="deuda" onclick="showView('deuda')">⚠️ Deuda Fiscal</button>
-  </div>
-
-  <!-- ===================== CALENDARIO SAT (v2 — semáforo legal CFF) ===================== -->
-  <div class="view active" id="view-calendario">
-
-    <!-- KPI Semáforo: 4 tarjetas clicables -->
-    <div class="kpi-grid" id="kpiSemaforoGrid" style="margin-bottom:16px">
-      <div class="kpi-card kpi-semaforo" id="kpiSem-rojo" onclick="oblFiltrarStatus('rojo')"
-           style="border-color:var(--red);cursor:pointer;user-select:none">
-        <div class="kpi-label" style="color:var(--red)">🔴 Embargo cuentas</div>
-        <div class="kpi-value" id="kpiSemN-rojo" style="color:var(--red)">0</div>
-        <div class="kpi-sub" id="kpiSemM-rojo">$0 · >90d vencido</div>
-        <div class="kpi-legal">Arts. 145,151 CFF — PAE activo. Atención inmediata.</div>
-      </div>
-      <div class="kpi-card kpi-semaforo" id="kpiSem-naranja" onclick="oblFiltrarStatus('naranja')"
-           style="border-color:#f97316;cursor:pointer;user-select:none">
-        <div class="kpi-label" style="color:#9a3412">🟠 Notificado/Avisos</div>
-        <div class="kpi-value" id="kpiSemN-naranja" style="color:#9a3412">0</div>
-        <div class="kpi-sub" id="kpiSemM-naranja">$0 · 1–90d vencido</div>
-        <div class="kpi-legal">Recargos 2.07%/mes (art. 21 CFF). Posible requerimiento (art. 41).</div>
-      </div>
-      <div class="kpi-card kpi-semaforo" id="kpiSem-amarillo" onclick="oblFiltrarStatus('amarillo')"
-           style="border-color:var(--yellow);cursor:pointer;user-select:none">
-        <div class="kpi-label" style="color:var(--yellow)">🟡 Por vencer</div>
-        <div class="kpi-value" id="kpiSemN-amarillo" style="color:var(--yellow)">0</div>
-        <div class="kpi-sub" id="kpiSemM-amarillo">$0 · 0–5d restantes</div>
-        <div class="kpi-legal">Art. 12 CFF — plazo hábil vigente. Pagar antes del límite.</div>
-      </div>
-      <div class="kpi-card kpi-semaforo" id="kpiSem-verde" onclick="oblFiltrarStatus('verde')"
-           style="border-color:var(--green);cursor:pointer;user-select:none">
-        <div class="kpi-label" style="color:var(--green)">🟢 En tiempo</div>
-        <div class="kpi-value" id="kpiSemN-verde" style="color:var(--green)">0</div>
-        <div class="kpi-sub" id="kpiSemM-verde">$0 · >5d restantes</div>
-        <div class="kpi-legal">Art. 6 CFF — dentro del plazo legal. Sin mora.</div>
-      </div>
-    </div>
-
-    <!-- Formulario agregar obligación -->
-    <div class="card">
-      <h2>Agregar obligación</h2>
-      <div class="desc">Registra una obligación fiscal recurrente o única (ISR provisional, IVA, IMSS, INFONAVIT, ISN, informativas, etc.)</div>
-      <div class="grid-3">
-        <div class="field"><label>Empresa</label>
-          <select id="oblEmpresa">
-            <option value="">— General —</option>
-            <option>Ariitranst</option><option>Autobot</option><option>Boughts</option>
-            <option>Comercial</option><option>Internacional</option>
-          </select>
-        </div>
-        <div class="field"><label>Tipo de obligación</label>
-          <select id="oblTipo">
-            <option value="">— Tipo —</option>
-            <option>ISR Propio</option><option>ISR Ret. Empleados</option><option>ISR Ret. Terceros</option>
-            <option>IVA</option><option>IVA Ret. Terceros</option>
-            <option>IMSS</option><option>INFONAVIT</option>
-            <option>ISN Baja California</option><option>Declaración informativa</option><option>Otra</option>
-          </select>
-        </div>
-        <div class="field"><label>Concepto / descripción</label><input id="oblConcepto" placeholder="Ej. Pago provisional ISR Jun 2026"></div>
-      </div>
-      <div class="grid-3">
-        <div class="field"><label>Periodicidad</label>
-          <select id="oblPeriodicidad">
-            <option>Mensual</option><option>Bimestral</option><option>Anual</option><option>Única</option>
-          </select>
-        </div>
-        <div class="field"><label>Fecha límite</label><input id="oblFecha" type="date"></div>
-        <div class="field"><label>Monto estimado (MXN)</label><input id="oblMonto" type="number" step="0.01" placeholder="0.00" min="0"></div>
-      </div>
-      <button class="btn" id="btnAgregarObligacion" onclick="agregarObligacion()">+ Agregar obligación</button>
-    </div>
-
-    <!-- Tabla del calendario con semáforo legal -->
-    <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
-        <div>
-          <h2 style="margin-bottom:4px">Calendario de obligaciones — semáforo legal CFF</h2>
-          <div class="desc" style="margin:0">Ordenadas por urgencia. Clic en una tarjeta KPI para filtrar por estatus. Clic en fila para ver fundamento legal.</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <select id="oblFiltroEmpresaSel" onchange="oblAplicarFiltros()" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer">
-            <option value="">Todas las empresas</option>
-            <option>Ariitranst</option><option>Autobot</option><option>Boughts</option>
-            <option>Comercial</option><option>Internacional</option>
-          </select>
-          <select id="oblFiltroTipoSel" onchange="oblAplicarFiltros()" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer">
-            <option value="">Todos los tipos</option>
-            <option>ISR Propio</option><option>ISR Ret. Empleados</option><option>ISR Ret. Terceros</option>
-            <option>IVA</option><option>IVA Ret. Terceros</option>
-            <option>IMSS</option><option>INFONAVIT</option><option>ISN Baja California</option>
-          </select>
-          <span id="oblFiltroStatusLbl" style="display:none;font-size:11px;padding:4px 10px;border-radius:6px;background:var(--surface2);color:var(--muted);cursor:pointer" onclick="oblFiltrarStatus('')">
-            ✕ <span id="oblFiltroStatusTxt"></span>
-          </span>
-          <span id="oblConteoFiltro" style="font-size:11px;color:var(--muted)"></span>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>#</th><th>Empresa</th><th>Tipo / Concepto</th>
-            <th>Período / Periodicidad</th><th>Fecha límite</th>
-            <th style="text-align:center">Días</th>
-            <th style="text-align:right">Monto est.</th>
-            <th>Estatus legal</th>
-            <th>Riesgo / Acción</th>
-            <th></th>
-          </tr></thead>
-          <tbody id="tblObligaciones"><tr><td colspan="10" style="color:var(--muted)">Cargando…</td></tr></tbody>
-        </table>
-      </div>
-      <div class="note" style="margin-top:10px">
-        <b>Marco legal:</b> 🔴&gt;90d — arts.145,151 CFF (PAE/Embargo) &nbsp;|&nbsp; 🟠 1–90d — arts.21,41 CFF (Recargos 2.07%/mes) &nbsp;|&nbsp; 🟡 0–5d — art.12 CFF &nbsp;|&nbsp; 🟢&gt;5d — art.6 CFF &nbsp;·&nbsp;
-        Tasa mora BC estatal (ISN): 2.25%/mes. Umbrales estimados — verificar con fiscalista. &nbsp;·&nbsp;
-        <a href="https://www.sat.gob.mx" target="_blank" style="color:var(--accent)">Portal SAT</a>
-      </div>
-    </div>
   </div>
 
   <!-- ===================== CxC FISCAL (semáforo de riesgo) ===================== -->
-  <div class="view" id="view-cxc">
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-label">Cartera fiscal total</div>
-        <div class="kpi-value" id="kpiCxcTotal">$0</div>
-        <div class="kpi-sub">Histórico 2023–2026 · cédula corporativa</div>
+  <div class="view active" id="view-cxc">
+    <div class="kpi-grid" id="kpiSemaforoGrid" style="margin-bottom:16px">
+      <div class="kpi-card kpi-semaforo" id="kpiSem-rojo" onclick="cxcFiltrarStatus('rojo')"
+           style="border-color:var(--red);cursor:pointer;user-select:none">
+        <div class="kpi-label" style="color:var(--red)">🔴 Embargo cuentas</div>
+        <div class="kpi-value" id="kpiSemN-rojo" style="color:var(--red)">0</div>
+        <div class="kpi-sub" id="kpiSemM-rojo">$0</div>
+        <div class="kpi-legal">Arts.145,151 CFF — Fiduciario pendiente. Riesgo penal arts.108-109 CFF.</div>
       </div>
-      <div class="kpi-card" style="border-color:var(--red)">
-        <div class="kpi-label">🔴 En riesgo (rojo)</div>
-        <div class="kpi-value" id="kpiCxcRojo" style="color:var(--red)">$0</div>
-        <div class="kpi-sub" id="kpiCxcRojoSub">0 conceptos</div>
+      <div class="kpi-card kpi-semaforo" id="kpiSem-naranja" onclick="cxcFiltrarStatus('naranja')"
+           style="border-color:#f97316;cursor:pointer;user-select:none">
+        <div class="kpi-label" style="color:#9a3412">🟠 Notificado/Avisos</div>
+        <div class="kpi-value" id="kpiSemN-naranja" style="color:#9a3412">0</div>
+        <div class="kpi-sub" id="kpiSemM-naranja">$0</div>
+        <div class="kpi-legal">Pendiente no fiduciario. Recargos 2.07%/mes (art.21 CFF). En proceso de cobro.</div>
       </div>
-      <div class="kpi-card" style="border-color:var(--yellow)">
-        <div class="kpi-label">🟡 En plan de pago / negociable</div>
-        <div class="kpi-value" id="kpiCxcAmarillo" style="color:var(--yellow)">$0</div>
-        <div class="kpi-sub" id="kpiCxcAmarilloSub">0 conceptos</div>
+      <div class="kpi-card kpi-semaforo" id="kpiSem-amarillo" onclick="cxcFiltrarStatus('amarillo')"
+           style="border-color:var(--yellow);cursor:pointer;user-select:none">
+        <div class="kpi-label" style="color:var(--yellow)">🟡 Por vencer / En plan</div>
+        <div class="kpi-value" id="kpiSemN-amarillo" style="color:var(--yellow)">0</div>
+        <div class="kpi-sub" id="kpiSemM-amarillo">$0</div>
+        <div class="kpi-legal">En plan de pago con autoridad. Regularización activa (arts.66,66-A CFF).</div>
       </div>
-      <div class="kpi-card" style="border-color:var(--green)">
-        <div class="kpi-label">🟢 Pagado</div>
-        <div class="kpi-value" id="kpiCxcVerde" style="color:var(--green)">$0</div>
-        <div class="kpi-sub" id="kpiCxcVerdeSub">0 conceptos</div>
+      <div class="kpi-card kpi-semaforo" id="kpiSem-verde" onclick="cxcFiltrarStatus('verde')"
+           style="border-color:var(--green);cursor:pointer;user-select:none">
+        <div class="kpi-label" style="color:var(--green)">🟢 Liquidado</div>
+        <div class="kpi-value" id="kpiSemN-verde" style="color:var(--green)">0</div>
+        <div class="kpi-sub" id="kpiSemM-verde">$0</div>
+        <div class="kpi-legal">Obligación cubierta. Sin mora ni riesgo (art.6 CFF).</div>
       </div>
     </div>
 
@@ -383,7 +270,7 @@ tr:last-child td{border-bottom:none}
 
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Empresa</th><th>Tipo de impuesto</th><th>Monto</th><th>Vigencia</th><th>Naturaleza</th><th>Estatus</th><th>Semáforo</th></tr></thead>
+          <thead><tr><th>Empresa</th><th>Tipo de impuesto</th><th>Monto</th><th>Vigencia</th><th>Estatus</th><th>Semáforo legal</th></tr></thead>
           <tbody id="tblCxc"><tr><td colspan="7" style="color:var(--muted)">Cargando…</td></tr></tbody>
         </table>
       </div>
@@ -428,115 +315,7 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
   </div>
-
-  <!-- ===================== CFDI ===================== -->
-  <div class="view" id="view-cfdi">
-    <div class="card">
-      <h2>Registrar CFDI</h2>
-      <div class="grid-3">
-        <div class="field"><label>Tipo</label>
-          <select id="cfdiTipo"><option>Emitido</option><option>Recibido</option></select>
-        </div>
-        <div class="field"><label>RFC contraparte</label><input id="cfdiRfc" placeholder="XAXX010101000"></div>
-        <div class="field"><label>Folio fiscal (UUID)</label><input id="cfdiFolio" placeholder="UUID"></div>
-      </div>
-      <div class="grid-3">
-        <div class="field"><label>Fecha</label><input id="cfdiFecha" type="date"></div>
-        <div class="field"><label>Monto total</label><input id="cfdiMonto" type="number" step="0.01" placeholder="0.00"></div>
-        <div class="field"><label>Estatus</label>
-          <select id="cfdiEstatus"><option>Pendiente</option><option>Conciliado</option><option>Cancelado</option></select>
-        </div>
-      </div>
-      <button class="btn" id="btnAgregarCfdi" onclick="agregarCfdi()">+ Registrar CFDI</button>
-    </div>
-    <div class="card">
-      <h2>Comprobantes registrados</h2>
-      <div class="desc">Concilia contra los gastos/ingresos del módulo de Flujo y Gastos para detectar CFDI faltantes o duplicados. Haz clic en el estatus para cambiarlo.</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Tipo</th><th>RFC</th><th>Folio</th><th>Fecha</th><th>Monto</th><th>Estatus</th></tr></thead>
-          <tbody id="tblCfdi"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== PROVISIONES Y PAGOS ===================== -->
-  <div class="view" id="view-provisiones">
-    <div class="card">
-      <h2>Registrar provisión / pago</h2>
-      <div class="grid-3">
-        <div class="field"><label>Concepto</label><input id="provConcepto" placeholder="Ej. ISR mensual"></div>
-        <div class="field"><label>Periodo</label><input id="provPeriodo" type="month"></div>
-        <div class="field"><label>Monto provisionado</label><input id="provProvisionado" type="number" step="0.01" placeholder="0.00"></div>
-      </div>
-      <div class="field" style="max-width:260px"><label>Monto pagado</label><input id="provPagado" type="number" step="0.01" placeholder="0.00"></div>
-      <button class="btn" id="btnAgregarProvision" onclick="agregarProvision()">+ Registrar</button>
-    </div>
-    <div class="card">
-      <h2>Provisiones vs pagos realizados</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Concepto</th><th>Periodo</th><th>Provisionado</th><th>Pagado</th><th>Diferencia</th><th>Estatus</th></tr></thead>
-          <tbody id="tblProvisiones"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== DEUDA FISCAL ===================== -->
-  <div class="view" id="view-deuda">
-    <div class="card">
-      <h2>Calculadora de deuda fiscal (actualización + recargos + multa)</h2>
-      <div class="desc">Metodología CFF: la actualización se aplica primero sobre el monto histórico; los recargos se calculan sobre el monto ya actualizado.</div>
-      <div class="grid-3">
-        <div class="field"><label>Concepto / obligación</label><input id="deuConcepto" placeholder="Ej. IVA marzo 2025"></div>
-        <div class="field"><label>Monto histórico del adeudo</label><input id="deuMonto" type="number" step="0.01" placeholder="0.00"></div>
-        <div class="field"><label>Fecha en que debió pagarse</label><input id="deuFechaVenc" type="date"></div>
-      </div>
-      <div class="grid-3">
-        <div class="field"><label>Fecha de pago (o de hoy)</label><input id="deuFechaPago" type="date"></div>
-        <div class="field"><label>INPC del mes anterior al vencimiento</label><input id="deuInpcIni" type="number" step="0.0001" placeholder="Ej. 128.5432"></div>
-        <div class="field"><label>INPC del mes anterior al pago</label><input id="deuInpcFin" type="number" step="0.0001" placeholder="Ej. 134.1200"></div>
-      </div>
-      <div class="grid-3">
-        <div class="field"><label>Tipo de recargo</label>
-          <select id="deuTipoRecargo" onchange="actualizarTasaRecargo()">
-            <option value="1.38">Prórroga — 1.38% mensual</option>
-            <option value="2.07" selected>Mora — 2.07% mensual</option>
-            <option value="1.42">Pago a plazos ≤12 meses — 1.42% mensual</option>
-            <option value="1.63">Pago a plazos 13–24 meses — 1.63% mensual</option>
-            <option value="1.97">Pago a plazos ≥25 meses / diferido — 1.97% mensual</option>
-          </select>
-        </div>
-        <div class="field"><label>Tasa de recargo mensual (%) — editable</label><input id="deuTasaRecargo" type="number" step="0.01" value="2.07"></div>
-        <div class="field"><label>Multa aplicable (opcional)</label><input id="deuMulta" type="number" step="0.01" placeholder="0.00"></div>
-      </div>
-      <button class="btn" id="btnCalcularDeuda" onclick="calcularDeuda()">Calcular deuda actualizada</button>
-
-      <div class="result-box" id="deuResultado" style="display:none">
-        <div class="result-row"><span class="muted">Meses transcurridos (para recargos)</span><span id="dMeses">0</span></div>
-        <div class="result-row"><span class="muted">Factor de actualización</span><span id="dFactor">1.0000</span></div>
-        <div class="result-row"><span class="muted">Monto actualizado</span><span id="dMontoAct">$0</span></div>
-        <div class="result-row"><span class="muted">Recargos generados</span><span id="dRecargos">$0</span></div>
-        <div class="result-row"><span class="muted">Multa</span><span id="dMulta">$0</span></div>
-        <div class="result-row total"><span>Total a pagar</span><span id="dTotal">$0</span></div>
-      </div>
-      <div class="note">
-        <b>Fuentes de referencia (verificar vigencia antes de usar en producción):</b> tasa de recargos por mora 2026 = 2.07% mensual; prórroga = 1.38% mensual; pagos a plazos = 1.42% / 1.63% / 1.97% según parcialidades. Factor de actualización = INPC del mes anterior al pago ÷ INPC del mes anterior al vencimiento. Multas por declaración extemporánea del ISR: rango general aproximado de $2,050 a $50,710 por obligación (Art. 82 CFF) — ingrésala manualmente según el caso. Confirma siempre contra el <a href="https://www.sat.gob.mx" target="_blank" style="color:var(--accent)">simulador oficial del SAT</a> o con tu contador antes de pagar.
-      </div>
-    </div>
-    <div class="card">
-      <h2>Adeudos registrados</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Concepto</th><th>Monto histórico</th><th>Actualizado</th><th>Recargos</th><th>Multa</th><th>Total</th></tr></thead>
-          <tbody id="tblDeudas"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
+</div>
 </div>
 
 <script>
@@ -576,7 +355,7 @@ async function bootstrapAuth() {
       if (user) {
         document.getElementById('userName').textContent = user.nombre || user.username || '—';
         document.getElementById('userRole').textContent = user.rol || '—';
-        document.getElementById('userAvatar').textContent = getInitials(user.nombre || user.username || '?');
+        document.getElementById('userAvatar') && (document.getElementById('userAvatar').textContent = getInitials(user.nombre || user.username || '?');
       }
     } catch (e) { console.warn('No se pudo cargar el usuario:', e); }
 
@@ -609,11 +388,7 @@ function setSyncOk(){
 }
 
 /* ---------- Estado en memoria (espejo de las tablas fiscal_*) ---------- */
-let obligaciones = [];
 let calculosImpuestos = [];
-let cfdis = [];
-let provisiones = [];
-let deudas = [];
 let cxcImpuestos = [];
 let cxcFiltroEmpresa = 'Todas';
 let cxcFiltroCategoria = 'Todas';
@@ -646,12 +421,8 @@ function showView(name){
 /* ---------- CARGA INICIAL DESDE SUPABASE ---------- */
 async function cargarTodo(){
   await Promise.all([
-    cargarObligaciones(),
     cargarCxc(),
     cargarImpuestos(),
-    cargarCfdi(),
-    cargarProvisiones(),
-    cargarDeudas(),
   ]);
 }
 
@@ -717,18 +488,25 @@ async function cargarCxc(){
   renderCxc();
 }
 
-/* Regla de semáforo (ver tarjeta de explicación en la vista):
-   - Pagado                              → verde
-   - Pendiente + fiduciario              → rojo   (retenciones empleados / IMSS: cero tolerancia)
-   - Pendiente + monto > $2,000,000      → rojo   (materialidad alta aunque no sea fiduciario)
-   - Pendiente (resto) / En plan de pago → amarillo */
+/* Semáforo legal CFF (4 estados desde carga Excel CxC):
+   🔴 Rojo     — Fiduciario pendiente (retenciones no enteradas) → riesgo penal arts.108-109 CFF
+   🟠 Naranja  — Pendiente no fiduciario → mora 2.07%/mes (art.21 CFF), en proceso de cobro
+   🟡 Amarillo — En plan de pago con autoridad (arts.66,66-A CFF)
+   🟢 Verde    — Pagado / liquidado */
 function cxcSemaforo(row){
-  if (row.estatus === 'Pagado') return { clase:'badge-green', texto:'🟢 Liquidado' };
-  if (row.estatus === 'Pendiente' && (row.fiduciario || Number(row.monto) > 2000000)) {
-    return { clase:'badge-red', texto: row.fiduciario ? '🔴 Fiduciario sin pagar' : '🔴 Monto crítico' };
-  }
-  if (row.estatus === 'En plan de pago') return { clase:'badge-yellow', texto:'🟡 En plan de pago' };
-  return { clase:'badge-yellow', texto:'🟡 Pendiente negociable' };
+  if (row.estatus === 'Pagado')
+    return { code:'verde',    cls:'sem-chip verde',    label:'Liquidado' };
+  if (row.estatus === 'En plan de pago')
+    return { code:'amarillo', cls:'sem-chip amarillo', label:'En plan de pago' };
+  if (row.fiduciario)
+    return { code:'rojo',     cls:'sem-chip rojo',     label:'Fiduciario — alto riesgo' };
+  return   { code:'naranja',  cls:'sem-chip naranja',  label:'Pendiente — en cobro' };
+}
+
+let cxcFiltroSemaforo = '';
+function cxcFiltrarStatus(code){
+  cxcFiltroSemaforo = (cxcFiltroSemaforo === code) ? '' : code;
+  renderCxc();
 }
 
 async function cxcCambiarEstatus(id, nuevoEstatus){
@@ -789,6 +567,7 @@ function renderCxc(){
 
   let filas = cxcFiltroEmpresa === 'Todas' ? cxcImpuestos : cxcImpuestos.filter(r=>r.empresa===cxcFiltroEmpresa);
   filas = cxcFiltroCategoria === 'Todas' ? filas : filas.filter(r=>r.categoria===cxcFiltroCategoria);
+  filas = cxcFiltroSemaforo ? filas.filter(r=>cxcSemaforo(r).code===cxcFiltroSemaforo) : filas;
   const ordenadas = [...filas].sort(CXC_ORDENADORES[cxcOrden] || CXC_ORDENADORES.monto_desc);
 
   const tbody = document.getElementById('tblCxc');
@@ -804,25 +583,25 @@ function renderCxc(){
       <td>${r.categoria}</td>
       <td><b>${fmtMoney(r.monto)}</b></td>
       <td>${vigencia}</td>
-      <td>${r.fiduciario ? '<span class="badge badge-red">Fiduciario</span>' : '<span class="badge badge-muted">No fiduciario</span>'}</td>
       <td>${estatusSelect}</td>
-      <td><span class="badge ${sem.clase}">${sem.texto}</span></td>
+      <td><span class="${sem.cls}">${sem.label}</span></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="7" style="color:var(--muted)">Sin conceptos registrados.</td></tr>';
+  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin conceptos registrados.</td></tr>';
 
   const sum = (arr) => arr.reduce((s,r)=>s+Number(r.monto||0),0);
   const total = sum(cxcImpuestos);
-  const rojos = cxcImpuestos.filter(r=>r.estatus==='Pendiente' && (r.fiduciario || Number(r.monto)>2000000));
-  const amarillos = cxcImpuestos.filter(r=>r.estatus!=='Pagado' && !rojos.includes(r));
-  const verdes = cxcImpuestos.filter(r=>r.estatus==='Pagado');
-
-  document.getElementById('kpiCxcTotal').textContent = fmtMoney(total);
-  document.getElementById('kpiCxcRojo').textContent = fmtMoney(sum(rojos));
-  document.getElementById('kpiCxcRojoSub').textContent = `${rojos.length} concepto${rojos.length===1?'':'s'}`;
-  document.getElementById('kpiCxcAmarillo').textContent = fmtMoney(sum(amarillos));
-  document.getElementById('kpiCxcAmarilloSub').textContent = `${amarillos.length} concepto${amarillos.length===1?'':'s'}`;
-  document.getElementById('kpiCxcVerde').textContent = fmtMoney(sum(verdes));
-  document.getElementById('kpiCxcVerdeSub').textContent = `${verdes.length} concepto${verdes.length===1?'':'s'}`;
+  /* KPIs semáforo legal — calculados sobre todos los datos (sin filtros de empresa/tipo/semáforo) */
+  ['rojo','naranja','amarillo','verde'].forEach(code => {
+    const subset = cxcImpuestos.filter(r => cxcSemaforo(r).code === code);
+    const el = document.getElementById('kpiSem-'+code);
+    if (!el) return;
+    el.classList.toggle('activo', cxcFiltroSemaforo === code);
+    document.getElementById('kpiSemN-'+code).textContent = subset.length;
+    document.getElementById('kpiSemM-'+code).textContent = fmtMoney(sum(subset));
+  });
+  /* KPI global cartera total (topbar) */
+  const kpiTotalEl = document.getElementById('kpiCxcTotal');
+  if (kpiTotalEl) kpiTotalEl.textContent = fmtMoney(total);
 
   const notaEl = document.getElementById('cxcNota');
   if (cxcModoSoloLectura) {
@@ -833,177 +612,7 @@ function renderCxc(){
   }
 }
 
-/* ================= SEMÁFORO LEGAL CFF ================= */
-/* Umbrales basados en CFF: >90d → PAE/Embargo; 1-90d → Recargos+Requerimiento; 0-5d → Por vencer; >5d → En tiempo */
-const SEM_CFG = {
-  rojo:     { label:'Embargo cuentas',   accion:'Fiscalista inmediato.',    legal:'Arts.145,151 CFF — PAE activo. Embargo bancario inminente.' },
-  naranja:  { label:'Notificado/Avisos', accion:'Regularizar urgente.',     legal:'Recargos 2.07%/mes s/monto actualizado (art.21 CFF). Posible requerimiento (art.41 CFF).' },
-  amarillo: { label:'Por vencer',        accion:'Pagar antes del límite.',  legal:'Plazo hábil vigente (art.12 CFF). Recargos inician día siguiente (2.07%/mes).' },
-  verde:    { label:'En tiempo',         accion:'Programar el pago.',       legal:'Dentro del plazo legal (art.6 CFF). Sin mora ni accesorios.' },
-};
 
-function calcSemaforoStatus(fechaLimite){
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const f   = new Date(fechaLimite + 'T00:00:00');
-  const d   = Math.floor((f - hoy) / 86400000);
-  if (d > 5)  return { code:'verde',    dias:d,         str:d+'d' };
-  if (d >= 0) return { code:'amarillo', dias:d,         str:d+'d' };
-  const a = Math.abs(d);
-  if (a <= 90)return { code:'naranja',  dias:a,         str:'+'+a+'d' };
-              return { code:'rojo',     dias:a,         str:'+'+a+'d' };
-}
-
-/* Estado de filtros del calendario */
-let oblFiltroStatus = '';
-let oblDetalleAbierto = null;
-
-function oblFiltrarStatus(code){
-  oblFiltroStatus = (oblFiltroStatus === code) ? '' : code;
-  renderObligaciones();
-}
-function oblAplicarFiltros(){ renderObligaciones(); }
-
-/* ================= OBLIGACIONES ================= */
-async function cargarObligaciones(){
-  const { data, error } = await sb.from('fiscal_obligaciones').select('*').order('fecha_limite', { ascending: true });
-  if (error) { console.error(error); setSyncError('Error leyendo obligaciones'); return; }
-  setSyncOk();
-  obligaciones = data || [];
-  renderObligaciones();
-}
-async function agregarObligacion(){
-  const concepto     = document.getElementById('oblConcepto').value.trim();
-  const empresa      = document.getElementById('oblEmpresa').value || '';
-  const tipo         = document.getElementById('oblTipo').value || '';
-  const periodicidad = document.getElementById('oblPeriodicidad').value;
-  const fecha        = document.getElementById('oblFecha').value;
-  const monto        = parseFloat(document.getElementById('oblMonto').value) || 0;
-  if(!concepto || !fecha){ alert('Completa al menos el concepto y la fecha límite.'); return; }
-
-  const btn = document.getElementById('btnAgregarObligacion');
-  btn.disabled = true; btn.textContent = 'Guardando…';
-  const payload = { concepto, periodicidad, fecha_limite: fecha, creado_por: currentUserId };
-  /* Campos opcionales: se guardan si la columna existe en Supabase */
-  if(empresa) payload.empresa = empresa;
-  if(tipo)    payload.tipo    = tipo;
-  if(monto)   payload.monto   = monto;
-
-  const { error } = await sb.from('fiscal_obligaciones').insert(payload);
-  btn.disabled = false; btn.textContent = '+ Agregar obligación';
-  if (error) { console.error(error); alert('No se pudo guardar: ' + error.message); return; }
-
-  ['oblConcepto','oblFecha','oblMonto'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('oblEmpresa').value = '';
-  document.getElementById('oblTipo').value = '';
-  await cargarObligaciones();
-}
-async function eliminarObligacion(id){
-  if(!confirm('¿Eliminar esta obligación?')) return;
-  const { error } = await sb.from('fiscal_obligaciones').delete().eq('id', id);
-  if (error) { alert('No se pudo eliminar: ' + error.message); return; }
-  await cargarObligaciones();
-}
-function oblToggleDetalle(id){ oblDetalleAbierto = (oblDetalleAbierto === id) ? null : id; renderObligaciones(); }
-
-function renderObligaciones(){
-  /* ── Leer filtros ── */
-  const fEmp  = (document.getElementById('oblFiltroEmpresaSel') || {}).value || '';
-  const fTipo = (document.getElementById('oblFiltroTipoSel')    || {}).value || '';
-
-  /* ── Filtrar + ordenar ── */
-  const ORDER = { rojo:0, naranja:1, amarillo:2, verde:3 };
-  let rows = obligaciones.map(o => ({ ...o, _st: calcSemaforoStatus(o.fecha_limite) }));
-  if(fEmp)            rows = rows.filter(r => (r.empresa || '') === fEmp);
-  if(fTipo)           rows = rows.filter(r => (r.tipo    || '') === fTipo);
-  if(oblFiltroStatus) rows = rows.filter(r => r._st.code === oblFiltroStatus);
-  rows.sort((a,b) => (ORDER[a._st.code] - ORDER[b._st.code]) || (b._st.dias - a._st.dias));
-
-  /* ── KPI semáforo (sobre todos los datos, sin filtros de empresa/tipo) ── */
-  const allRows = obligaciones.map(o => ({ ...o, _st: calcSemaforoStatus(o.fecha_limite) }));
-  ['rojo','naranja','amarillo','verde'].forEach(code => {
-    const subset = allRows.filter(r => r._st.code === code);
-    const n      = subset.length;
-    const m      = subset.reduce((t,r) => t + (parseFloat(r.monto)||0), 0);
-    const el = document.getElementById('kpiSem-'+code);
-    if(!el) return;
-    document.getElementById('kpiSemN-'+code).textContent = n;
-    document.getElementById('kpiSemM-'+code).textContent =
-      (m > 0 ? fmtMoney(m) + ' · ' : '') +
-      (code==='rojo'?'>90d vencido':code==='naranja'?'1–90d vencido':code==='amarillo'?'0–5d restantes':'>5d restantes');
-    el.classList.toggle('activo', oblFiltroStatus === code);
-  });
-
-  /* ── Label del filtro activo ── */
-  const lbl = document.getElementById('oblFiltroStatusLbl');
-  if(lbl){
-    lbl.style.display = oblFiltroStatus ? '' : 'none';
-    const txt = document.getElementById('oblFiltroStatusTxt');
-    if(txt && oblFiltroStatus) txt.textContent = SEM_CFG[oblFiltroStatus]?.label || oblFiltroStatus;
-  }
-  const conteo = document.getElementById('oblConteoFiltro');
-  if(conteo) conteo.textContent = rows.length + ' / ' + obligaciones.length;
-
-  /* ── Tabla ── */
-  const tbody = document.getElementById('tblObligaciones');
-  if(!rows.length){
-    tbody.innerHTML = '<tr><td colspan="10" style="color:var(--muted);padding:24px;text-align:center">Sin obligaciones con los filtros seleccionados.</td></tr>';
-  } else {
-    tbody.innerHTML = rows.map((o, i) => {
-      const s   = o._st;
-      const cfg = SEM_CFG[s.code];
-      const recargo = (s.code !== 'verde' && s.code !== 'amarillo' && parseFloat(o.monto) > 0)
-        ? fmtMoney(Math.round(parseFloat(o.monto) * (s.dias/30) * 0.0207))
-        : null;
-      const detOpen = oblDetalleAbierto === o.id;
-      return `
-      <tr onclick="oblToggleDetalle('${o.id}')"
-          style="cursor:pointer;background:${detOpen?'var(--surface2)':''}">
-        <td style="color:var(--muted);font-size:10px">${i+1}</td>
-        <td style="font-weight:600">${o.empresa || '—'}</td>
-        <td>
-          <div style="font-weight:500">${o.tipo || o.concepto}</div>
-          ${o.tipo ? '<div style="font-size:10px;color:var(--muted)">'+o.concepto+'</div>' : ''}
-        </td>
-        <td style="color:var(--muted);font-size:11px">${o.periodicidad}</td>
-        <td style="font-family:monospace;font-size:11px">${o.fecha_limite}</td>
-        <td style="text-align:center">
-          <span class="dias-chip ${s.code}">${s.str}</span>
-        </td>
-        <td style="text-align:right;font-family:monospace;font-size:11px;font-weight:600">
-          ${parseFloat(o.monto) > 0 ? fmtMoney(o.monto) : '—'}
-        </td>
-        <td><span class="sem-chip ${s.code}">${cfg.label}</span></td>
-        <td style="font-size:10px">
-          <div style="font-weight:600;color:${s.code==='rojo'?'var(--red)':s.code==='amarillo'?'var(--yellow)':s.code==='verde'?'var(--green)':'#f97316'}">${s.code==='rojo'?'Crítico':s.code==='naranja'?'Alto':s.code==='amarillo'?'Medio':'Bajo'}</div>
-          <div style="color:var(--muted)">${cfg.accion}</div>
-        </td>
-        <td onclick="event.stopPropagation()">
-          <button class="btn-secondary btn" style="padding:3px 8px;font-size:10px" onclick="eliminarObligacion('${o.id}')">Quitar</button>
-        </td>
-      </tr>
-      ${detOpen ? `<tr class="obl-detail-row"><td colspan="10" class="obl-detail">
-        <b>Fundamento legal:</b> ${cfg.legal}
-        ${recargo ? ' &nbsp;·&nbsp; <b>Recargo estimado (aprox.):</b> ' + recargo + ' ('+s.dias+'d × 2.07%/mes)' : ''}
-        ${(o.tipo||'').includes('Ret.')||( o.tipo||'').includes('Retenido') ? ' &nbsp;·&nbsp; <span style="color:#f59e0b">⚠️ Fiduciario — menor elegibilidad de condonación (art.70-A CFF). Riesgo penal si omisión dolosa (arts.108-109 CFF).</span>' : ''}
-      </td></tr>` : ''}`;
-    }).join('');
-  }
-
-  /* ── Actualizar KPI global "Próximo vencimiento" ── */
-  const criticos = allRows.filter(r => r._st.code === 'rojo' || r._st.code === 'naranja' || r._st.code === 'amarillo');
-  if(criticos.length){
-    const prox = criticos.sort((a,b) => ORDER[a._st.code]-ORDER[b._st.code] || a._st.dias-b._st.dias)[0];
-    document.getElementById('kpiProximo').textContent = prox.fecha_limite;
-    document.getElementById('kpiProximoSub').textContent = (prox.empresa ? prox.empresa+' · ' : '') + (prox.tipo || prox.concepto) + ' · ' + prox._st.str;
-  } else if(obligaciones.length){
-    const prox = obligaciones[0];
-    document.getElementById('kpiProximo').textContent = prox.fecha_limite;
-    document.getElementById('kpiProximoSub').textContent = prox.concepto;
-  } else {
-    document.getElementById('kpiProximo').textContent = '—';
-    document.getElementById('kpiProximoSub').textContent = 'Sin obligaciones registradas';
-  }
-}
 
 /* ================= IMPUESTOS ================= */
 async function cargarImpuestos(){
@@ -1053,162 +662,6 @@ function renderImpuestos(){
       <td>${c.periodo}</td><td>${fmtMoney(c.utilidad)}</td><td>${fmtMoney(c.isr)}</td>
       <td>${fmtMoney(c.iva_cargo)}</td><td>${fmtMoney(c.total)}</td>
     </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">Sin cálculos registrados.</td></tr>';
-}
-
-/* ================= CFDI ================= */
-async function cargarCfdi(){
-  const { data, error } = await sb.from('fiscal_cfdi').select('*').order('fecha', { ascending: false });
-  if (error) { console.error(error); setSyncError('Error leyendo CFDI'); return; }
-  cfdis = data || [];
-  renderCfdi();
-}
-async function agregarCfdi(){
-  const tipo = document.getElementById('cfdiTipo').value;
-  const rfc = document.getElementById('cfdiRfc').value.trim();
-  const folio = document.getElementById('cfdiFolio').value.trim();
-  const fecha = document.getElementById('cfdiFecha').value;
-  const monto = parseFloat(document.getElementById('cfdiMonto').value)||0;
-  const estatus = document.getElementById('cfdiEstatus').value;
-  if(!rfc || !folio || !fecha){ alert('Completa RFC, folio y fecha.'); return; }
-
-  const btn = document.getElementById('btnAgregarCfdi');
-  btn.disabled = true;
-  const { error } = await sb.from('fiscal_cfdi').insert({
-    tipo, rfc, folio_uuid: folio, fecha, monto, estatus, creado_por: currentUserId
-  });
-  btn.disabled = false;
-  if (error) { alert('No se pudo guardar el CFDI: ' + error.message); return; }
-
-  ['cfdiRfc','cfdiFolio','cfdiFecha','cfdiMonto'].forEach(id=>document.getElementById(id).value='');
-  await cargarCfdi();
-}
-async function cambiarEstatusCfdi(id, estatusActual){
-  const orden = ['Pendiente','Conciliado','Cancelado'];
-  const siguiente = orden[(orden.indexOf(estatusActual)+1)%orden.length];
-  const { error } = await sb.from('fiscal_cfdi').update({ estatus: siguiente }).eq('id', id);
-  if (error) { alert('No se pudo actualizar: ' + error.message); return; }
-  await cargarCfdi();
-}
-function renderCfdi(){
-  const tbody = document.getElementById('tblCfdi');
-  tbody.innerHTML = cfdis.map((c)=>{
-    const badge = c.estatus==='Conciliado'?'badge-green':c.estatus==='Cancelado'?'badge-red':'badge-yellow';
-    return `<tr>
-      <td>${c.tipo}</td><td>${c.rfc}</td><td style="font-size:10.5px">${c.folio_uuid}</td><td>${c.fecha}</td>
-      <td>${fmtMoney(c.monto)}</td>
-      <td><span class="badge ${badge}" style="cursor:pointer" onclick="cambiarEstatusCfdi('${c.id}','${c.estatus}')">${c.estatus}</span></td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin CFDI registrados.</td></tr>';
-
-  document.getElementById('kpiCfdiTotal').textContent = cfdis.length;
-  document.getElementById('kpiCfdiPend').textContent = cfdis.filter(c=>c.estatus==='Pendiente').length;
-}
-
-/* ================= PROVISIONES ================= */
-async function cargarProvisiones(){
-  const { data, error } = await sb.from('fiscal_provisiones').select('*').order('periodo', { ascending: false });
-  if (error) { console.error(error); setSyncError('Error leyendo provisiones'); return; }
-  provisiones = data || [];
-  renderProvisiones();
-}
-async function agregarProvision(){
-  const concepto = document.getElementById('provConcepto').value.trim();
-  const periodo = document.getElementById('provPeriodo').value;
-  const provisionado = parseFloat(document.getElementById('provProvisionado').value)||0;
-  const pagado = parseFloat(document.getElementById('provPagado').value)||0;
-  if(!concepto || !periodo){ alert('Completa concepto y periodo.'); return; }
-
-  const btn = document.getElementById('btnAgregarProvision');
-  btn.disabled = true;
-  const { error } = await sb.from('fiscal_provisiones').insert({
-    concepto, periodo, monto_provisionado: provisionado, monto_pagado: pagado, creado_por: currentUserId
-  });
-  btn.disabled = false;
-  if (error) { alert('No se pudo guardar: ' + error.message); return; }
-
-  ['provConcepto','provPeriodo','provProvisionado','provPagado'].forEach(id=>document.getElementById(id).value='');
-  await cargarProvisiones();
-}
-function renderProvisiones(){
-  const tbody = document.getElementById('tblProvisiones');
-  tbody.innerHTML = provisiones.map(p=>{
-    const dif = p.monto_provisionado - p.monto_pagado;
-    const estatus = dif<=0 ? '<span class="badge badge-green">Cubierto</span>' : '<span class="badge badge-yellow">Pendiente</span>';
-    return `<tr>
-      <td>${p.concepto}</td><td>${p.periodo}</td><td>${fmtMoney(p.monto_provisionado)}</td>
-      <td>${fmtMoney(p.monto_pagado)}</td><td>${fmtMoney(dif)}</td><td>${estatus}</td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin provisiones registradas.</td></tr>';
-}
-
-/* ================= DEUDA FISCAL ================= */
-function actualizarTasaRecargo(){
-  const sel = document.getElementById('deuTipoRecargo');
-  document.getElementById('deuTasaRecargo').value = sel.value;
-}
-function mesesEntre(f1,f2){
-  const d1 = new Date(f1+"T00:00:00"), d2 = new Date(f2+"T00:00:00");
-  let meses = (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
-  if(d2.getDate() >= d1.getDate()) meses += 1;
-  return Math.max(meses,0);
-}
-async function cargarDeudas(){
-  const { data, error } = await sb.from('fiscal_deudas').select('*').order('creado_en', { ascending: false });
-  if (error) { console.error(error); setSyncError('Error leyendo deudas'); return; }
-  deudas = data || [];
-  renderDeudas();
-}
-async function calcularDeuda(){
-  const concepto = document.getElementById('deuConcepto').value.trim() || 'Adeudo sin nombre';
-  const monto = parseFloat(document.getElementById('deuMonto').value)||0;
-  const fVenc = document.getElementById('deuFechaVenc').value;
-  const fPago = document.getElementById('deuFechaPago').value || new Date().toISOString().slice(0,10);
-  const inpcIni = parseFloat(document.getElementById('deuInpcIni').value)||0;
-  const inpcFin = parseFloat(document.getElementById('deuInpcFin').value)||0;
-  const tasaRecargo = parseFloat(document.getElementById('deuTasaRecargo').value)||0;
-  const multa = parseFloat(document.getElementById('deuMulta').value)||0;
-
-  if(!monto || !fVenc){ alert('Captura al menos el monto y la fecha de vencimiento.'); return; }
-
-  const meses = mesesEntre(fVenc, fPago);
-  let factor = 1;
-  if(inpcIni > 0 && inpcFin > 0){
-    factor = inpcFin / inpcIni;
-    if(factor < 1) factor = 1;
-  }
-  const montoActualizado = monto * factor;
-  const recargos = montoActualizado * (tasaRecargo/100) * meses;
-  const total = montoActualizado + recargos + multa;
-
-  document.getElementById('dMeses').textContent = meses;
-  document.getElementById('dFactor').textContent = factor.toFixed(4);
-  document.getElementById('dMontoAct').textContent = fmtMoney(montoActualizado);
-  document.getElementById('dRecargos').textContent = fmtMoney(recargos);
-  document.getElementById('dMulta').textContent = fmtMoney(multa);
-  document.getElementById('dTotal').textContent = fmtMoney(total);
-  document.getElementById('deuResultado').style.display = 'block';
-
-  const btn = document.getElementById('btnCalcularDeuda');
-  btn.disabled = true;
-  const { error } = await sb.from('fiscal_deudas').insert({
-    concepto, monto_historico: monto, fecha_vencimiento: fVenc, fecha_pago: fPago,
-    inpc_inicial: inpcIni || null, inpc_final: inpcFin || null, tasa_recargo: tasaRecargo,
-    meses, factor_actualizacion: factor, monto_actualizado: montoActualizado,
-    recargos, multa, total, creado_por: currentUserId
-  });
-  btn.disabled = false;
-  if (error) { alert('No se pudo guardar el adeudo: ' + error.message); return; }
-  await cargarDeudas();
-}
-function renderDeudas(){
-  const tbody = document.getElementById('tblDeudas');
-  tbody.innerHTML = deudas.map(d=>`<tr>
-      <td>${d.concepto}</td><td>${fmtMoney(d.monto_historico)}</td><td>${fmtMoney(d.monto_actualizado)}</td>
-      <td>${fmtMoney(d.recargos)}</td><td>${fmtMoney(d.multa)}</td><td><b>${fmtMoney(d.total)}</b></td>
-    </tr>`).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin adeudos registrados.</td></tr>';
-
-  const totalDeuda = deudas.reduce((s,d)=>s+Number(d.total||0),0);
-  document.getElementById('kpiDeudaTotal').textContent = fmtMoney(totalDeuda);
 }
 
 /* ---------- INIT ---------- */
