@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#0f1923">
 <title>Fiscal · SIF · MI Global</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 :root{
@@ -239,6 +240,13 @@ tr:last-child td{border-bottom:none}
         <span id="excelStatusTxt">Cargando datos CxC…</span>
       </div>
       <div id="excelStatusDetalle" style="font-size:11px;color:var(--muted)"></div>
+      <!-- Botón carga masiva (solo admin_master, se muestra desde bootstrapAuth) -->
+      <button id="btnCargarExcel" onclick="document.getElementById('inputExcelCxc').click()"
+              style="display:none;margin-left:auto;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(0,120,200,.25)">
+        📤 Cargar Excel
+      </button>
+      <input type="file" id="inputExcelCxc" accept=".xlsx,.xls" style="display:none"
+             onchange="if(this.files[0]){procesarExcelCxc(this.files[0]);this.value='';}">
     </div>
 
     <div class="card">
@@ -317,6 +325,44 @@ tr:last-child td{border-bottom:none}
 </div>
 </div>
 
+<!-- ═══════ MODAL: Vista previa carga masiva Excel ═══════ -->
+<div id="cxcUploadBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;backdrop-filter:blur(3px)"></div>
+<div id="cxcUploadModal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);width:min(960px,94vw);max-height:88vh;overflow:hidden;display:none;flex-direction:column">
+  <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff">
+    <div>
+      <div style="font-size:15px;font-weight:700">📤 Vista previa — Carga masiva CxC Fiscal</div>
+      <div id="cxcUploadSubtitle" style="font-size:11.5px;opacity:.85;margin-top:2px">—</div>
+    </div>
+    <button onclick="cerrarModalCarga()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px">✕ Cerrar</button>
+  </div>
+  <div id="cxcUploadResumen" style="padding:12px 22px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:20px;flex-wrap:wrap;font-size:12px"></div>
+  <div style="overflow:auto;flex:1">
+    <table id="cxcUploadTabla" style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead style="position:sticky;top:0;background:var(--surface2);z-index:1">
+        <tr>
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Acción</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Empresa</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Categoría</th>
+          <th style="padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)">Año</th>
+          <th style="padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)">Fid.</th>
+          <th style="padding:10px 12px;text-align:right;border-bottom:1px solid var(--border)">Monto anterior</th>
+          <th style="padding:10px 12px;text-align:right;border-bottom:1px solid var(--border)">Monto nuevo</th>
+          <th style="padding:10px 12px;text-align:right;border-bottom:1px solid var(--border)">Δ</th>
+        </tr>
+      </thead>
+      <tbody id="cxcUploadTbody"></tbody>
+    </table>
+    <div id="cxcUploadSkipped" style="padding:12px 22px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);display:none"></div>
+  </div>
+  <div style="padding:16px 22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--surface2);gap:12px">
+    <div id="cxcUploadStatus" style="font-size:12px;color:var(--muted)">Revisa la propuesta antes de confirmar.</div>
+    <div style="display:flex;gap:10px">
+      <button onclick="cerrarModalCarga()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer">Cancelar</button>
+      <button id="btnConfirmarCarga" onclick="confirmarCargaMasiva()" style="background:var(--green);color:#000;border:none;border-radius:8px;padding:9px 22px;font-size:12px;font-weight:700;cursor:pointer">✓ Confirmar carga</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    MÓDULO FISCAL — SIF · MI Global
@@ -328,6 +374,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
+const APP_VERSION   = '2026.07.14.1';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -339,6 +386,7 @@ sb.auth.onAuthStateChange((event) => {
 });
 
 let currentUserId = null;
+let currentUserRol = null;
 
 async function bootstrapAuth() {
   /* MODO BYPASS — muestra la app sin bloquear por sesión SSO */
@@ -349,10 +397,16 @@ async function bootstrapAuth() {
       try {
         const { data: user } = await sb.from('usuarios').select('*').eq('auth_id', session.user.id).maybeSingle();
         if (user) {
+          currentUserRol = user.rol || null;
           document.getElementById('userName').textContent = user.nombre || user.username || 'Usuario';
           document.getElementById('userRole').textContent = user.rol || '—';
           const av = document.getElementById('userAvatar');
           if (av) av.textContent = getInitials(user.nombre || user.username || '?');
+          /* Mostrar botón de carga masiva solo a admin_master */
+          if (currentUserRol === 'admin_master') {
+            const btn = document.getElementById('btnCargarExcel');
+            if (btn) btn.style.display = 'inline-flex';
+          }
         }
       } catch(e) { console.warn('Sin datos de usuario:', e); }
     } else {
@@ -744,6 +798,233 @@ function renderImpuestos(){
       <td>${c.periodo}</td><td>${fmtMoney(c.utilidad)}</td><td>${fmtMoney(c.isr)}</td>
       <td>${fmtMoney(c.iva_cargo)}</td><td>${fmtMoney(c.total)}</td>
     </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">Sin cálculos registrados.</td></tr>';
+}
+
+/* ============================================================
+   CARGA MASIVA CxC — Excel Dashboard_Impuestos_.xlsx
+   Hoja: DATOS · Solo filas con Monto > 0 · Consolida 27 tipos → 8 categorías
+   ============================================================ */
+
+/* Mapeo canónico: tipo del Excel → (categoria consolidada, fiduciario) */
+function mapearTipoImpuesto(tipoExcel){
+  const t = String(tipoExcel||'').trim();
+  if (t === 'Income Tax/ ISR Propio')
+    return { categoria:'ISR Propio', fiduciario:false };
+  if (t === 'Employees Tax Withholding / ISR Ret. Empleado')
+    return { categoria:'ISR Retenido a Empleados', fiduciario:true };
+  if (t === 'Third party Tax Withholding / ISR Ret. (Hono.,Arren.,Fle)')
+    return { categoria:'ISR Retenido a Terceros', fiduciario:true };
+  if (t === 'Third party Tax Withholding / IVA Ret. (Hono.,Arren.,Fle)')
+    return { categoria:'IVA Retenido a Terceros', fiduciario:true };
+  if (t === 'VAT/ IVA')
+    return { categoria:'IVA', fiduciario:false };
+  if (t.startsWith('Social Security / IMSS'))
+    return { categoria:'IMSS / Seguridad Social', fiduciario:false };
+  if (t.startsWith('Housing and Retirement Fund / INFONAVIT'))
+    return { categoria:'INFONAVIT / RCV', fiduciario:false };
+  if (t.startsWith('Housing and Retirement Fund / RCV'))
+    return { categoria:'INFONAVIT / RCV', fiduciario:false };
+  if (t.startsWith('State Tax on payroll'))
+    return { categoria:'ISN Estatal', fiduciario:false };
+  return null;  // sin mapeo — se reporta como skipped
+}
+
+/* Estado en memoria de la propuesta actual (para el botón Confirmar) */
+let cargaMasivaPropuesta = null;
+
+async function procesarExcelCxc(file){
+  if (currentUserRol !== 'admin_master') {
+    alert('Solo admin_master puede realizar carga masiva.');
+    return;
+  }
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array' });
+    if (!wb.SheetNames.includes('DATOS')) {
+      alert('El archivo no contiene la hoja "DATOS".\nHojas encontradas: ' + wb.SheetNames.join(', '));
+      return;
+    }
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets['DATOS'], { defval:null });
+
+    /* Filtrar Monto > 0 y mapear */
+    const skipped = [];
+    const grouped = {};
+    for (const r of rows) {
+      const monto = Number(r.Monto) || 0;
+      if (monto <= 0) continue;
+      const empresa = String(r.Empresa||'').trim();
+      const anio = Number(r['Año']);
+      const tipo = String(r['Tipo de Impuesto']||'').trim();
+      if (!empresa || !anio || !tipo) { skipped.push({row:r, motivo:'campos vacíos'}); continue; }
+      const m = mapearTipoImpuesto(tipo);
+      if (!m) { skipped.push({row:r, motivo:'tipo no mapeado: '+tipo}); continue; }
+      const key = empresa + '||' + m.categoria + '||' + anio;
+      if (!grouped[key]) {
+        grouped[key] = {
+          empresa,
+          categoria: m.categoria,
+          fiduciario: m.fiduciario,
+          anio_inicio: anio,
+          anio_fin: anio,
+          monto: 0,
+          estatus: 'Pendiente'
+        };
+      }
+      grouped[key].monto += monto;
+    }
+    const propuesta = Object.values(grouped).sort((a,b) =>
+      a.empresa.localeCompare(b.empresa) ||
+      a.anio_inicio - b.anio_inicio ||
+      a.categoria.localeCompare(b.categoria)
+    );
+
+    if (!propuesta.length) {
+      alert('No se encontraron filas válidas con monto > 0.');
+      return;
+    }
+
+    /* Consultar filas existentes para saber qué actualizar */
+    const { data: existing, error: errEx } = await sb.from('fiscal_cxc_impuestos')
+      .select('id, empresa, categoria, anio_inicio, monto');
+    if (errEx) { alert('Error consultando existentes: '+errEx.message); return; }
+    const existMap = new Map();
+    (existing||[]).forEach(e => existMap.set(e.empresa+'||'+e.categoria+'||'+e.anio_inicio, e));
+
+    let cInsert = 0, cUpdate = 0, cSinCambio = 0;
+    propuesta.forEach(p => {
+      const k = p.empresa+'||'+p.categoria+'||'+p.anio_inicio;
+      const ex = existMap.get(k);
+      if (ex) {
+        p._id = ex.id;
+        p._montoAnt = Number(ex.monto) || 0;
+        p._delta = p.monto - p._montoAnt;
+        if (Math.abs(p._delta) < 0.01) { p._accion = 'SIN CAMBIO'; cSinCambio++; }
+        else { p._accion = 'UPDATE'; cUpdate++; }
+      } else {
+        p._accion = 'INSERT';
+        cInsert++;
+      }
+    });
+
+    cargaMasivaPropuesta = propuesta;
+    mostrarPreviewCargaCxc(propuesta, skipped, { cInsert, cUpdate, cSinCambio, file: file.name });
+  } catch(e) {
+    console.error(e);
+    alert('Error procesando Excel: '+e.message);
+  }
+}
+
+function mostrarPreviewCargaCxc(propuesta, skipped, stats){
+  const total = propuesta.reduce((a,p)=>a+p.monto, 0);
+  const totalDelta = propuesta.reduce((a,p)=>a+(p._delta||0), 0);
+  const totalActual = propuesta.reduce((a,p)=>a+(p._montoAnt||0), 0);
+
+  document.getElementById('cxcUploadSubtitle').textContent =
+    stats.file + ' · ' + propuesta.length + ' filas agrupadas';
+
+  document.getElementById('cxcUploadResumen').innerHTML = `
+    <div><b style="color:var(--green)">${stats.cInsert}</b> nuevas</div>
+    <div><b style="color:var(--yellow)">${stats.cUpdate}</b> con cambio</div>
+    <div><b style="color:var(--muted)">${stats.cSinCambio}</b> sin cambio</div>
+    <div style="margin-left:auto"><b>Total actual:</b> ${fmtMoney(totalActual)}</div>
+    <div><b>Total nuevo:</b> ${fmtMoney(total)}</div>
+    <div><b style="color:${totalDelta>=0?'var(--green)':'var(--red)'}">Δ ${fmtMoney(totalDelta)}</b></div>
+  `;
+
+  const tbody = document.getElementById('cxcUploadTbody');
+  tbody.innerHTML = propuesta.map(p => {
+    const colorAccion =
+      p._accion==='INSERT' ? 'var(--green)' :
+      p._accion==='UPDATE' ? 'var(--yellow)' : 'var(--muted)';
+    const badge = `<span style="background:${colorAccion};color:${p._accion==='INSERT'?'#000':(p._accion==='UPDATE'?'#000':'var(--surface)')};padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700">${p._accion}</span>`;
+    const delta = p._delta != null ? p._delta : (p._accion==='INSERT' ? p.monto : 0);
+    const deltaColor = Math.abs(delta) < 0.01 ? 'var(--muted)' : (delta > 0 ? 'var(--green)' : 'var(--red)');
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:8px 12px">${badge}</td>
+      <td style="padding:8px 12px">${p.empresa}</td>
+      <td style="padding:8px 12px">${p.categoria}</td>
+      <td style="padding:8px 12px;text-align:center">${p.anio_inicio}</td>
+      <td style="padding:8px 12px;text-align:center">${p.fiduciario?'🔴':'—'}</td>
+      <td style="padding:8px 12px;text-align:right;color:var(--muted)">${p._montoAnt!=null?fmtMoney(p._montoAnt):'—'}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:600">${fmtMoney(p.monto)}</td>
+      <td style="padding:8px 12px;text-align:right;color:${deltaColor}">${Math.abs(delta)<0.01?'—':fmtMoney(delta)}</td>
+    </tr>`;
+  }).join('');
+
+  const skDiv = document.getElementById('cxcUploadSkipped');
+  if (skipped.length) {
+    skDiv.style.display = 'block';
+    skDiv.innerHTML = '<b>⚠️ ' + skipped.length + ' filas ignoradas:</b> ' +
+      Array.from(new Set(skipped.map(s => s.motivo))).slice(0,5).join(' · ');
+  } else {
+    skDiv.style.display = 'none';
+  }
+
+  document.getElementById('cxcUploadBackdrop').style.display = 'block';
+  document.getElementById('cxcUploadModal').style.display = 'flex';
+  document.getElementById('cxcUploadStatus').textContent =
+    'Revisa la propuesta antes de confirmar. Los UPDATE sobrescriben el monto existente.';
+  document.getElementById('btnConfirmarCarga').disabled = false;
+  document.getElementById('btnConfirmarCarga').style.opacity = '1';
+}
+
+function cerrarModalCarga(){
+  document.getElementById('cxcUploadBackdrop').style.display = 'none';
+  document.getElementById('cxcUploadModal').style.display = 'none';
+  cargaMasivaPropuesta = null;
+}
+
+async function confirmarCargaMasiva(){
+  if (currentUserRol !== 'admin_master') { alert('Solo admin_master.'); return; }
+  if (!cargaMasivaPropuesta || !cargaMasivaPropuesta.length) return;
+
+  const btn = document.getElementById('btnConfirmarCarga');
+  const status = document.getElementById('cxcUploadStatus');
+  btn.disabled = true; btn.style.opacity = '0.6';
+  status.textContent = 'Aplicando cambios en Supabase…';
+
+  const inserts = cargaMasivaPropuesta
+    .filter(p => p._accion === 'INSERT')
+    .map(p => ({
+      empresa: p.empresa,
+      categoria: p.categoria,
+      monto: p.monto,
+      fiduciario: p.fiduciario,
+      anio_inicio: p.anio_inicio,
+      anio_fin: p.anio_fin,
+      estatus: 'Pendiente',
+      creado_por: currentUserId
+    }));
+
+  const updates = cargaMasivaPropuesta.filter(p => p._accion === 'UPDATE');
+
+  let okIns = 0, okUpd = 0, errores = [];
+
+  try {
+    if (inserts.length) {
+      const { error } = await sb.from('fiscal_cxc_impuestos').insert(inserts);
+      if (error) errores.push('INSERT: '+error.message);
+      else okIns = inserts.length;
+    }
+    for (const u of updates) {
+      const { error } = await sb.from('fiscal_cxc_impuestos')
+        .update({ monto: u.monto, fiduciario: u.fiduciario, updated_at: new Date().toISOString() })
+        .eq('id', u._id);
+      if (error) errores.push('UPDATE id='+u._id+': '+error.message);
+      else okUpd++;
+    }
+  } catch(e) {
+    errores.push('Excepción: '+e.message);
+  }
+
+  if (errores.length) {
+    status.innerHTML = '<span style="color:var(--red)">⚠️ Terminó con errores. Insertadas: '+okIns+' · Actualizadas: '+okUpd+' · Errores: '+errores.length+'</span>';
+    console.error('Errores carga masiva:', errores);
+    btn.disabled = false; btn.style.opacity = '1';
+  } else {
+    status.innerHTML = '<span style="color:var(--green)">✅ Carga aplicada — Insertadas: '+okIns+' · Actualizadas: '+okUpd+'</span>';
+    setTimeout(() => { cerrarModalCarga(); cargarCxc(); }, 1400);
+  }
 }
 
 /* ---------- INIT ---------- */
