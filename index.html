@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,19 +9,16 @@
 <meta name="theme-color" content="#0f1923">
 <title>Fiscal · SIF · MI Global</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 :root{
   --bg:#0f1923; --surface:#161f2c; --surface2:#1d2a3a; --border:#243044;
   --accent:#00c2ff; --accent2:#0077b6; --green:#00e5a0; --red:#ff4d6d; --yellow:#ffd166;
-  --orange:#ff8f3f; --critical:#8b0000; --blue:#38bdf8;
   --text:#e8f0f8; --muted:#7a95b0; --radius:12px; --font:'Inter',system-ui,sans-serif;
 }
 [data-theme="light"]{
   --bg:#e6ecf3; --surface:#f7fafd; --surface2:#ebf1f8; --border:#c9d3e0;
   --accent:#0284c7; --accent2:#0369a1; --green:#059669; --red:#e11d48; --yellow:#d97706;
-  --orange:#ea580c; --critical:#7f1d1d; --blue:#0284c7;
   --text:#1e293b; --muted:#64748b;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -70,16 +67,28 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 /* KPI cards */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
 @media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr}}
-/* Grid de 6 zonas de riesgo (CxC Fiscal): 6 cols desktop → 3 cols tablet → 2 cols mobile */
-.kpi-grid-6{grid-template-columns:repeat(6,1fr) !important}
-@media(max-width:1100px){.kpi-grid-6{grid-template-columns:repeat(3,1fr) !important}}
-@media(max-width:640px){.kpi-grid-6{grid-template-columns:1fr 1fr !important}}
 .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
 .kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
 .kpi-value{font-size:22px;font-weight:700}
 .kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
 
 /* Tabs */
+/* ── SEMÁFORO CALENDARIO ── */
+.kpi-semaforo{transition:transform .12s,box-shadow .12s}
+.kpi-semaforo:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.kpi-semaforo.activo{outline:3px solid currentColor;outline-offset:2px}
+.kpi-legal{font-size:9px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);line-height:1.5}
+.sem-chip{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;color:#fff;white-space:nowrap}
+.sem-chip.rojo   {background:#dc2626}
+.sem-chip.naranja{background:#f97316}
+.sem-chip.amarillo{background:#f59e0b}
+.sem-chip.verde  {background:#22c55e}
+.dias-chip{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;font-family:monospace}
+.dias-chip.rojo   {background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.dias-chip.naranja{background:#ffedd5;color:#9a3412;border:1px solid #fdba74}
+.dias-chip.amarillo{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.dias-chip.verde  {background:#dcfce7;color:#14532d;border:1px solid #86efac}
+.obl-detail{background:var(--surface2);padding:8px 14px 10px 48px;font-size:11px;line-height:1.6;border-top:1px dashed var(--border)}
 .nav-tabs{display:flex;gap:6px;border-bottom:1px solid var(--border);margin-bottom:20px;flex-wrap:wrap}
 .nav-tab{background:none;border:none;color:var(--muted);padding:10px 14px;font-size:13px;font-weight:600;
   cursor:pointer;border-bottom:2px solid transparent}
@@ -115,10 +124,6 @@ tr:last-child td{border-bottom:none}
 .badge-green{background:rgba(0,229,160,.15);color:var(--green)}
 .badge-red{background:rgba(255,77,109,.15);color:var(--red)}
 .badge-yellow{background:rgba(255,209,102,.15);color:var(--yellow)}
-.badge-orange{background:rgba(255,143,63,.15);color:var(--orange)}
-.badge-critical{background:rgba(139,0,0,.18);color:#fff;background:linear-gradient(135deg,rgba(139,0,0,.9),rgba(60,0,0,.9));font-weight:700}
-[data-theme="light"] .badge-critical{background:linear-gradient(135deg,#7f1d1d,#450a0a);color:#fff}
-.badge-blue{background:rgba(56,189,248,.15);color:var(--blue)}
 .badge-muted{background:rgba(122,149,176,.15);color:var(--muted)}
 
 .note{font-size:11.5px;color:var(--muted);background:var(--surface2);border:1px dashed var(--border);
@@ -129,26 +134,6 @@ tr:last-child td{border-bottom:none}
 .result-row.total{border-top:1px solid var(--border);margin-top:6px;padding-top:10px;font-weight:700;font-size:15px}
 .result-row .muted{color:var(--muted)}
 .table-wrap{overflow-x:auto}
-
-/* ── Etapa 5.1 · Banner auto-updater (cero caché) ─────────────── */
-#updateBanner{
-  position:fixed;top:0;left:0;right:0;z-index:9999;
-  background:linear-gradient(90deg,var(--green),var(--accent));
-  color:#0d1117;font-weight:800;font-size:13px;
-  padding:10px 18px;display:none;
-  align-items:center;justify-content:space-between;gap:12px;
-  box-shadow:0 4px 20px rgba(0,0,0,.35);
-  animation:slideDown .35s ease-out;
-}
-#updateBanner.visible{display:flex;}
-#updateBanner .msg{flex:1;min-width:0;}
-#updateBanner button{
-  background:#0d1117;color:var(--green);border:none;border-radius:8px;
-  padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;
-  white-space:nowrap;
-}
-#updateBanner button:hover{background:#161b22;}
-@keyframes slideDown{from{transform:translateY(-100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
 .sync-badge{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
 .sync-dot.error{background:var(--red)}
@@ -157,472 +142,9 @@ tr:last-child td{border-bottom:none}
 .cxc-controls .grp.grow{flex:1;min-width:220px}
 .cxc-controls .chips{display:flex;gap:6px;flex-wrap:wrap}
 .cxc-controls select{width:auto;min-width:200px}
-
-/* ══════════ EXCEL UPLOAD ══════════ */
-.excel-drop{
-  border:2px dashed var(--border);border-radius:12px;
-  padding:24px;text-align:center;cursor:pointer;
-  transition:all .15s ease;background:var(--surface2);
-}
-.excel-drop:hover,.excel-drop.drag{
-  border-color:var(--accent);background:rgba(0,194,255,.06);
-}
-.excel-drop-inner{pointer-events:none}
-.excel-drop-inner .btn{pointer-events:auto}
-.excel-preview{
-  border:1px solid var(--border);border-radius:10px;
-  padding:14px;background:var(--surface2);margin-top:12px;
-}
-.excel-preview h3{font-size:14px;margin-bottom:10px;color:var(--accent)}
-.excel-preview .stats{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-  gap:10px;margin:10px 0;
-}
-.excel-preview .stat{
-  background:var(--surface);border-radius:8px;padding:10px 12px;
-  border:1px solid var(--border);
-}
-.excel-preview .stat .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-.excel-preview .stat .val{font-size:20px;font-weight:700;color:var(--accent);margin-top:2px}
-.excel-warn{
-  background:rgba(255,77,109,.10);border:1px solid var(--red);
-  border-radius:8px;padding:10px 12px;color:var(--red);
-  font-size:12.5px;margin:10px 0;
-}
-[data-theme="light"] .excel-warn{background:rgba(225,29,72,.08)}
-.excel-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
-.btn-danger{
-  background:var(--red);color:#fff;border:none;padding:8px 16px;
-  border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;
-}
-.btn-danger:hover{opacity:.9}
-
-/* ══════════ Modal de desglose del cálculo fiscal ══════════ */
-.calc-modal-backdrop{
-  position:fixed;inset:0;background:rgba(0,0,0,.65);
-  display:flex;align-items:center;justify-content:center;
-  z-index:9999;padding:20px;overflow-y:auto;
-  animation:calcModalFadeIn .18s ease-out;
-}
-@keyframes calcModalFadeIn{from{opacity:0}to{opacity:1}}
-.calc-modal{
-  background:var(--bg);border:1px solid var(--border);
-  border-radius:14px;max-width:920px;width:100%;
-  max-height:90vh;display:flex;flex-direction:column;
-  box-shadow:0 20px 60px rgba(0,0,0,.5);
-  animation:calcModalSlideIn .22s ease-out;
-}
-@keyframes calcModalSlideIn{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
-.calc-modal-header{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:16px 22px;border-bottom:1px solid var(--border);
-  background:linear-gradient(135deg,rgba(0,87,184,.08),rgba(0,40,85,.04));
-}
-.calc-modal-header h2{margin:0;font-size:17px;font-weight:600;color:var(--text)}
-.calc-modal-close{
-  background:none;border:none;font-size:28px;line-height:1;
-  color:var(--muted);cursor:pointer;padding:0 6px;
-  border-radius:6px;transition:all .15s;
-}
-.calc-modal-close:hover{background:var(--border);color:var(--text)}
-.calc-modal-body{padding:22px;overflow-y:auto;flex:1}
-.calc-step{
-  background:rgba(0,87,184,.04);border:1px solid var(--border);
-  border-radius:10px;padding:14px 16px;margin-bottom:12px;
-}
-[data-theme="light"] .calc-step{background:rgba(0,87,184,.03)}
-.calc-step-title{
-  font-size:11px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.5px;color:var(--muted);margin-bottom:8px;
-  display:flex;align-items:center;gap:6px;
-}
-.calc-step-title .calc-step-num{
-  background:var(--primary,#0057B8);color:#fff;
-  width:20px;height:20px;border-radius:50%;
-  display:inline-flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:700;
-}
-.calc-formula{
-  font-family:'SF Mono','Monaco','Cascadia Code',monospace;
-  font-size:13px;background:var(--bg);border:1px solid var(--border);
-  border-radius:6px;padding:8px 12px;margin:6px 0;
-  color:var(--text);overflow-x:auto;
-}
-.calc-row{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;font-size:13.5px}
-.calc-row-label{color:var(--muted)}
-.calc-row-value{font-weight:600;color:var(--text)}
-.calc-row-value.big{font-size:16px;color:var(--primary,#0057B8)}
-.calc-row-value.total{font-size:20px;font-weight:700;color:var(--red)}
-.calc-legal{
-  font-size:11.5px;color:var(--muted);font-style:italic;
-  margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);
-}
-.calc-warn-box{
-  background:rgba(225,29,72,.08);border-left:3px solid var(--red);
-  padding:10px 14px;border-radius:6px;font-size:12.5px;
-  color:var(--text);margin-top:10px;
-}
-.calc-step-total{
-  background:linear-gradient(135deg,rgba(225,29,72,.12),rgba(225,29,72,.04));
-  border:2px solid var(--red);
-}
-
-/* ══════════ KPIs mini de Cálculo de Impuestos — Look premium ══════════ */
-.kpi-agrupador-bar{
-  display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:16px;
-  padding-bottom:14px;border-bottom:1px solid var(--border);
-}
-.kpi-agrupador-bar .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-right:4px}
-.kpi-chip{
-  padding:6px 14px;font-size:11.5px;border-radius:20px;cursor:pointer;
-  background:transparent;border:1px solid var(--border);
-  color:var(--muted);transition:all .18s;font-weight:500;
-}
-.kpi-chip:hover{border-color:var(--accent,#0057B8);color:var(--accent,#0057B8);background:rgba(0,87,184,.04)}
-.kpi-chip.active{
-  background:linear-gradient(135deg,#003876,#0057B8);color:#fff;
-  border-color:transparent;box-shadow:0 2px 8px rgba(0,87,184,.25);font-weight:600;
-}
-.kpi-calc-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-  gap:14px;
-}
-.kpi-mini{
-  position:relative;overflow:hidden;
-  background:var(--bg);border:1px solid var(--border);border-radius:14px;
-  padding:18px 18px 16px;cursor:pointer;transition:all .22s cubic-bezier(.4,0,.2,1);
-  display:flex;flex-direction:column;gap:0;min-height:140px;
-}
-.kpi-mini::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,#003876,#0057B8);
-  opacity:0;transition:opacity .22s;
-}
-.kpi-mini::after{
-  content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;
-  background:radial-gradient(circle,rgba(0,87,184,.06) 0%,transparent 70%);
-  pointer-events:none;
-}
-[data-theme="dark"] .kpi-mini::after{background:radial-gradient(circle,rgba(0,87,184,.12) 0%,transparent 70%)}
-.kpi-mini:hover{
-  border-color:rgba(0,87,184,.4);transform:translateY(-3px);
-  box-shadow:0 12px 32px rgba(0,87,184,.15),0 3px 8px rgba(0,0,0,.04);
-}
-.kpi-mini:hover::before{opacity:1}
-.kpi-mini-icon{
-  width:36px;height:36px;border-radius:10px;
-  background:linear-gradient(135deg,rgba(0,87,184,.12),rgba(0,40,85,.06));
-  display:flex;align-items:center;justify-content:center;font-size:17px;
-  margin-bottom:10px;
-}
-[data-theme="dark"] .kpi-mini-icon{background:linear-gradient(135deg,rgba(0,87,184,.25),rgba(0,40,85,.12))}
-.kpi-mini-label{
-  font-size:10px;color:var(--muted);text-transform:uppercase;
-  letter-spacing:1px;font-weight:700;margin-bottom:4px;
-}
-.kpi-mini-title{
-  font-size:15px;font-weight:600;color:var(--text);line-height:1.25;
-  margin-bottom:8px;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-  overflow:hidden;
-}
-.kpi-mini-count{
-  font-size:10.5px;color:var(--muted);font-weight:500;
-  padding:2px 8px;background:var(--bg-soft,#f7f8fa);border-radius:10px;
-  align-self:flex-start;
-}
-[data-theme="dark"] .kpi-mini-count{background:rgba(255,255,255,.05)}
-.kpi-mini-total{
-  font-size:22px;font-weight:700;color:var(--text);margin-top:auto;
-  letter-spacing:-.5px;line-height:1.1;
-}
-.kpi-mini-alert{
-  display:inline-flex;align-items:center;gap:4px;
-  font-size:10px;padding:3px 8px;border-radius:10px;margin-top:6px;
-  background:linear-gradient(135deg,rgba(225,29,72,.12),rgba(225,29,72,.05));
-  color:var(--red);align-self:flex-start;font-weight:600;
-  border:1px solid rgba(225,29,72,.2);
-}
-.kpi-mini-arrow{
-  position:absolute;bottom:16px;right:16px;color:var(--muted);
-  font-size:16px;opacity:0;transition:all .22s;
-}
-.kpi-mini:hover .kpi-mini-arrow{opacity:.7;color:var(--accent,#0057B8);transform:translateX(3px)}
-
-/* ══════════ Wizard modal — asistente paso a paso (COMPACTO) ══════════ */
-.wizard-modal{
-  background:var(--bg);border:1px solid var(--border);
-  border-radius:12px;max-width:540px;width:100%;
-  max-height:88vh;display:flex;flex-direction:column;
-  box-shadow:0 20px 60px rgba(0,0,0,.5);
-  animation:calcModalSlideIn .22s ease-out;
-}
-.wizard-header{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:12px 16px;border-bottom:1px solid var(--border);
-  background:linear-gradient(135deg,rgba(0,87,184,.08),rgba(0,40,85,.04));
-}
-.wizard-header h2{margin:0;font-size:14px;font-weight:600;color:var(--text)}
-.wizard-header .subtitle{font-size:11px;color:var(--muted);margin-top:1px}
-.wizard-steps{
-  display:flex;align-items:center;gap:0;padding:10px 14px;
-  border-bottom:1px solid var(--border);background:var(--bg-soft,#f7f8fa);
-}
-.wizard-step-item{
-  display:flex;align-items:center;gap:6px;flex:1;font-size:10.5px;
-  color:var(--muted);position:relative;
-}
-.wizard-step-item .num{
-  width:20px;height:20px;border-radius:50%;background:var(--border);
-  color:var(--muted);display:flex;align-items:center;justify-content:center;
-  font-weight:600;font-size:10.5px;flex-shrink:0;transition:all .18s;
-}
-.wizard-step-item.active{color:var(--text);font-weight:600}
-.wizard-step-item.active .num{background:var(--accent,#0057B8);color:#fff}
-.wizard-step-item.done .num{background:#22c55e;color:#fff}
-.wizard-step-item.done::after,
-.wizard-step-item.active::after,
-.wizard-step-item::after{
-  content:'';flex:1;height:2px;background:var(--border);margin-left:4px;
-}
-.wizard-step-item:last-child::after{display:none}
-.wizard-step-item.done::after{background:#22c55e}
-.wizard-body{padding:14px 16px;overflow-y:auto;flex:1}
-.wizard-body p{margin:0 0 10px 0;font-size:11.5px !important}
-.wizard-nav{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:10px 14px;border-top:1px solid var(--border);
-  background:var(--bg-soft,#f7f8fa);gap:8px;flex-wrap:wrap;
-}
-.wizard-nav .btn,.wizard-nav .btn-secondary,.wizard-nav .btn-danger{
-  padding:6px 12px;font-size:12px;
-}
-.wizard-nav .spacer{flex:1}
-.wizard-nav .info{font-size:10.5px;color:var(--muted)}
-
-.wiz-concept-card{
-  background:var(--bg);border:1px solid var(--border);border-radius:8px;
-  padding:10px 12px;margin-bottom:8px;
-}
-.wiz-concept-card .head{
-  display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;
-  padding-bottom:6px;border-bottom:1px solid var(--border);
-}
-.wiz-concept-card .head b{font-size:12px}
-.wiz-concept-card .head .badge{
-  font-size:9.5px;padding:1px 6px;border-radius:8px;
-  background:var(--bg-soft,#f7f8fa);color:var(--muted);font-weight:500;
-}
-.wiz-concept-card .head .badge.fid{background:rgba(225,29,72,.1);color:var(--red)}
-.wiz-concept-card .row{
-  display:grid;grid-template-columns:1fr auto;gap:8px;
-  padding:3px 0;font-size:11.5px;align-items:center;
-}
-.wiz-concept-card .row > label,
-.wiz-concept-card .row > div{min-width:0}
-.wiz-concept-card .row label{
-  text-transform:none;flex-wrap:wrap;
-}
-.wiz-concept-card .row label .lbl{
-  overflow-wrap:break-word;word-break:break-word;line-height:1.35;
-}
-.wiz-concept-card .row.calc{color:var(--accent,#0057B8);font-weight:600}
-.wiz-concept-card .row .lbl{color:var(--muted);font-size:10.5px}
-.wiz-concept-card .row .val{font-weight:500;white-space:nowrap;text-align:right}
-.wiz-concept-card .row .val.big{font-size:13px;font-weight:700}
-.wiz-concept-card .row input[type="number"],
-.wiz-concept-card .row input[type="month"]{
-  width:110px;padding:4px 6px;font-size:11.5px;
-  border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);
-}
-.wiz-concept-card .toggles{
-  display:flex;gap:10px;flex-wrap:wrap;padding-top:6px;margin-top:6px;
-  border-top:1px dashed var(--border);
-}
-.wiz-concept-card .toggles label{
-  display:inline-flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;
-}
-.wiz-concept-card .cond-slider{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.wiz-concept-card .cond-slider input[type="range"]{width:90px}
-.wiz-concept-card .cond-slider .pct{font-weight:600;color:var(--accent,#0057B8);min-width:30px;font-size:11px}
-.wiz-inpc-input{
-  background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.4);
-  padding:6px 10px;border-radius:6px;font-size:10.5px;margin-top:6px;
-}
-.wiz-select-list{
-  max-height:45vh;overflow-y:auto;border:1px solid var(--border);
-  border-radius:8px;padding:4px;
-}
-.wiz-select-row{
-  display:flex;align-items:center;gap:10px;padding:10px 12px;
-  border-bottom:1px solid var(--border);cursor:pointer;transition:all .15s;
-  min-width:0;
-}
-.wiz-select-row:hover{background:var(--bg-soft,#f7f8fa)}
-.wiz-select-row:last-child{border-bottom:none}
-.wiz-select-row.selected{background:linear-gradient(90deg,rgba(0,87,184,.06),transparent)}
-.wiz-select-row input[type="checkbox"]{flex-shrink:0;margin:0}
-.wiz-select-row .info{
-  flex:1;font-size:12px;min-width:0;overflow:hidden;
-  display:flex;flex-direction:column;gap:2px;
-}
-.wiz-select-row .info .main{
-  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
-  font-weight:600;color:var(--text);line-height:1.3;
-}
-.wiz-select-row .info .fid-badge{
-  display:inline-flex;align-items:center;gap:3px;
-  font-size:9.5px;padding:1px 6px;border-radius:8px;
-  background:rgba(225,29,72,.1);color:var(--red);font-weight:600;
-  border:1px solid rgba(225,29,72,.15);
-}
-.wiz-select-row .info .sub{
-  font-size:10.5px;color:var(--muted);font-weight:400;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.wiz-select-row .monto{
-  font-weight:700;font-size:13px;color:var(--text);
-  white-space:nowrap;flex-shrink:0;
-  font-variant-numeric:tabular-nums;
-}
-.wiz-select-header{
-  display:flex;align-items:center;gap:8px;padding:8px 12px;
-  background:linear-gradient(135deg,rgba(0,87,184,.05),rgba(0,40,85,.02));
-  border:1px solid rgba(0,87,184,.15);border-radius:8px;margin-bottom:10px;
-  font-size:11.5px;
-}
-.wiz-select-header label{font-weight:600;color:var(--text);cursor:pointer}
-.wiz-select-header .counter{
-  font-weight:700;color:var(--accent,#0057B8);
-  padding:2px 8px;background:var(--bg);border-radius:10px;
-  font-size:11px;
-}
-
-/* Paso 1: tarjetas KPI seleccionables (mismo lenguaje visual que .kpi-mini) */
-.wiz-select-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(198px,1fr));
-  gap:10px;max-height:46vh;overflow-y:auto;padding:4px 2px;
-}
-.wiz-concept-kpi{
-  position:relative;overflow:hidden;
-  background:var(--bg);border:1px solid var(--border);border-radius:12px;
-  padding:12px 12px 10px;cursor:pointer;transition:all .18s cubic-bezier(.4,0,.2,1);
-  display:flex;flex-direction:column;gap:0;min-height:104px;
-}
-.wiz-concept-kpi::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,#003876,#0057B8);
-  opacity:0;transition:opacity .18s;
-}
-.wiz-concept-kpi.selected::before{opacity:1}
-.wiz-concept-kpi.selected{border-color:rgba(0,87,184,.35);box-shadow:0 4px 14px rgba(0,87,184,.1)}
-.wiz-concept-kpi:not(.selected){opacity:.5}
-.wiz-concept-kpi:not(.selected):hover{opacity:.8}
-.wiz-concept-kpi:hover{transform:translateY(-2px)}
-.wiz-concept-kpi .kpi-icon{font-size:14px;margin-bottom:6px}
-.wiz-concept-kpi .kpi-check{
-  position:absolute;top:10px;right:10px;width:17px;height:17px;border-radius:6px;
-  border:1.5px solid var(--border);background:var(--bg);
-  display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#fff;
-  transition:all .18s;flex-shrink:0;
-}
-.wiz-concept-kpi.selected .kpi-check{background:linear-gradient(135deg,#003876,#0057B8);border-color:transparent}
-.wiz-concept-kpi .kpi-label{
-  font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;
-  font-weight:700;margin-bottom:3px;padding-right:20px;
-}
-.wiz-concept-kpi .kpi-title{
-  font-size:12.5px;font-weight:600;color:var(--text);line-height:1.25;
-  margin-bottom:5px;padding-right:20px;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-}
-.wiz-concept-kpi .kpi-fid{
-  display:inline-flex;align-items:center;gap:3px;font-size:9px;padding:2px 6px;
-  border-radius:8px;background:rgba(225,29,72,.1);color:var(--red);font-weight:600;
-  border:1px solid rgba(225,29,72,.15);align-self:flex-start;margin-bottom:5px;
-}
-.wiz-concept-kpi .kpi-monto{
-  font-size:16px;font-weight:700;color:var(--text);margin-top:auto;
-  letter-spacing:-.3px;font-variant-numeric:tabular-nums;
-}
-
-/* Paso 4: lista compacta pro */
-.wiz-summary-list{display:flex;flex-direction:column;gap:8px}
-.wiz-summary-item{
-  background:var(--bg);border:1px solid var(--border);border-radius:10px;
-  padding:11px 13px;transition:all .15s;position:relative;
-}
-.wiz-summary-item:hover{border-color:rgba(0,87,184,.3);box-shadow:0 2px 8px rgba(0,87,184,.06)}
-.wiz-summary-item .top{
-  display:flex;align-items:baseline;justify-content:space-between;
-  gap:10px;margin-bottom:2px;
-}
-.wiz-summary-item .top .name{
-  font-size:12.5px;font-weight:600;flex:1;min-width:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  color:var(--text);
-}
-.wiz-summary-item .top .total{
-  font-size:15px;font-weight:700;color:var(--accent,#0057B8);
-  white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.3px;
-}
-.wiz-summary-item .subline{
-  font-size:10px;color:var(--muted);margin-bottom:8px;
-  text-transform:uppercase;letter-spacing:.5px;font-weight:500;
-}
-.wiz-summary-item .breakdown{
-  display:grid;grid-template-columns:repeat(2,1fr);gap:5px 10px;
-  font-size:10.5px;padding-top:6px;border-top:1px dashed var(--border);
-}
-.wiz-summary-item .breakdown div{display:flex;justify-content:space-between;gap:6px}
-.wiz-summary-item .breakdown span{color:var(--muted)}
-.wiz-summary-item .breakdown b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
-.wiz-summary-item .actions{
-  margin-top:8px;padding-top:6px;border-top:1px dashed var(--border);
-}
-.wiz-summary-item .actions button{
-  padding:4px 10px;font-size:10.5px;background:transparent;
-  border:1px solid var(--border);color:var(--muted);
-}
-.wiz-summary-item .actions button:hover{
-  border-color:var(--accent,#0057B8);color:var(--accent,#0057B8);
-}
-
-.wiz-total-card{
-  background:linear-gradient(135deg,#003876 0%,#0057B8 100%);
-  border:none;border-radius:12px;
-  padding:16px 18px;margin-top:12px;text-align:center;
-  color:#fff;box-shadow:0 8px 24px rgba(0,87,184,.25);
-}
-.wiz-total-card .lbl{
-  font-size:10px;color:rgba(255,255,255,.7);text-transform:uppercase;
-  letter-spacing:1px;font-weight:700;
-}
-.wiz-total-card .amount{
-  font-size:28px;font-weight:800;color:#fff;margin-top:4px;
-  letter-spacing:-1px;font-variant-numeric:tabular-nums;
-}
-.wiz-total-card .breakdown{
-  font-size:10.5px;color:rgba(255,255,255,.85);margin-top:6px;
-}
-.wiz-total-card .breakdown b{color:#fff}
 </style>
 </head>
 <body>
-
-<!-- Bootstrap inline: aplica preferencias de tema e idioma guardadas ANTES
-     de que se pinte el DOM, para evitar flash (FOUC). Default: tema=light, lang=es. -->
-<script>
-(function(){
-  try {
-    var t = localStorage.getItem('mitech_fiscal_theme');
-    if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
-    // Si no hay valor, se queda con 'light' del atributo HTML por defecto.
-    var l = localStorage.getItem('mitech_fiscal_lang');
-    if (l === 'en' || l === 'es') document.documentElement.lang = l;
-  } catch(e) {}
-})();
-</script>
 
 <!-- ═══════════ BOOT LOADER — verifica sesión SSO contra SIF-Portal ═══════════ -->
 <div id="bootLoader">
@@ -632,21 +154,15 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- Etapa 5.1 · Banner de actualización — aparece cuando el auto-updater detecta nueva versión -->
-<div id="updateBanner" role="alert" aria-live="polite">
-  <div class="msg" data-i18n="update.msg">🔄 Hay una nueva versión del módulo Fiscal disponible. Recárgala para verla.</div>
-  <button onclick="applyUpdate()" data-i18n="update.btn">Recargar ahora</button>
-</div>
-
 <div id="app" class="wrap">
 
   <div class="topbar">
     <div class="topbar-left">
-      <h1 data-i18n="app.title">Módulo Fiscal</h1>
-      <div class="sub" data-i18n="app.subtitle">SIF · MI Global — Obligaciones SAT, impuestos, CFDI, provisiones y deuda fiscal</div>
+      <h1>Módulo Fiscal</h1>
+      <div class="sub">SIF · MI Global — Obligaciones SAT, impuestos, CFDI, provisiones y deuda fiscal</div>
     </div>
     <div class="topbar-right">
-      <span class="sync-badge" id="syncBadge"><span class="sync-dot" id="syncDot"></span><span id="syncTxt" data-i18n="sync.ok">Conectado a Supabase</span></span>
+      <span class="sync-badge" id="syncBadge"><span class="sync-dot" id="syncDot"></span><span id="syncTxt">Conectado a Supabase</span></span>
       <div class="user-chip">
         <div class="user-avatar" id="userAvatar">—</div>
         <div class="user-meta">
@@ -654,178 +170,226 @@ tr:last-child td{border-bottom:none}
           <span class="role" id="userRole">—</span>
         </div>
       </div>
-      <button class="btn-ghost" id="langToggleBtn" onclick="toggleLang()" title="Cambiar idioma / Change language">ES</button>
       <button class="btn-ghost" onclick="toggleTheme()">🌓</button>
-      <button class="btn-ghost" onclick="volverPortal()" data-i18n="btn.portal">← Portal</button>
-      <button class="btn-ghost" onclick="cerrarSesion()" data-i18n="btn.logout">Cerrar sesión</button>
+      <button class="btn-ghost" onclick="volverPortal()">← Portal</button>
+      <button class="btn-ghost" onclick="cerrarSesion()">Cerrar sesión</button>
     </div>
   </div>
 
   <div class="kpi-grid">
     <div class="kpi-card">
-      <div class="kpi-label" data-i18n="kpi.proximo">Próximo vencimiento</div>
+      <div class="kpi-label">Próximo vencimiento</div>
       <div class="kpi-value" id="kpiProximo">—</div>
       <div class="kpi-sub" id="kpiProximoSub">—</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label" data-i18n="kpi.impuesto_mes">Impuesto estimado del mes</div>
+      <div class="kpi-label">Impuesto estimado del mes</div>
       <div class="kpi-value" id="kpiImpuestoMes">$0</div>
-      <div class="kpi-sub" data-i18n="kpi.impuesto_mes.sub">ISR + IVA estimados</div>
+      <div class="kpi-sub">ISR + IVA estimados</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">CFDI pendientes de conciliar</div>
+      <div class="kpi-value" id="kpiCfdiPend">0</div>
+      <div class="kpi-sub">de <span id="kpiCfdiTotal">0</span> registrados</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Deuda fiscal actualizada</div>
+      <div class="kpi-value" id="kpiDeudaTotal">$0</div>
+      <div class="kpi-sub">Incluye recargos y actualización</div>
     </div>
   </div>
 
   <div class="nav-tabs">
-    <button class="nav-tab active" data-view="calendario" onclick="showView('calendario')" data-i18n="tab.calendario">📅 Calendario SAT</button>
-    <button class="nav-tab" data-view="cxc" onclick="showView('cxc')" data-i18n="tab.cxc">🚦 CxC Fiscal</button>
-    <button class="nav-tab" data-view="impuestos" onclick="showView('impuestos')" data-i18n="tab.impuestos">🧮 Cálculo de Impuestos</button>
+    <button class="nav-tab active" data-view="calendario" onclick="showView('calendario')">📅 Calendario SAT</button>
+    <button class="nav-tab" data-view="cxc" onclick="showView('cxc')">🚦 CxC Fiscal</button>
+    <button class="nav-tab" data-view="impuestos" onclick="showView('impuestos')">🧮 Cálculo de Impuestos</button>
+    <button class="nav-tab" data-view="cfdi" onclick="showView('cfdi')">🧾 Control de CFDI</button>
+    <button class="nav-tab" data-view="provisiones" onclick="showView('provisiones')">💰 Provisiones y Pagos</button>
+    <button class="nav-tab" data-view="deuda" onclick="showView('deuda')">⚠️ Deuda Fiscal</button>
   </div>
 
-  <!-- ===================== CALENDARIO SAT ===================== -->
+  <!-- ===================== CALENDARIO SAT (v2 — semáforo legal CFF) ===================== -->
   <div class="view active" id="view-calendario">
-    <div class="card" id="cardCargaExcel">
-      <h2 data-i18n="cal.excel.title">📥 Carga masiva desde Excel</h2>
-      <div class="desc" data-i18n="cal.excel.desc">
-        Carga la Cédula Fiscal Corporativa (.xlsx) para sembrar el histórico de impuestos. Usa solo la hoja <b>Resumen</b>. <b style="color:var(--red)">Reemplaza todo</b> el histórico previo en Calendario SAT y CxC Fiscal.
+
+    <!-- KPI Semáforo: 4 tarjetas clicables -->
+    <div class="kpi-grid" id="kpiSemaforoGrid" style="margin-bottom:16px">
+      <div class="kpi-card kpi-semaforo" id="kpiSem-rojo" onclick="oblFiltrarStatus('rojo')"
+           style="border-color:var(--red);cursor:pointer;user-select:none">
+        <div class="kpi-label" style="color:var(--red)">🔴 Embargo cuentas</div>
+        <div class="kpi-value" id="kpiSemN-rojo" style="color:var(--red)">0</div>
+        <div class="kpi-sub" id="kpiSemM-rojo">$0 · >90d vencido</div>
+        <div class="kpi-legal">Arts. 145,151 CFF — PAE activo. Atención inmediata.</div>
       </div>
-      <div id="excelDrop" class="excel-drop">
-        <input type="file" id="excelInput" accept=".xlsx,.xls" style="display:none" onchange="excelHandleInput(event)">
-        <div class="excel-drop-inner">
-          <div style="font-size:32px;line-height:1">📊</div>
-          <div style="margin-top:8px;font-weight:600" data-i18n="cal.excel.drop">Arrastra el archivo .xlsx aquí</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="cal.excel.or">o</div>
-          <button class="btn" onclick="document.getElementById('excelInput').click()" style="margin-top:8px" data-i18n="cal.excel.btn_pick">Elegir archivo</button>
-          <div style="font-size:11px;color:var(--muted);margin-top:10px" data-i18n="cal.excel.hint">Sin password. Hoja: Resumen. Columnas: Año · Empresa · Impuesto · Enero…Diciembre · TOTAL.</div>
-        </div>
+      <div class="kpi-card kpi-semaforo" id="kpiSem-naranja" onclick="oblFiltrarStatus('naranja')"
+           style="border-color:#f97316;cursor:pointer;user-select:none">
+        <div class="kpi-label" style="color:#9a3412">🟠 Notificado/Avisos</div>
+        <div class="kpi-value" id="kpiSemN-naranja" style="color:#9a3412">0</div>
+        <div class="kpi-sub" id="kpiSemM-naranja">$0 · 1–90d vencido</div>
+        <div class="kpi-legal">Recargos 2.07%/mes (art. 21 CFF). Posible requerimiento (art. 41).</div>
       </div>
-      <div id="excelPreview" style="display:none;margin-top:14px"></div>
+      <div class="kpi-card kpi-semaforo" id="kpiSem-amarillo" onclick="oblFiltrarStatus('amarillo')"
+           style="border-color:var(--yellow);cursor:pointer;user-select:none">
+        <div class="kpi-label" style="color:var(--yellow)">🟡 Por vencer</div>
+        <div class="kpi-value" id="kpiSemN-amarillo" style="color:var(--yellow)">0</div>
+        <div class="kpi-sub" id="kpiSemM-amarillo">$0 · 0–5d restantes</div>
+        <div class="kpi-legal">Art. 12 CFF — plazo hábil vigente. Pagar antes del límite.</div>
+      </div>
+      <div class="kpi-card kpi-semaforo" id="kpiSem-verde" onclick="oblFiltrarStatus('verde')"
+           style="border-color:var(--green);cursor:pointer;user-select:none">
+        <div class="kpi-label" style="color:var(--green)">🟢 En tiempo</div>
+        <div class="kpi-value" id="kpiSemN-verde" style="color:var(--green)">0</div>
+        <div class="kpi-sub" id="kpiSemM-verde">$0 · >5d restantes</div>
+        <div class="kpi-legal">Art. 6 CFF — dentro del plazo legal. Sin mora.</div>
+      </div>
     </div>
 
+    <!-- Formulario agregar obligación -->
     <div class="card">
-      <h2 data-i18n="cal.add.title">Agregar obligación</h2>
-      <div class="desc" data-i18n="cal.add.desc">Registra una obligación fiscal recurrente o única (declaración, pago provisional, informativa, etc.)</div>
+      <h2>Agregar obligación</h2>
+      <div class="desc">Registra una obligación fiscal recurrente o única (ISR provisional, IVA, IMSS, INFONAVIT, ISN, informativas, etc.)</div>
       <div class="grid-3">
-        <div class="field"><label data-i18n="cal.add.concepto">Concepto</label><input id="oblConcepto" placeholder="Ej. Pago provisional ISR"></div>
-        <div class="field"><label data-i18n="cal.add.periodicidad">Periodicidad</label>
-          <select id="oblPeriodicidad">
-            <option value="Mensual" data-i18n="periodicidad.Mensual">Mensual</option><option value="Bimestral" data-i18n="periodicidad.Bimestral">Bimestral</option><option value="Anual" data-i18n="periodicidad.Anual">Anual</option><option value="Única" data-i18n="periodicidad.Unica">Única</option>
+        <div class="field"><label>Empresa</label>
+          <select id="oblEmpresa">
+            <option value="">— General —</option>
+            <option>Ariitranst</option><option>Autobot</option><option>Boughts</option>
+            <option>Comercial</option><option>Internacional</option>
           </select>
         </div>
-        <div class="field"><label data-i18n="cal.add.fecha">Próxima fecha límite</label><input id="oblFecha" type="date"></div>
+        <div class="field"><label>Tipo de obligación</label>
+          <select id="oblTipo">
+            <option value="">— Tipo —</option>
+            <option>ISR Propio</option><option>ISR Ret. Empleados</option><option>ISR Ret. Terceros</option>
+            <option>IVA</option><option>IVA Ret. Terceros</option>
+            <option>IMSS</option><option>INFONAVIT</option>
+            <option>ISN Baja California</option><option>Declaración informativa</option><option>Otra</option>
+          </select>
+        </div>
+        <div class="field"><label>Concepto / descripción</label><input id="oblConcepto" placeholder="Ej. Pago provisional ISR Jun 2026"></div>
       </div>
-      <button class="btn" id="btnAgregarObligacion" onclick="agregarObligacion()" data-i18n="cal.add.btn">+ Agregar obligación</button>
+      <div class="grid-3">
+        <div class="field"><label>Periodicidad</label>
+          <select id="oblPeriodicidad">
+            <option>Mensual</option><option>Bimestral</option><option>Anual</option><option>Única</option>
+          </select>
+        </div>
+        <div class="field"><label>Fecha límite</label><input id="oblFecha" type="date"></div>
+        <div class="field"><label>Monto estimado (MXN)</label><input id="oblMonto" type="number" step="0.01" placeholder="0.00" min="0"></div>
+      </div>
+      <button class="btn" id="btnAgregarObligacion" onclick="agregarObligacion()">+ Agregar obligación</button>
     </div>
+
+    <!-- Tabla del calendario con semáforo legal -->
     <div class="card">
-      <h2 data-i18n="cal.list.title">Calendario de obligaciones</h2>
-      <div class="desc" data-i18n="cal.list.desc">Ordenadas por fecha límite más próxima. El estatus se recalcula automáticamente según los días restantes.</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+        <div>
+          <h2 style="margin-bottom:4px">Calendario de obligaciones — semáforo legal CFF</h2>
+          <div class="desc" style="margin:0">Ordenadas por urgencia. Clic en una tarjeta KPI para filtrar por estatus. Clic en fila para ver fundamento legal.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <select id="oblFiltroEmpresaSel" onchange="oblAplicarFiltros()" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer">
+            <option value="">Todas las empresas</option>
+            <option>Ariitranst</option><option>Autobot</option><option>Boughts</option>
+            <option>Comercial</option><option>Internacional</option>
+          </select>
+          <select id="oblFiltroTipoSel" onchange="oblAplicarFiltros()" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer">
+            <option value="">Todos los tipos</option>
+            <option>ISR Propio</option><option>ISR Ret. Empleados</option><option>ISR Ret. Terceros</option>
+            <option>IVA</option><option>IVA Ret. Terceros</option>
+            <option>IMSS</option><option>INFONAVIT</option><option>ISN Baja California</option>
+          </select>
+          <span id="oblFiltroStatusLbl" style="display:none;font-size:11px;padding:4px 10px;border-radius:6px;background:var(--surface2);color:var(--muted);cursor:pointer" onclick="oblFiltrarStatus('')">
+            ✕ <span id="oblFiltroStatusTxt"></span>
+          </span>
+          <span id="oblConteoFiltro" style="font-size:11px;color:var(--muted)"></span>
+        </div>
+      </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th data-i18n="cal.th.concepto">Concepto</th><th data-i18n="cal.th.periodicidad">Periodicidad</th><th data-i18n="cal.th.fecha">Fecha límite</th><th data-i18n="cal.th.dias">Días restantes</th><th data-i18n="cal.th.estatus">Estatus</th><th></th></tr></thead>
-          <tbody id="tblObligaciones"><tr><td colspan="6" style="color:var(--muted)" data-i18n="loading">Cargando…</td></tr></tbody>
+          <thead><tr>
+            <th>#</th><th>Empresa</th><th>Tipo / Concepto</th>
+            <th>Período / Periodicidad</th><th>Fecha límite</th>
+            <th style="text-align:center">Días</th>
+            <th style="text-align:right">Monto est.</th>
+            <th>Estatus legal</th>
+            <th>Riesgo / Acción</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="tblObligaciones"><tr><td colspan="10" style="color:var(--muted)">Cargando…</td></tr></tbody>
         </table>
       </div>
-      <div class="note"><b data-i18n="cal.list.note.label">Nota:</b> <span data-i18n="cal.list.note.txt">este calendario es de control interno. Las fechas límite oficiales deben confirmarse siempre contra el</span> <a href="https://www.sat.gob.mx" target="_blank" style="color:var(--accent)" data-i18n="cal.list.note.link">portal del SAT</a>.</div>
+      <div class="note" style="margin-top:10px">
+        <b>Marco legal:</b> 🔴&gt;90d — arts.145,151 CFF (PAE/Embargo) &nbsp;|&nbsp; 🟠 1–90d — arts.21,41 CFF (Recargos 2.07%/mes) &nbsp;|&nbsp; 🟡 0–5d — art.12 CFF &nbsp;|&nbsp; 🟢&gt;5d — art.6 CFF &nbsp;·&nbsp;
+        Tasa mora BC estatal (ISN): 2.25%/mes. Umbrales estimados — verificar con fiscalista. &nbsp;·&nbsp;
+        <a href="https://www.sat.gob.mx" target="_blank" style="color:var(--accent)">Portal SAT</a>
+      </div>
     </div>
   </div>
 
-  <!-- ===================== CxC FISCAL (riesgo por antigüedad) ===================== -->
+  <!-- ===================== CxC FISCAL (semáforo de riesgo) ===================== -->
   <div class="view" id="view-cxc">
-    <!-- Banner de retenciones en riesgo penal (destacado) -->
-    <div id="cxcPenalBanner" style="display:none;background:linear-gradient(135deg,rgba(139,0,0,.12),rgba(225,29,72,.08));border:1px solid var(--red);border-left:4px solid var(--critical);border-radius:var(--radius);padding:14px 18px;margin-bottom:18px">
-      <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
-        <div style="font-size:22px;line-height:1">⚠️</div>
-        <div style="flex:1;min-width:240px">
-          <div style="font-weight:700;color:var(--critical);font-size:13.5px;letter-spacing:.02em" data-i18n="cxc.penal.title">RETENCIONES VENCIDAS — RIESGO PENAL</div>
-          <div style="font-size:12.5px;color:var(--muted);margin-top:2px" data-i18n="cxc.penal.sub">Retenciones a empleados/terceros no enteradas · Arts. 108-109 CFF (defraudación fiscal equiparada)</div>
-        </div>
-        <div style="text-align:right">
-          <div id="kpiCxcPenal" style="font-size:22px;font-weight:800;color:var(--critical)">$0</div>
-          <div id="kpiCxcPenalSub" style="font-size:11px;color:var(--muted)">0 conceptos</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="kpi-grid kpi-grid-6">
+    <div class="kpi-grid">
       <div class="kpi-card">
-        <div class="kpi-label" data-i18n="cxc.kpi.total">Cartera fiscal total</div>
+        <div class="kpi-label">Cartera fiscal total</div>
         <div class="kpi-value" id="kpiCxcTotal">$0</div>
-        <div class="kpi-sub" id="kpiCxcTotalSub">0 conceptos</div>
-      </div>
-      <div class="kpi-card" style="border-color:var(--critical);border-width:2px">
-        <div class="kpi-label" data-i18n="cxc.kpi.embargo">⚫ Zona embargo · &gt;365 días</div>
-        <div class="kpi-value" id="kpiCxcEmbargo" style="color:var(--critical)">$0</div>
-        <div class="kpi-sub" id="kpiCxcEmbargoSub">0 conceptos · PAE activable</div>
+        <div class="kpi-sub">Histórico 2023–2026 · cédula corporativa</div>
       </div>
       <div class="kpi-card" style="border-color:var(--red)">
-        <div class="kpi-label" data-i18n="cxc.kpi.csd">🔴 Restricción CSD · 181-365d</div>
-        <div class="kpi-value" id="kpiCxcCsd" style="color:var(--red)">$0</div>
-        <div class="kpi-sub" id="kpiCxcCsdSub">0 conceptos · Art. 17-H Bis</div>
-      </div>
-      <div class="kpi-card" style="border-color:var(--orange)">
-        <div class="kpi-label" data-i18n="cxc.kpi.requerimiento">🟠 Requerimiento · 91-180d</div>
-        <div class="kpi-value" id="kpiCxcReq" style="color:var(--orange)">$0</div>
-        <div class="kpi-sub" id="kpiCxcReqSub">0 conceptos · Art. 41 CFF</div>
+        <div class="kpi-label">🔴 En riesgo (rojo)</div>
+        <div class="kpi-value" id="kpiCxcRojo" style="color:var(--red)">$0</div>
+        <div class="kpi-sub" id="kpiCxcRojoSub">0 conceptos</div>
       </div>
       <div class="kpi-card" style="border-color:var(--yellow)">
-        <div class="kpi-label" data-i18n="cxc.kpi.vigilancia">🟡 Vigilancia · 31-90d</div>
-        <div class="kpi-value" id="kpiCxcVig" style="color:var(--yellow)">$0</div>
-        <div class="kpi-sub" id="kpiCxcVigSub">0 conceptos · detección SAT</div>
+        <div class="kpi-label">🟡 En plan de pago / negociable</div>
+        <div class="kpi-value" id="kpiCxcAmarillo" style="color:var(--yellow)">$0</div>
+        <div class="kpi-sub" id="kpiCxcAmarilloSub">0 conceptos</div>
       </div>
-      <div class="kpi-card" style="border-color:var(--blue)">
-        <div class="kpi-label" data-i18n="cxc.kpi.ventana">🔵 Ventana espontánea · ≤30d</div>
-        <div class="kpi-value" id="kpiCxcVentana" style="color:var(--blue)">$0</div>
-        <div class="kpi-sub" id="kpiCxcVentanaSub">0 conceptos · Art. 73 CFF</div>
+      <div class="kpi-card" style="border-color:var(--green)">
+        <div class="kpi-label">🟢 Pagado</div>
+        <div class="kpi-value" id="kpiCxcVerde" style="color:var(--green)">$0</div>
+        <div class="kpi-sub" id="kpiCxcVerdeSub">0 conceptos</div>
       </div>
     </div>
 
     <div class="card">
-      <h2 data-i18n="cxc.title">Cuentas por cobrar de impuestos — riesgo por antigüedad del adeudo</h2>
+      <h2>Cuentas por cobrar de impuestos — por empresa / tipo de impuesto</h2>
       <div class="desc">
-        Zonas de riesgo calculadas por días de antigüedad desde la fecha de exigibilidad (31/mar del año siguiente a <code>anio_inicio</code>), con fundamento en el marco fiscal mexicano:
-        <b style="color:var(--critical)">⚫ Embargo</b> = &gt;365 días, procede embargo precautorio y PAE (arts. 145, 151, 156-Bis CFF);
-        <b style="color:var(--red)">🔴 Restricción CSD</b> = 181-365 días, riesgo de restricción temporal de sellos digitales (art. 17-H Bis CFF);
-        <b style="color:var(--orange)">🟠 Requerimiento</b> = 91-180 días, notificación de requerimiento probable (art. 41 CFF);
-        <b style="color:var(--yellow)">🟡 Vigilancia</b> = 31-90 días, detección SAT y opinión de cumplimiento en negativo;
-        <b style="color:var(--blue)">🔵 Ventana</b> = ≤30 días, pago espontáneo aún sin multa (art. 73 CFF).
-        <br><span style="color:var(--red);font-weight:600">⚠️ Los umbrales son referencia práctica; el riesgo real depende del expediente. Valida con el fiscalista.</span>
+        Semáforo basado en la estrategia de prioridad de pagos del corporativo:
+        <b style="color:var(--red)">rojo</b> = obligaciones fiduciarias (retenciones a empleados, IMSS) pendientes o cualquier concepto pendiente &gt; $2,000,000 — riesgo penal/laboral, cero tolerancia;
+        <b style="color:var(--yellow)">amarillo</b> = pendiente no fiduciario y negociable con el SAT, o ya dentro de un plan de pago activo;
+        <b style="color:var(--green)">verde</b> = liquidado. Cifras extraídas de la cédula fiscal corporativa (hoja "Resumen").
       </div>
 
       <div class="cxc-controls">
         <div class="grp grow">
-          <label style="margin-bottom:0" data-i18n="cxc.lbl.empresa">Empresa</label>
+          <label style="margin-bottom:0">Empresa</label>
           <div id="cxcFiltros" class="chips"></div>
         </div>
         <div class="grp grow">
-          <label style="margin-bottom:0" data-i18n="cxc.lbl.tipo">Tipo de impuesto</label>
+          <label style="margin-bottom:0">Tipo de impuesto</label>
           <div id="cxcFiltrosCategoria" class="chips"></div>
         </div>
-        <div class="grp grow">
-          <label style="margin-bottom:0" data-i18n="cxc.lbl.anio">Año</label>
-          <div id="cxcFiltrosAnio" class="chips"></div>
-        </div>
         <div class="grp">
-          <label style="margin-bottom:0" data-i18n="cxc.lbl.orden">Ordenar por</label>
+          <label style="margin-bottom:0">Ordenar por</label>
           <select id="cxcOrden" onchange="cxcSetOrden(this.value)">
-            <option value="riesgo_desc" data-i18n="cxc.ord.riesgo_desc">Riesgo (mayor a menor)</option>
-            <option value="dias_desc" data-i18n="cxc.ord.dias_desc">Días vencidos (más a menos)</option>
-            <option value="monto_desc" data-i18n="cxc.ord.monto_desc">Monto (mayor a menor)</option>
-            <option value="monto_asc" data-i18n="cxc.ord.monto_asc">Monto (menor a mayor)</option>
-            <option value="empresa" data-i18n="cxc.ord.empresa">Empresa (A-Z)</option>
-            <option value="categoria" data-i18n="cxc.ord.categoria">Tipo de impuesto (A-Z)</option>
-            <option value="anio_asc" data-i18n="cxc.ord.anio_asc">Año (más antiguo primero)</option>
-            <option value="anio_desc" data-i18n="cxc.ord.anio_desc">Año (más reciente primero)</option>
+            <option value="monto_desc">Monto (mayor a menor)</option>
+            <option value="monto_asc">Monto (menor a mayor)</option>
+            <option value="empresa">Empresa (A-Z)</option>
+            <option value="categoria">Tipo de impuesto (A-Z)</option>
+            <option value="anio_asc">Año (más antiguo primero)</option>
+            <option value="anio_desc">Año (más reciente primero)</option>
           </select>
         </div>
       </div>
 
       <div class="table-wrap">
         <table>
-          <thead><tr><th data-i18n="cxc.th.empresa">Empresa</th><th data-i18n="cxc.th.tipo">Tipo de impuesto</th><th data-i18n="cxc.th.monto">Monto</th><th data-i18n="cxc.th.vigencia">Vigencia</th><th data-i18n="cxc.th.dias">Días vencidos</th><th data-i18n="cxc.th.estatus">Estatus</th><th data-i18n="cxc.th.riesgo">Riesgo</th></tr></thead>
-          <tbody id="tblCxc"><tr><td colspan="7" style="color:var(--muted)" data-i18n="loading">Cargando…</td></tr></tbody>
+          <thead><tr><th>Empresa</th><th>Tipo de impuesto</th><th>Monto</th><th>Vigencia</th><th>Naturaleza</th><th>Estatus</th><th>Semáforo</th></tr></thead>
+          <tbody id="tblCxc"><tr><td colspan="7" style="color:var(--muted)">Cargando…</td></tr></tbody>
         </table>
       </div>
       <div class="note" id="cxcNota" style="display:none"></div>
       <div class="note">
-        <b>Nota sobre periodicidad:</b> esta cartera se registra a nivel anual (vigencia por año, no por mes), tomada de la cédula fiscal corporativa consolidada 2023–2026. Los filtros de "Tipo de impuesto" y "Año", y el orden por "Año", ya están disponibles arriba. Si necesitas desglose mes por mes, hay que ampliar la tabla <code>fiscal_cxc_impuestos</code> con un campo de periodo mensual y volver a cargar los montos con ese detalle — avísame y lo preparamos.
+        <b>Nota sobre periodicidad:</b> esta cartera se registra a nivel anual (vigencia por año, no por mes), tomada de la cédula fiscal corporativa consolidada 2023–2026. El filtro de "Tipo de impuesto" y el orden por "Año" ya están disponibles arriba. Si necesitas desglose mes por mes, hay que ampliar la tabla <code>fiscal_cxc_impuestos</code> con un campo de periodo mensual y volver a cargar los montos con ese detalle — avísame y lo preparamos.
       </div>
     </div>
   </div>
@@ -833,80 +397,146 @@ tr:last-child td{border-bottom:none}
   <!-- ===================== CALCULO DE IMPUESTOS ===================== -->
   <div class="view" id="view-impuestos">
     <div class="card">
-      <h2>🔄 Calcular actualización de impuestos</h2>
-      <div class="desc">
-        Elige cómo agrupar los conceptos de <b>CxC Fiscal</b> y haz clic en cualquier tarjeta para abrir el asistente paso a paso: <b>selección → INPC → recargos y multas → total</b>. El sistema calcula automáticamente actualización (Art. 17-A CFF), recargos por régimen, multas y estímulo LIF 2026 — todo elegible.
-        <br><span style="color:var(--red);font-weight:600">⚠️ Herramienta de apoyo interno — valida con el fiscalista antes de pagar.</span>
-      </div>
-      <div id="calcAgrupadorBar" class="kpi-agrupador-bar"></div>
-      <div id="calcKpisGrid" class="kpi-calc-grid">Cargando…</div>
-    </div>
-
-    <div class="card">
-      <h2>🧮 Simulador de actualización y recargos (monto libre)</h2>
-      <div class="desc">
-        Captura <b>cualquier monto histórico</b> (no tiene que estar en CxC Fiscal) y el sistema calcula, con la misma lógica que la actualización de arriba: <b>actualización por INPC</b> + <b>recargos por mora</b> + <b>multa</b> + <b>condonación</b> + <b>estímulo LIF 2026</b>, con desglose legal completo. Úsalo para simular escenarios "¿y si…?" antes de negociar con la autoridad o el fiscalista.
-        <br><span style="color:var(--red);font-weight:600">⚠️ Simulación de apoyo — no sustituye la determinación oficial del fiscalista.</span>
+      <h2>Simulador de ISR / IVA del periodo</h2>
+      <div class="desc">Estimación simplificada de pago provisional. No sustituye el cálculo oficial de tu contador — úsalo como control preventivo.</div>
+      <div class="grid-3">
+        <div class="field"><label>Periodo</label><input id="impPeriodo" type="month"></div>
+        <div class="field"><label>Ingresos gravables</label><input id="impIngresos" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label>Deducciones autorizadas</label><input id="impDeducciones" type="number" step="0.01" placeholder="0.00"></div>
       </div>
       <div class="grid-3">
-        <div class="field"><label>Empresa (opcional)</label><input id="simEmpresa" type="text" placeholder="Simulación"></div>
-        <div class="field"><label>Tipo de impuesto</label>
-          <select id="simCategoria">
-            <option value="ISR Propio">ISR Propio</option>
-            <option value="IVA">IVA</option>
-            <option value="ISR Retenido a Empleados">ISR Retenido a Empleados</option>
-            <option value="ISR Retenido a Terceros">ISR Retenido a Terceros</option>
-            <option value="IVA Retenido a Terceros">IVA Retenido a Terceros</option>
-            <option value="IMSS / Seguridad Social">IMSS / Seguridad Social</option>
-            <option value="INFONAVIT / RCV">INFONAVIT / RCV</option>
-            <option value="ISN Estatal">ISN Estatal</option>
+        <div class="field"><label>Tasa ISR aplicable (%)</label><input id="impTasaIsr" type="number" step="0.01" value="30"></div>
+        <div class="field"><label>Tasa IVA (%)</label><input id="impTasaIva" type="number" step="0.01" value="16"></div>
+        <div class="field"><label>IVA acreditable del periodo</label><input id="impIvaAcreditable" type="number" step="0.01" placeholder="0.00"></div>
+      </div>
+      <button class="btn" id="btnCalcularImpuesto" onclick="calcularImpuesto()">Calcular y guardar en historial</button>
+      <div class="result-box" id="impResultado" style="display:none">
+        <div class="result-row"><span class="muted">Utilidad fiscal (ingresos − deducciones)</span><span id="rUtilidad">$0</span></div>
+        <div class="result-row"><span class="muted">ISR estimado</span><span id="rIsr">$0</span></div>
+        <div class="result-row"><span class="muted">IVA trasladado</span><span id="rIvaTrasladado">$0</span></div>
+        <div class="result-row"><span class="muted">IVA a favor / a cargo</span><span id="rIvaCargo">$0</span></div>
+        <div class="result-row total"><span>Total estimado a pagar</span><span id="rTotal">$0</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Historial de cálculos</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Periodo</th><th>Utilidad fiscal</th><th>ISR</th><th>IVA a cargo</th><th>Total</th></tr></thead>
+          <tbody id="tblImpuestos"><tr><td colspan="5" style="color:var(--muted)">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== CFDI ===================== -->
+  <div class="view" id="view-cfdi">
+    <div class="card">
+      <h2>Registrar CFDI</h2>
+      <div class="grid-3">
+        <div class="field"><label>Tipo</label>
+          <select id="cfdiTipo"><option>Emitido</option><option>Recibido</option></select>
+        </div>
+        <div class="field"><label>RFC contraparte</label><input id="cfdiRfc" placeholder="XAXX010101000"></div>
+        <div class="field"><label>Folio fiscal (UUID)</label><input id="cfdiFolio" placeholder="UUID"></div>
+      </div>
+      <div class="grid-3">
+        <div class="field"><label>Fecha</label><input id="cfdiFecha" type="date"></div>
+        <div class="field"><label>Monto total</label><input id="cfdiMonto" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label>Estatus</label>
+          <select id="cfdiEstatus"><option>Pendiente</option><option>Conciliado</option><option>Cancelado</option></select>
+        </div>
+      </div>
+      <button class="btn" id="btnAgregarCfdi" onclick="agregarCfdi()">+ Registrar CFDI</button>
+    </div>
+    <div class="card">
+      <h2>Comprobantes registrados</h2>
+      <div class="desc">Concilia contra los gastos/ingresos del módulo de Flujo y Gastos para detectar CFDI faltantes o duplicados. Haz clic en el estatus para cambiarlo.</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tipo</th><th>RFC</th><th>Folio</th><th>Fecha</th><th>Monto</th><th>Estatus</th></tr></thead>
+          <tbody id="tblCfdi"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PROVISIONES Y PAGOS ===================== -->
+  <div class="view" id="view-provisiones">
+    <div class="card">
+      <h2>Registrar provisión / pago</h2>
+      <div class="grid-3">
+        <div class="field"><label>Concepto</label><input id="provConcepto" placeholder="Ej. ISR mensual"></div>
+        <div class="field"><label>Periodo</label><input id="provPeriodo" type="month"></div>
+        <div class="field"><label>Monto provisionado</label><input id="provProvisionado" type="number" step="0.01" placeholder="0.00"></div>
+      </div>
+      <div class="field" style="max-width:260px"><label>Monto pagado</label><input id="provPagado" type="number" step="0.01" placeholder="0.00"></div>
+      <button class="btn" id="btnAgregarProvision" onclick="agregarProvision()">+ Registrar</button>
+    </div>
+    <div class="card">
+      <h2>Provisiones vs pagos realizados</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Concepto</th><th>Periodo</th><th>Provisionado</th><th>Pagado</th><th>Diferencia</th><th>Estatus</th></tr></thead>
+          <tbody id="tblProvisiones"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== DEUDA FISCAL ===================== -->
+  <div class="view" id="view-deuda">
+    <div class="card">
+      <h2>Calculadora de deuda fiscal (actualización + recargos + multa)</h2>
+      <div class="desc">Metodología CFF: la actualización se aplica primero sobre el monto histórico; los recargos se calculan sobre el monto ya actualizado.</div>
+      <div class="grid-3">
+        <div class="field"><label>Concepto / obligación</label><input id="deuConcepto" placeholder="Ej. IVA marzo 2025"></div>
+        <div class="field"><label>Monto histórico del adeudo</label><input id="deuMonto" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label>Fecha en que debió pagarse</label><input id="deuFechaVenc" type="date"></div>
+      </div>
+      <div class="grid-3">
+        <div class="field"><label>Fecha de pago (o de hoy)</label><input id="deuFechaPago" type="date"></div>
+        <div class="field"><label>INPC del mes anterior al vencimiento</label><input id="deuInpcIni" type="number" step="0.0001" placeholder="Ej. 128.5432"></div>
+        <div class="field"><label>INPC del mes anterior al pago</label><input id="deuInpcFin" type="number" step="0.0001" placeholder="Ej. 134.1200"></div>
+      </div>
+      <div class="grid-3">
+        <div class="field"><label>Tipo de recargo</label>
+          <select id="deuTipoRecargo" onchange="actualizarTasaRecargo()">
+            <option value="1.38">Prórroga — 1.38% mensual</option>
+            <option value="2.07" selected>Mora — 2.07% mensual</option>
+            <option value="1.42">Pago a plazos ≤12 meses — 1.42% mensual</option>
+            <option value="1.63">Pago a plazos 13–24 meses — 1.63% mensual</option>
+            <option value="1.97">Pago a plazos ≥25 meses / diferido — 1.97% mensual</option>
           </select>
         </div>
-        <div class="field"><label>Periodo origen</label><input id="simPeriodoOrigen" type="month"></div>
+        <div class="field"><label>Tasa de recargo mensual (%) — editable</label><input id="deuTasaRecargo" type="number" step="0.01" value="2.07"></div>
+        <div class="field"><label>Multa aplicable (opcional)</label><input id="deuMulta" type="number" step="0.01" placeholder="0.00"></div>
       </div>
-      <div class="grid-3">
-        <div class="field"><label>Monto histórico</label><input id="simMonto" type="number" step="0.01" placeholder="0.00"></div>
-        <div class="field"><label>Multa base estimada (opcional)</label><input id="simMulta" type="number" step="0.01" value="0"></div>
-        <div class="field"><label>% Condonación de multa (opcional)</label><input id="simCondonacion" type="number" step="1" min="0" max="100" value="0"></div>
-      </div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px">
-        <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-          <input id="simEstimuloLif" type="checkbox"> Aplicar estímulo LIF 2026 (100% multas+recargos, solo CFF/CFF retenido)
-        </label>
-      </div>
-      <button class="btn" id="btnSimular" onclick="simularActualizacion()" style="margin-top:10px">Simular actualización y recargos</button>
+      <button class="btn" id="btnCalcularDeuda" onclick="calcularDeuda()">Calcular deuda actualizada</button>
 
-      <div id="simInpcForm" style="display:none;margin-top:14px"></div>
-      <div id="simPreview" style="display:none;margin-top:14px"></div>
+      <div class="result-box" id="deuResultado" style="display:none">
+        <div class="result-row"><span class="muted">Meses transcurridos (para recargos)</span><span id="dMeses">0</span></div>
+        <div class="result-row"><span class="muted">Factor de actualización</span><span id="dFactor">1.0000</span></div>
+        <div class="result-row"><span class="muted">Monto actualizado</span><span id="dMontoAct">$0</span></div>
+        <div class="result-row"><span class="muted">Recargos generados</span><span id="dRecargos">$0</span></div>
+        <div class="result-row"><span class="muted">Multa</span><span id="dMulta">$0</span></div>
+        <div class="result-row total"><span>Total a pagar</span><span id="dTotal">$0</span></div>
+      </div>
+      <div class="note">
+        <b>Fuentes de referencia (verificar vigencia antes de usar en producción):</b> tasa de recargos por mora 2026 = 2.07% mensual; prórroga = 1.38% mensual; pagos a plazos = 1.42% / 1.63% / 1.97% según parcialidades. Factor de actualización = INPC del mes anterior al pago ÷ INPC del mes anterior al vencimiento. Multas por declaración extemporánea del ISR: rango general aproximado de $2,050 a $50,710 por obligación (Art. 82 CFF) — ingrésala manualmente según el caso. Confirma siempre contra el <a href="https://www.sat.gob.mx" target="_blank" style="color:var(--accent)">simulador oficial del SAT</a> o con tu contador antes de pagar.
+      </div>
+    </div>
+    <div class="card">
+      <h2>Adeudos registrados</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Concepto</th><th>Monto histórico</th><th>Actualizado</th><th>Recargos</th><th>Multa</th><th>Total</th></tr></thead>
+          <tbody id="tblDeudas"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Modal de desglose detallado del cálculo fiscal -->
-<div id="calcDetalleModal" class="calc-modal-backdrop" style="display:none" onclick="calcCerrarDetalle(event)">
-  <div class="calc-modal" onclick="event.stopPropagation()">
-    <div class="calc-modal-header">
-      <h2 id="calcDetalleTitulo">Desglose del cálculo</h2>
-      <button class="calc-modal-close" onclick="calcCerrarDetalle()" aria-label="Cerrar">×</button>
-    </div>
-    <div class="calc-modal-body" id="calcDetalleBody"></div>
-  </div>
-</div>
-
-<!-- Wizard modal — asistente paso a paso para calcular actualización de impuestos -->
-<div id="calcWizardModal" class="calc-modal-backdrop" style="display:none" onclick="calcCerrarWizard(event)">
-  <div class="wizard-modal" onclick="event.stopPropagation()">
-    <div class="wizard-header">
-      <div>
-        <h2 id="wizTitulo">Asistente de cálculo</h2>
-        <div class="subtitle" id="wizSubtitulo">—</div>
-      </div>
-      <button class="calc-modal-close" onclick="calcCerrarWizard()" aria-label="Cerrar">×</button>
-    </div>
-    <div class="wizard-steps" id="wizSteps"></div>
-    <div class="wizard-body" id="wizBody"></div>
-    <div class="wizard-nav" id="wizNav"></div>
-  </div>
 </div>
 
 <script>
@@ -915,13 +545,8 @@ tr:last-child td{border-bottom:none}
    SSO: comparte sesión de Supabase con SIF-Portal (mismo origen
    jcgt1976.github.io), igual que ya hace Deadpool / Flujo y Gastos.
    Persistencia: tablas fiscal_* en el mismo proyecto Supabase
-   (ver fiscal-migration.sql para crearlas antes de usar esto).
+   (ver supabase-modulo-fiscal.sql para crearlas antes de usar esto).
    ============================================================ */
-
-/* Marca de versión (bumpear en cada push) para que el auto-updater
-   detecte cambio y purgue caché del navegador. Formato: YYYY.MM.DD.N */
-const APP_VERSION = '2026.07.12.2';
-
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
@@ -936,14 +561,11 @@ sb.auth.onAuthStateChange((event) => {
 });
 
 let currentUserId = null;
-let currentUser = null; // objeto completo de la tabla 'usuarios' (incluye .rol) — usado por requirePermCarga()
 
 async function bootstrapAuth() {
-  console.log('[fiscal] bootstrapAuth iniciado, APP_VERSION=' + APP_VERSION);
   try {
     const { data: { session }, error } = await sb.auth.getSession();
     if (error || !session || !session.user) {
-      console.warn('[fiscal] Sin sesión válida, redirigiendo al portal');
       window.location.replace(PORTAL_URL);
       return;
     }
@@ -952,44 +574,19 @@ async function bootstrapAuth() {
     try {
       const { data: user } = await sb.from('usuarios').select('*').eq('auth_id', session.user.id).maybeSingle();
       if (user) {
-        currentUser = user;
-        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-        set('userName',   user.nombre || user.username || '—');
-        set('userRole',   user.rol || '—');
-        set('userAvatar', getInitials(user.nombre || user.username || '?'));
+        document.getElementById('userName').textContent = user.nombre || user.username || '—';
+        document.getElementById('userRole').textContent = user.rol || '—';
+        document.getElementById('userAvatar').textContent = getInitials(user.nombre || user.username || '?');
       }
     } catch (e) { console.warn('No se pudo cargar el usuario:', e); }
 
-    // Mostrar la app defensivamente (no reventar si algún nodo no existe)
-    const bootLoader = document.getElementById('bootLoader');
-    if (bootLoader) bootLoader.style.display = 'none';
-    const appEl = document.getElementById('app');
-    if (appEl) appEl.style.display = 'block';
+    document.getElementById('bootLoader').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
 
-    // Aplicar el idioma persistido a todo el chrome de la app (ES por defecto).
-    try { applyI18n(); } catch(e) { console.warn('applyI18n:', e); }
-
-    // Carga inicial de datos — si falla, NO redirigir al portal (evita loop portal↔fiscal).
-    // Cada cargar* ya tiene su propio manejo interno de errores; envolvemos por seguridad.
-    try {
-      await cargarTodo();
-    } catch (e) {
-      console.error('[fiscal] cargarTodo falló pero seguimos en la app:', e);
-      try { setSyncError && setSyncError('Error de carga inicial — revisa consola'); } catch(_) {}
-    }
-    console.log('[fiscal] bootstrapAuth completado OK');
+    await cargarTodo();
   } catch (e) {
-    console.error('bootstrapAuth error crítico:', e);
-    // Guard contra loop: solo redirigir al portal si NO acabamos de venir de él
-    // (evita ping-pong Portal↔Fiscal cuando algo del cliente está fallando)
-    const cameFromPortal = document.referrer && document.referrer.includes('/SIF-Portal');
-    if (cameFromPortal) {
-      console.warn('[fiscal] Error crítico pero venimos del portal — NO redirigimos para evitar loop');
-      const bootLoader = document.getElementById('bootLoader');
-      if (bootLoader) bootLoader.innerHTML = '<div style="padding:20px;color:#c00;text-align:center"><h3>Error al inicializar Fiscal</h3><p style="margin-top:10px;font-size:13px">Revisa la consola (F12). Si el problema persiste, cierra la pestaña y vuelve a abrir.</p><button onclick="window.location.replace(PORTAL_URL)" style="margin-top:16px;padding:8px 16px;cursor:pointer">Volver al Portal</button></div>';
-    } else {
-      window.location.replace(PORTAL_URL);
-    }
+    console.error('bootstrapAuth error:', e);
+    window.location.replace(PORTAL_URL);
   }
 }
 function getInitials(nom){
@@ -1013,14 +610,14 @@ function setSyncOk(){
 
 /* ---------- Estado en memoria (espejo de las tablas fiscal_*) ---------- */
 let obligaciones = [];
+let calculosImpuestos = [];
 let cfdis = [];
 let provisiones = [];
 let deudas = [];
 let cxcImpuestos = [];
 let cxcFiltroEmpresa = 'Todas';
 let cxcFiltroCategoria = 'Todas';
-let cxcFiltroAnio = 'Todos';
-let cxcOrden = 'riesgo_desc';
+let cxcOrden = 'monto_desc';
 
 function fmtMoney(n){
   n = Number(n)||0;
@@ -1032,218 +629,10 @@ function diasRestantes(fechaStr){
   return Math.round((f-hoy)/86400000);
 }
 
-/* ---------- THEME ----------
-   Default = 'light' (day). Se persiste en localStorage.mitech_fiscal_theme.
-   El bootstrap inline al inicio del <body> aplica la preferencia guardada
-   antes de mostrar el app (evita FOUC). Solo cambia si el usuario toggleó. */
+/* ---------- THEME ---------- */
 function toggleTheme(){
   const html = document.documentElement;
-  const nuevo = html.dataset.theme === "light" ? "dark" : "light";
-  html.dataset.theme = nuevo;
-  try { localStorage.setItem('mitech_fiscal_theme', nuevo); } catch(e){}
-}
-
-/* ---------- I18N (ES/EN) ----------
-   Mismo patrón que Deadpool: diccionario `translations` + función `t()` +
-   toggle en header. Aplica traducciones a cualquier elemento con
-   `data-i18n="clave"`. Se persiste en localStorage.mitech_fiscal_lang.
-   Fase 1: cubre chrome (header, KPIs, tabs, botones globales, banner). Los
-   contenidos dinámicos generados por JS se pueden traducir en fases
-   posteriores llamando a t('clave.x') donde se emitan.
-*/
-const translations = {
-  // Header + chrome global
-  'app.title':                { es:'Módulo Fiscal',                                  en:'Tax Module' },
-  'app.subtitle':             { es:'SIF · MI Global — Obligaciones SAT, impuestos, CFDI, provisiones y deuda fiscal',
-                                en:'SIF · MI Global — Tax obligations, taxes, CFDI, provisions and tax debt' },
-  'sync.ok':                  { es:'Conectado a Supabase',                           en:'Connected to Supabase' },
-  'btn.portal':               { es:'← Portal',                                       en:'← Portal' },
-  'btn.logout':               { es:'Cerrar sesión',                                  en:'Sign out' },
-  // KPIs
-  'kpi.proximo':              { es:'Próximo vencimiento',                            en:'Next due date' },
-  'kpi.impuesto_mes':         { es:'Impuesto estimado del mes',                     en:'Estimated tax this month' },
-  'kpi.impuesto_mes.sub':     { es:'ISR + IVA estimados',                            en:'Estimated ISR + IVA' },
-  // Tabs
-  'tab.calendario':           { es:'📅 Calendario SAT',                              en:'📅 SAT Calendar' },
-  'tab.cxc':                  { es:'🚦 CxC Fiscal',                                  en:'🚦 Tax Receivables' },
-  'tab.impuestos':            { es:'🧮 Cálculo de Impuestos',                        en:'🧮 Tax Calculation' },
-  // Banner update
-  'update.msg':               { es:'🔄 Hay una nueva versión del módulo Fiscal disponible. Recárgala para verla.',
-                                en:'🔄 A new version of the Tax module is available. Reload to see it.' },
-  'update.btn':               { es:'Recargar ahora',                                 en:'Reload now' },
-  // Generic
-  'loading':                  { es:'Cargando…',                                      en:'Loading…' },
-  // === CALENDARIO SAT VIEW ===
-  'cal.excel.title':          { es:'📥 Carga masiva desde Excel',                     en:'📥 Bulk load from Excel' },
-  'cal.excel.desc':           { es:'Carga la Cédula Fiscal Corporativa (.xlsx) para sembrar el histórico de impuestos. Usa solo la hoja <b>Resumen</b>. <b style="color:var(--red)">Reemplaza todo</b> el histórico previo en Calendario SAT y CxC Fiscal.',
-                                en:'Load the Corporate Tax Ledger (.xlsx) to seed the tax history. Uses only the <b>Resumen</b> sheet. <b style="color:var(--red)">Replaces all</b> previous history in Tax Calendar and Tax Receivables.' },
-  'cal.excel.drop':           { es:'Arrastra el archivo .xlsx aquí',                  en:'Drag the .xlsx file here' },
-  'cal.excel.or':             { es:'o',                                              en:'or' },
-  'cal.excel.btn_pick':       { es:'Elegir archivo',                                 en:'Choose file' },
-  'cal.excel.hint':           { es:'Sin password. Hoja: Resumen. Columnas: Año · Empresa · Impuesto · Enero…Diciembre · TOTAL.',
-                                en:'No password. Sheet: Resumen. Columns: Year · Company · Tax · January…December · TOTAL.' },
-  'cal.excel.preview_title':  { es:'Vista previa de la carga',                        en:'Load preview' },
-  'cal.excel.stat.anios':     { es:'Años',                                            en:'Years' },
-  'cal.excel.stat.empresas':  { es:'Empresas',                                        en:'Companies' },
-  'cal.excel.stat.oblig':     { es:'Obligaciones mensuales',                          en:'Monthly obligations' },
-  'cal.excel.stat.cxc':       { es:'Registros CxC (anuales)',                         en:'CxC records (yearly)' },
-  'cal.excel.warn':           { es:'⚠️ Esta operación BORRA todos los registros previos de las tablas fiscal_obligaciones y fiscal_cxc_impuestos.',
-                                en:'⚠️ This operation ERASES all previous records in fiscal_obligaciones and fiscal_cxc_impuestos tables.' },
-  'cal.excel.btn_cancel':     { es:'Cancelar',                                        en:'Cancel' },
-  'cal.excel.btn_apply':      { es:'⚠️ Reemplazar histórico completo',                 en:'⚠️ Replace complete history' },
-  'cal.excel.err_sheet':      { es:'❌ El archivo no contiene la hoja "Resumen".',      en:'❌ The file does not contain the "Resumen" sheet.' },
-  'cal.excel.err_lib':        { es:'❌ La librería SheetJS no está cargada.',            en:'❌ SheetJS library is not loaded.' },
-  'cal.excel.err_empty':      { es:'❌ No se encontraron filas válidas en el Excel.',    en:'❌ No valid rows found in the Excel file.' },
-  'cal.excel.uploading':      { es:'Subiendo a Supabase…',                             en:'Uploading to Supabase…' },
-  'cal.excel.ok':             { es:'✅ Carga completada exitosamente',                  en:'✅ Load completed successfully' },
-  'cal.excel.confirm_msg':    { es:'Esto REEMPLAZA TODO el histórico:\n\n• Se borrarán todas las obligaciones existentes\n• Se borrará toda la cartera CxC existente\n• Se insertarán los datos del Excel\n\n¿Continuar?',
-                                en:'This REPLACES ALL history:\n\n• All existing obligations will be deleted\n• All existing CxC records will be deleted\n• Excel data will be inserted\n\nContinue?' },
-  'cal.add.title':            { es:'Agregar obligación',                              en:'Add obligation' },
-  'cal.add.desc':             { es:'Registra una obligación fiscal recurrente o única (declaración, pago provisional, informativa, etc.)',
-                                en:'Register a recurring or one-off tax obligation (return, provisional payment, informative, etc.)' },
-  'cal.add.concepto':         { es:'Concepto',                                        en:'Concept' },
-  'cal.add.periodicidad':     { es:'Periodicidad',                                    en:'Frequency' },
-  'cal.add.fecha':            { es:'Próxima fecha límite',                            en:'Next due date' },
-  'cal.add.btn':              { es:'+ Agregar obligación',                            en:'+ Add obligation' },
-  'cal.list.title':           { es:'Calendario de obligaciones',                      en:'Obligations calendar' },
-  'cal.list.desc':            { es:'Ordenadas por fecha límite más próxima. El estatus se recalcula automáticamente según los días restantes.',
-                                en:'Sorted by nearest due date. Status is recalculated automatically based on remaining days.' },
-  'cal.th.concepto':          { es:'Concepto',                                        en:'Concept' },
-  'cal.th.periodicidad':      { es:'Periodicidad',                                    en:'Frequency' },
-  'cal.th.fecha':             { es:'Fecha límite',                                    en:'Due date' },
-  'cal.th.dias':              { es:'Días restantes',                                  en:'Days left' },
-  'cal.th.estatus':           { es:'Estatus',                                         en:'Status' },
-  'cal.list.note.label':      { es:'Nota:',                                           en:'Note:' },
-  'cal.list.note.txt':        { es:'este calendario es de control interno. Las fechas límite oficiales deben confirmarse siempre contra el',
-                                en:'this calendar is for internal control. Official due dates must always be verified against the' },
-  'cal.list.note.link':       { es:'portal del SAT',                                  en:'SAT portal' },
-  'periodicidad.Mensual':     { es:'Mensual',                                         en:'Monthly' },
-  'periodicidad.Bimestral':   { es:'Bimestral',                                       en:'Bimonthly' },
-  'periodicidad.Anual':       { es:'Anual',                                           en:'Yearly' },
-  'periodicidad.Unica':       { es:'Única',                                           en:'One-off' },
-  // Obligaciones — badges y acciones
-  'obl.on_time':              { es:'A tiempo',                                        en:'On time' },
-  'obl.overdue':              { es:'Vencida',                                         en:'Overdue' },
-  'obl.urgent':               { es:'Urgente',                                         en:'Urgent' },
-  'obl.soon':                 { es:'Próxima',                                         en:'Coming up' },
-  'obl.remove':               { es:'Quitar',                                          en:'Remove' },
-  'obl.empty':                { es:'Sin obligaciones registradas.',                   en:'No obligations registered.' },
-  // === CxC FISCAL VIEW ===
-  'cxc.kpi.total':            { es:'Cartera fiscal total',                            en:'Total tax portfolio' },
-  'cxc.kpi.total.sub':        { es:'Histórico 2023–2026 · cédula corporativa',        en:'History 2023–2026 · corporate ledger' },
-  'cxc.kpi.embargo':          { es:'⚫ Zona embargo · >365 días',                      en:'⚫ Seizure zone · >365 days' },
-  'cxc.kpi.csd':              { es:'🔴 Restricción CSD · 181-365d',                   en:'🔴 Digital seal freeze · 181-365d' },
-  'cxc.kpi.requerimiento':    { es:'🟠 Requerimiento · 91-180d',                       en:'🟠 Demand notice · 91-180d' },
-  'cxc.kpi.vigilancia':       { es:'🟡 Vigilancia · 31-90d',                           en:'🟡 Surveillance · 31-90d' },
-  'cxc.kpi.ventana':          { es:'🔵 Ventana espontánea · ≤30d',                    en:'🔵 Spontaneous window · ≤30d' },
-  'cxc.kpi.conceptos':        { es:'conceptos',                                       en:'items' },
-  'cxc.kpi.concepto':         { es:'concepto',                                        en:'item' },
-  'cxc.penal.title':          { es:'RETENCIONES VENCIDAS — RIESGO PENAL',              en:'OVERDUE WITHHOLDINGS — CRIMINAL RISK' },
-  'cxc.penal.sub':            { es:'Retenciones a empleados/terceros no enteradas · Arts. 108-109 CFF (defraudación fiscal equiparada)', en:'Employee/third-party withholdings not remitted · Arts. 108-109 CFF (equated tax fraud)' },
-  'cxc.zona.embargo':         { es:'Embargo/PAE',                                     en:'Seizure/PAE' },
-  'cxc.zona.csd':             { es:'Restricción CSD',                                 en:'Seal freeze' },
-  'cxc.zona.requerimiento':   { es:'Requerimiento',                                   en:'Demand notice' },
-  'cxc.zona.vigilancia':      { es:'Vigilancia',                                      en:'Surveillance' },
-  'cxc.zona.ventana':         { es:'Ventana espontánea',                              en:'Spontaneous window' },
-  'cxc.zona.no_vencido':      { es:'No vencido',                                      en:'Not due' },
-  'cxc.zona.pagado':          { es:'Pagado',                                          en:'Paid' },
-  'cxc.dias.no_vencido':      { es:'—',                                               en:'—' },
-  'cxc.dias.dias':            { es:'días',                                            en:'days' },
-  'cxc.ord.riesgo_desc':      { es:'Riesgo (mayor a menor)',                          en:'Risk (highest to lowest)' },
-  'cxc.ord.dias_desc':        { es:'Días vencidos (más a menos)',                     en:'Days overdue (most to least)' },
-  'cxc.title':                { es:'Cuentas por cobrar de impuestos — por empresa / tipo de impuesto',
-                                en:'Tax receivables — by company / tax type' },
-  'cxc.lbl.empresa':          { es:'Empresa',                                         en:'Company' },
-  'cxc.lbl.tipo':             { es:'Tipo de impuesto',                                en:'Tax type' },
-  'cxc.lbl.anio':             { es:'Año',                                             en:'Year' },
-  'cxc.lbl.orden':            { es:'Ordenar por',                                     en:'Sort by' },
-  'cxc.ord.monto_desc':       { es:'Monto (mayor a menor)',                           en:'Amount (high to low)' },
-  'cxc.ord.monto_asc':        { es:'Monto (menor a mayor)',                           en:'Amount (low to high)' },
-  'cxc.ord.empresa':          { es:'Empresa (A-Z)',                                   en:'Company (A-Z)' },
-  'cxc.ord.categoria':        { es:'Tipo de impuesto (A-Z)',                          en:'Tax type (A-Z)' },
-  'cxc.ord.anio_asc':         { es:'Año (más antiguo primero)',                       en:'Year (oldest first)' },
-  'cxc.ord.anio_desc':        { es:'Año (más reciente primero)',                      en:'Year (newest first)' },
-  'cxc.th.empresa':           { es:'Empresa',                                         en:'Company' },
-  'cxc.th.tipo':              { es:'Tipo de impuesto',                                en:'Tax type' },
-  'cxc.th.monto':             { es:'Monto',                                           en:'Amount' },
-  'cxc.th.vigencia':          { es:'Vigencia',                                        en:'Period' },
-  'cxc.th.dias':              { es:'Días vencidos',                                   en:'Days overdue' },
-  'cxc.th.estatus':           { es:'Estatus',                                         en:'Status' },
-  'cxc.th.riesgo':            { es:'Riesgo',                                          en:'Risk' },
-  'cxc.chip.todas':           { es:'Todas',                                           en:'All' },
-  'cxc.chip.todos':           { es:'Todos',                                           en:'All' },
-  'cxc.empty':                { es:'Sin conceptos registrados.',                      en:'No records.' },
-  // Naturaleza
-  'nat.fiduciario':           { es:'Fiduciario',                                      en:'Fiduciary' },
-  'nat.no_fiduciario':        { es:'No fiduciario',                                   en:'Non-fiduciary' },
-  // Estatus
-  'est.Pendiente':            { es:'Pendiente',                                       en:'Pending' },
-  'est.En plan de pago':      { es:'En plan de pago',                                 en:'On payment plan' },
-  'est.Pagado':               { es:'Pagado',                                          en:'Paid' },
-  // Semáforo — texto del badge
-  'sem.monto_critico':        { es:'Monto crítico',                                   en:'Critical amount' },
-  'sem.fiduciario':           { es:'Fiduciario',                                      en:'Fiduciary' },
-  'sem.en_plan':              { es:'En plan de pago',                                 en:'On payment plan' },
-  'sem.pagado':               { es:'Pagado',                                          en:'Paid' },
-  'sem.pendiente':            { es:'Pendiente',                                       en:'Pending' },
-  // Categorías de impuesto (siglas SAT se mantienen)
-  'cat.ISR Propio':                        { es:'ISR Propio',                    en:'ISR (own)' },
-  'cat.ISR Retenido a Empleados':          { es:'ISR Retenido a Empleados',      en:'ISR withheld — employees' },
-  'cat.IVA Retenido a Terceros':           { es:'IVA Retenido a Terceros',       en:'IVA withheld — 3rd parties' },
-  'cat.ISR Retenido a Terceros':           { es:'ISR Retenido a Terceros',       en:'ISR withheld — 3rd parties' },
-  'cat.IMSS / Seguridad Social':           { es:'IMSS / Seguridad Social',       en:'IMSS / Social Security' },
-  'cat.INFONAVIT / RCV':                   { es:'INFONAVIT / RCV',               en:'INFONAVIT / RCV' },
-  'cat.ISN Estatal':                       { es:'ISN Estatal',                   en:'ISN (state payroll)' },
-  'cat.IVA':                               { es:'IVA',                           en:'IVA (VAT)' },
-};
-
-/* Helpers de traducción para valores dinámicos guardados en BD (categorías,
-   estatus, naturaleza). Devuelven el mismo valor si no hay traducción registrada. */
-function catT(cat){ return t('cat.' + cat) === ('cat.' + cat) ? cat : t('cat.' + cat); }
-function estT(est){ return t('est.' + est) === ('est.' + est) ? est : t('est.' + est); }
-function natT(esFid){ return esFid ? t('nat.fiduciario') : t('nat.no_fiduciario'); }
-
-function getLang(){
-  const l = (localStorage.getItem('mitech_fiscal_lang') || document.documentElement.lang || 'es').toLowerCase();
-  return (l === 'en') ? 'en' : 'es';
-}
-
-function t(key){
-  const entry = translations[key];
-  if (!entry) return key;
-  const l = getLang();
-  return entry[l] || entry.es || key;
-}
-
-/* Recorre todos los elementos con data-i18n y les inyecta la traducción actual. */
-function applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    const txt = t(key);
-    if (txt === null || txt === undefined) return;
-    // Si el texto de traducción contiene HTML (etiquetas), usar innerHTML
-    if (/<[a-z][\s\S]*>/i.test(txt)) el.innerHTML = txt; else el.textContent = txt;
-  });
-  // Actualizar etiqueta del botón de idioma para mostrar el idioma OPUESTO
-  // (indica qué idioma se activará al hacer clic).
-  const btn = document.getElementById('langToggleBtn');
-  if (btn) btn.textContent = (getLang() === 'es') ? 'EN' : 'ES';
-  // Sincronizar atributo lang del documento
-  document.documentElement.lang = getLang();
-  // Re-renderizar vistas dinámicas para que las etiquetas de datos (categorías,
-  // estatus, naturaleza, chips) también se muestren traducidas.
-  try { if (typeof renderCxc === 'function' && Array.isArray(cxcImpuestos)) renderCxc(); } catch(e){}
-  try { if (typeof renderObligaciones === 'function' && Array.isArray(obligaciones)) renderObligaciones(); } catch(e){}
-}
-
-function setLang(lang){
-  const nuevo = (lang === 'en') ? 'en' : 'es';
-  try { localStorage.setItem('mitech_fiscal_lang', nuevo); } catch(e){}
-  applyI18n();
-}
-
-function toggleLang(){
-  setLang(getLang() === 'es' ? 'en' : 'es');
+  html.dataset.theme = html.dataset.theme === "light" ? "dark" : "light";
 }
 
 /* ---------- TABS ---------- */
@@ -1259,7 +648,10 @@ async function cargarTodo(){
   await Promise.all([
     cargarObligaciones(),
     cargarCxc(),
-    cargarInpc(),
+    cargarImpuestos(),
+    cargarCfdi(),
+    cargarProvisiones(),
+    cargarDeudas(),
   ]);
 }
 
@@ -1325,52 +717,18 @@ async function cargarCxc(){
   renderCxc();
 }
 
-/* ── Riesgo por antigüedad del adeudo ────────────────────────────────
-   Fecha de exigibilidad = 31 de marzo del año siguiente a anio_inicio
-   (fecha canónica de cierre fiscal — la parte más antigua del rango
-   consolidado ya es exigible desde ese momento).
-
-   Zonas y fundamento legal (marco fiscal MX vigente 2026):
-   - Pagado                → 🟢 Pagado
-   - No vencido (hoy<exig) → ⚪ No vencido
-   - 0-30 días             → 🔵 Ventana espontánea (art. 73 CFF: sin multa)
-   - 31-90 días            → 🟡 Vigilancia (detección SAT, opinión negativa)
-   - 91-180 días           → 🟠 Requerimiento (art. 41 CFF)
-   - 181-365 días          → 🔴 Restricción CSD (art. 17-H Bis CFF)
-   - >365 días             → ⚫ Embargo/PAE (arts. 145, 151, 156-Bis CFF)
-   Los umbrales son referencia práctica; el riesgo real depende del
-   expediente. Los conceptos marcados como fiduciarios (retenciones)
-   suman al banner de riesgo penal (arts. 108-109 CFF). */
-
-function cxcFechaExigibilidad(row){
-  // 31 de marzo del año siguiente a anio_inicio (mes 2 = marzo en JS, día 31)
-  return new Date(Number(row.anio_inicio) + 1, 2, 31);
-}
-
-function cxcDiasVencidos(row){
-  if (row.estatus === 'Pagado') return null;
-  const hoy = new Date();
-  const exig = cxcFechaExigibilidad(row);
-  const diff = Math.floor((hoy - exig) / (1000*60*60*24));
-  return diff; // negativo = aún no vence
-}
-
-// Prioridad numérica para ordenar por riesgo (mayor = más urgente)
-const CXC_ZONA_PRIO = { embargo:6, csd:5, requerimiento:4, vigilancia:3, ventana:2, no_vencido:1, pagado:0 };
-
-function cxcRiesgo(row){
-  if (row.estatus === 'Pagado') {
-    return { zona:'pagado', prio:0, dias:null, clase:'badge-green', texto:'🟢 ' + t('cxc.zona.pagado') };
+/* Regla de semáforo (ver tarjeta de explicación en la vista):
+   - Pagado                              → verde
+   - Pendiente + fiduciario              → rojo   (retenciones empleados / IMSS: cero tolerancia)
+   - Pendiente + monto > $2,000,000      → rojo   (materialidad alta aunque no sea fiduciario)
+   - Pendiente (resto) / En plan de pago → amarillo */
+function cxcSemaforo(row){
+  if (row.estatus === 'Pagado') return { clase:'badge-green', texto:'🟢 Liquidado' };
+  if (row.estatus === 'Pendiente' && (row.fiduciario || Number(row.monto) > 2000000)) {
+    return { clase:'badge-red', texto: row.fiduciario ? '🔴 Fiduciario sin pagar' : '🔴 Monto crítico' };
   }
-  const dias = cxcDiasVencidos(row);
-  if (dias === null || dias < 0) {
-    return { zona:'no_vencido', prio:1, dias, clase:'badge-muted', texto:'⚪ ' + t('cxc.zona.no_vencido') };
-  }
-  if (dias > 365)  return { zona:'embargo',       prio:6, dias, clase:'badge-critical',  texto:'⚫ ' + t('cxc.zona.embargo') };
-  if (dias > 180)  return { zona:'csd',           prio:5, dias, clase:'badge-red',       texto:'🔴 ' + t('cxc.zona.csd') };
-  if (dias > 90)   return { zona:'requerimiento', prio:4, dias, clase:'badge-orange',    texto:'🟠 ' + t('cxc.zona.requerimiento') };
-  if (dias > 30)   return { zona:'vigilancia',    prio:3, dias, clase:'badge-yellow',    texto:'🟡 ' + t('cxc.zona.vigilancia') };
-  return              { zona:'ventana',       prio:2, dias, clase:'badge-blue',      texto:'🔵 ' + t('cxc.zona.ventana') };
+  if (row.estatus === 'En plan de pago') return { clase:'badge-yellow', texto:'🟡 En plan de pago' };
+  return { clase:'badge-yellow', texto:'🟡 Pendiente negociable' };
 }
 
 async function cxcCambiarEstatus(id, nuevoEstatus){
@@ -1393,11 +751,6 @@ function cxcSetFiltroCategoria(categoria){
   renderCxc();
 }
 
-function cxcSetFiltroAnio(anio){
-  cxcFiltroAnio = anio;
-  renderCxc();
-}
-
 function cxcSetOrden(valor){
   cxcOrden = valor;
   renderCxc();
@@ -1405,11 +758,8 @@ function cxcSetOrden(valor){
 
 /* Comparadores de orden. El orden por Empresa/Tipo de impuesto usa
    el monto (desc) como criterio secundario para mantener las filas
-   legibles dentro de cada grupo. El default es por riesgo (más urgente
-   primero) → días vencidos → monto. */
+   legibles dentro de cada grupo. */
 const CXC_ORDENADORES = {
-  riesgo_desc:(a,b)=> (cxcRiesgo(b).prio - cxcRiesgo(a).prio) || ((cxcDiasVencidos(b)??-9999)-(cxcDiasVencidos(a)??-9999)) || (Number(b.monto)-Number(a.monto)),
-  dias_desc:  (a,b)=> ((cxcDiasVencidos(b)??-9999)-(cxcDiasVencidos(a)??-9999)) || (Number(b.monto)-Number(a.monto)),
   monto_desc: (a,b)=> Number(b.monto)-Number(a.monto),
   monto_asc:  (a,b)=> Number(a.monto)-Number(b.monto),
   empresa:    (a,b)=> a.empresa.localeCompare(b.empresa, 'es') || Number(b.monto)-Number(a.monto),
@@ -1424,9 +774,7 @@ function renderCxc(){
   if (filtrosEl) {
     filtrosEl.innerHTML = empresas.map(e=>{
       const activo = e === cxcFiltroEmpresa;
-      // "Todas" se traduce; nombres de empresa son propios y no se traducen
-      const label = (e === 'Todas') ? t('cxc.chip.todas') : e;
-      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltro('${e}')">${label}</button>`;
+      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltro('${e}')">${e}</button>`;
     }).join('');
   }
 
@@ -1435,110 +783,46 @@ function renderCxc(){
   if (filtrosCatEl) {
     filtrosCatEl.innerHTML = categorias.map(c=>{
       const activo = c === cxcFiltroCategoria;
-      const label = (c === 'Todas') ? t('cxc.chip.todas') : catT(c);
-      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltroCategoria('${c.replace(/'/g,"\\'")}')">${label}</button>`;
-    }).join('');
-  }
-
-  // Año: la vigencia es un rango (anio_inicio–anio_fin), así que el filtro
-  // muestra todos los años que aparecen en ese rango para cualquier fila.
-  const aniosSet = new Set();
-  cxcImpuestos.forEach(r=>{
-    for (let a = Number(r.anio_inicio); a <= Number(r.anio_fin); a++) aniosSet.add(a);
-  });
-  const anios = ['Todos', ...Array.from(aniosSet).sort((a,b)=>a-b)];
-  const filtrosAnioEl = document.getElementById('cxcFiltrosAnio');
-  if (filtrosAnioEl) {
-    filtrosAnioEl.innerHTML = anios.map(a=>{
-      const activo = String(a) === String(cxcFiltroAnio);
-      const label = (a === 'Todos') ? t('cxc.chip.todos') : a;
-      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltroAnio('${a}')">${label}</button>`;
+      return `<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;${activo?'border-color:var(--accent);color:var(--accent)':''}" onclick="cxcSetFiltroCategoria('${c}')">${c}</button>`;
     }).join('');
   }
 
   let filas = cxcFiltroEmpresa === 'Todas' ? cxcImpuestos : cxcImpuestos.filter(r=>r.empresa===cxcFiltroEmpresa);
   filas = cxcFiltroCategoria === 'Todas' ? filas : filas.filter(r=>r.categoria===cxcFiltroCategoria);
-  filas = cxcFiltroAnio === 'Todos' ? filas : filas.filter(r=>Number(cxcFiltroAnio) >= Number(r.anio_inicio) && Number(cxcFiltroAnio) <= Number(r.anio_fin));
   const ordenadas = [...filas].sort(CXC_ORDENADORES[cxcOrden] || CXC_ORDENADORES.monto_desc);
 
   const tbody = document.getElementById('tblCxc');
   const ESTATUS_OPCIONES = ['Pendiente','En plan de pago','Pagado'];
   tbody.innerHTML = ordenadas.map(r=>{
-    const riesgo = cxcRiesgo(r);
+    const sem = cxcSemaforo(r);
     const vigencia = r.anio_inicio === r.anio_fin ? r.anio_inicio : `${r.anio_inicio}–${r.anio_fin}`;
     const estatusSelect = `<select style="width:auto;font-size:11.5px;padding:5px 8px" onchange="cxcCambiarEstatus('${r.id}', this.value)" ${cxcModoSoloLectura?'disabled':''}>
-        ${ESTATUS_OPCIONES.map(op=>`<option value="${op}" ${op===r.estatus?'selected':''}>${estT(op)}</option>`).join('')}
+        ${ESTATUS_OPCIONES.map(op=>`<option value="${op}" ${op===r.estatus?'selected':''}>${op}</option>`).join('')}
       </select>`;
-    // Días vencidos: número + etiqueta "días" cuando aplica; "—" si pagado o no vencido
-    let diasCell;
-    if (riesgo.zona === 'pagado') {
-      diasCell = `<span style="color:var(--muted)">—</span>`;
-    } else if (riesgo.zona === 'no_vencido') {
-      diasCell = `<span style="color:var(--muted)">${riesgo.dias} ${t('cxc.dias.dias')}</span>`;
-    } else {
-      const color = riesgo.zona === 'embargo' ? 'var(--critical)'
-                 : riesgo.zona === 'csd' ? 'var(--red)'
-                 : riesgo.zona === 'requerimiento' ? 'var(--orange)'
-                 : riesgo.zona === 'vigilancia' ? 'var(--yellow)'
-                 : 'var(--blue)';
-      diasCell = `<b style="color:${color}">${riesgo.dias.toLocaleString('es-MX')}</b> <span style="color:var(--muted);font-size:11px">${t('cxc.dias.dias')}</span>`;
-    }
-    // Marca visual ⚠️ discreta si es retención (mantengo el dato interno sin volver a mostrar la columna Naturaleza)
-    const fidTag = r.fiduciario ? ` <span title="Retención — riesgo penal (arts. 108-109 CFF)" style="color:var(--critical);font-size:11px;margin-left:4px">⚠</span>` : '';
     return `<tr>
       <td>${r.empresa}</td>
-      <td>${catT(r.categoria)}${fidTag}</td>
+      <td>${r.categoria}</td>
       <td><b>${fmtMoney(r.monto)}</b></td>
       <td>${vigencia}</td>
-      <td>${diasCell}</td>
+      <td>${r.fiduciario ? '<span class="badge badge-red">Fiduciario</span>' : '<span class="badge badge-muted">No fiduciario</span>'}</td>
       <td>${estatusSelect}</td>
-      <td><span class="badge ${riesgo.clase}">${riesgo.texto}</span></td>
+      <td><span class="badge ${sem.clase}">${sem.texto}</span></td>
     </tr>`;
-  }).join('') || `<tr><td colspan="7" style="color:var(--muted)">${t('cxc.empty')}</td></tr>`;
+  }).join('') || '<tr><td colspan="7" style="color:var(--muted)">Sin conceptos registrados.</td></tr>';
 
   const sum = (arr) => arr.reduce((s,r)=>s+Number(r.monto||0),0);
-  // KPIs recalculados sobre las FILAS FILTRADAS (Empresa + Tipo de impuesto + Año).
-  // Cuando todos los chips están en "Todas/Todos", `filas` === `cxcImpuestos` y
-  // los totales coinciden con el histórico global. Cualquier chip seleccionado
-  // restringe los KPIs a esa intersección.
-  //
-  // Clasificación por zona de riesgo (basada en días de antigüedad desde fecha
-  // de exigibilidad = 31/mar del año siguiente a anio_inicio). Un adeudo Pagado
-  // no cuenta en ninguna zona; un adeudo aún no exigible (dias<0) tampoco.
-  const total = sum(filas);
-  const porZona = { embargo:[], csd:[], requerimiento:[], vigilancia:[], ventana:[] };
-  filas.forEach(r => {
-    const z = cxcRiesgo(r).zona;
-    if (porZona[z]) porZona[z].push(r);
-  });
-  // Retenciones vencidas (fiduciario:true con estatus distinto de Pagado y en zona de riesgo real)
-  const penales = filas.filter(r => r.fiduciario && r.estatus !== 'Pagado' && (cxcDiasVencidos(r) ?? -1) >= 0);
+  const total = sum(cxcImpuestos);
+  const rojos = cxcImpuestos.filter(r=>r.estatus==='Pendiente' && (r.fiduciario || Number(r.monto)>2000000));
+  const amarillos = cxcImpuestos.filter(r=>r.estatus!=='Pagado' && !rojos.includes(r));
+  const verdes = cxcImpuestos.filter(r=>r.estatus==='Pagado');
 
-  const nLabel = (n) => n===1 ? t('cxc.kpi.concepto') : t('cxc.kpi.conceptos');
   document.getElementById('kpiCxcTotal').textContent = fmtMoney(total);
-  document.getElementById('kpiCxcTotalSub').textContent = `${filas.length} ${nLabel(filas.length)}`;
-  document.getElementById('kpiCxcEmbargo').textContent = fmtMoney(sum(porZona.embargo));
-  document.getElementById('kpiCxcEmbargoSub').textContent = `${porZona.embargo.length} ${nLabel(porZona.embargo.length)} · PAE activable`;
-  document.getElementById('kpiCxcCsd').textContent = fmtMoney(sum(porZona.csd));
-  document.getElementById('kpiCxcCsdSub').textContent = `${porZona.csd.length} ${nLabel(porZona.csd.length)} · Art. 17-H Bis`;
-  document.getElementById('kpiCxcReq').textContent = fmtMoney(sum(porZona.requerimiento));
-  document.getElementById('kpiCxcReqSub').textContent = `${porZona.requerimiento.length} ${nLabel(porZona.requerimiento.length)} · Art. 41 CFF`;
-  document.getElementById('kpiCxcVig').textContent = fmtMoney(sum(porZona.vigilancia));
-  document.getElementById('kpiCxcVigSub').textContent = `${porZona.vigilancia.length} ${nLabel(porZona.vigilancia.length)} · detección SAT`;
-  document.getElementById('kpiCxcVentana').textContent = fmtMoney(sum(porZona.ventana));
-  document.getElementById('kpiCxcVentanaSub').textContent = `${porZona.ventana.length} ${nLabel(porZona.ventana.length)} · Art. 73 CFF`;
-
-  // Banner de retenciones en riesgo penal (arts. 108-109 CFF)
-  const bannerEl = document.getElementById('cxcPenalBanner');
-  if (bannerEl) {
-    if (penales.length > 0) {
-      bannerEl.style.display = 'block';
-      document.getElementById('kpiCxcPenal').textContent = fmtMoney(sum(penales));
-      document.getElementById('kpiCxcPenalSub').textContent = `${penales.length} ${nLabel(penales.length)}`;
-    } else {
-      bannerEl.style.display = 'none';
-    }
-  }
+  document.getElementById('kpiCxcRojo').textContent = fmtMoney(sum(rojos));
+  document.getElementById('kpiCxcRojoSub').textContent = `${rojos.length} concepto${rojos.length===1?'':'s'}`;
+  document.getElementById('kpiCxcAmarillo').textContent = fmtMoney(sum(amarillos));
+  document.getElementById('kpiCxcAmarilloSub').textContent = `${amarillos.length} concepto${amarillos.length===1?'':'s'}`;
+  document.getElementById('kpiCxcVerde').textContent = fmtMoney(sum(verdes));
+  document.getElementById('kpiCxcVerdeSub').textContent = `${verdes.length} concepto${verdes.length===1?'':'s'}`;
 
   const notaEl = document.getElementById('cxcNota');
   if (cxcModoSoloLectura) {
@@ -1547,1142 +831,37 @@ function renderCxc(){
   } else {
     notaEl.style.display = 'none';
   }
-  if (typeof calcRenderKPIs === 'function') calcRenderKPIs();
 }
 
-/* ══════════════════════════════════════════
-   CÁLCULO DE IMPUESTOS — Actualización a hoy + recargos + condonación
-   Fundamento legal por régimen: ver skill fiscal-recargos-mx.
-   IMPORTANTE: multa estimada y % de condonación son valores que
-   captura el usuario/fiscalista — el sistema NO los determina solo,
-   solo aplica correctamente la ley a lo que el usuario indique.
-   ══════════════════════════════════════════ */
-
-const REGIMEN_POR_CATEGORIA = {
-  'ISR Propio':               { key:'CFF',          label:'CFF (federal)' },
-  'IVA':                      { key:'CFF',          label:'CFF (federal)' },
-  'ISR Retenido a Empleados': { key:'CFF_RETENIDO', label:'CFF — retenido ⚠️' },
-  'ISR Retenido a Terceros':  { key:'CFF_RETENIDO', label:'CFF — retenido ⚠️' },
-  'IVA Retenido a Terceros':  { key:'CFF_RETENIDO', label:'CFF — retenido ⚠️' },
-  'IMSS / Seguridad Social':  { key:'IMSS',          label:'LSS (IMSS)' },
-  'INFONAVIT / RCV':          { key:'INFONAVIT',     label:'Ley INFONAVIT' },
-  'ISN Estatal':              { key:'BC_ISN',        label:'Cód. Fiscal BC (estatal)' },
-};
-function calcRegimenPorCategoria(cat){
-  return REGIMEN_POR_CATEGORIA[cat] || { key:'CFF', label:'CFF (default)' };
-}
-const ICONO_REGIMEN = { CFF:'🧾', CFF_RETENIDO:'🔒', IMSS:'🏥', INFONAVIT:'🏠', BC_ISN:'🏛️' };
-
-/* Tasas mensuales de recargos por mora, vigentes 2026 — verificar
-   anualmente (LIF federal / Ley de Ingresos del Estado de BC). */
-const TASA_RECARGO_MORA = { CFF:0.0207, CFF_RETENIDO:0.0207, IMSS:0.0207, INFONAVIT:0.0207, BC_ISN:0.0225 };
-
-const CONDONACION_INFO = {
-  CFF:          { maxPct:1.00, nota:'Art. 74 CFF: el SAT puede reducir hasta 100% de la MULTA (no del capital ni recargos, salvo estímulo LIF). Trámite "Reducción de Multas art. 74 CFF" en el portal del SAT.' },
-  CFF_RETENIDO: { maxPct:0.00, nota:'⚠️ Retenido no enterado: la condonación normalmente NO procede (Art. 70-A fracc. VII CFF) y hay riesgo de defraudación fiscal equiparada (Art. 108-109 CFF). Revisar con fiscalista antes de cualquier trámite.' },
-  IMSS:         { maxPct:0.00, nota:'Art. 40-F LSS: el IMSS NO puede condonar actualización ni recargos de cuotas, bajo ninguna circunstancia. Multas administrativas se reducen por vía separada (no calculada aquí).' },
-  INFONAVIT:    { maxPct:0.90, nota:'Programa "Cumplamos Juntos" INFONAVIT: 50%–90% sobre MULTAS y su actualización (no sobre el capital). Confirma % y vigencia en el Portal Empresarial INFONAVIT.' },
-  BC_ISN:       { maxPct:0.00, nota:'Sin decreto estatal de condonación confirmado para ISN 2026. Verificar Periódico Oficial de BC antes de asumir beneficio.' },
+/* ================= SEMÁFORO LEGAL CFF ================= */
+/* Umbrales basados en CFF: >90d → PAE/Embargo; 1-90d → Recargos+Requerimiento; 0-5d → Por vencer; >5d → En tiempo */
+const SEM_CFG = {
+  rojo:     { label:'Embargo cuentas',   accion:'Fiscalista inmediato.',    legal:'Arts.145,151 CFF — PAE activo. Embargo bancario inminente.' },
+  naranja:  { label:'Notificado/Avisos', accion:'Regularizar urgente.',     legal:'Recargos 2.07%/mes s/monto actualizado (art.21 CFF). Posible requerimiento (art.41 CFF).' },
+  amarillo: { label:'Por vencer',        accion:'Pagar antes del límite.',  legal:'Plazo hábil vigente (art.12 CFF). Recargos inician día siguiente (2.07%/mes).' },
+  verde:    { label:'En tiempo',         accion:'Programar el pago.',       legal:'Dentro del plazo legal (art.6 CFF). Sin mora ni accesorios.' },
 };
 
-let calcAgrupacion = 'empresa'; // 'empresa' | 'categoria' | 'vigencia'
-let calcResultados = []; // resultados finales (usados por calcVerDetalle y calcGuardarEnSupabase)
-
-/* Estado del wizard activo */
-let wizEstado = {
-  claveGrupo: null,
-  paso: 1,
-  conceptosDisponibles: [],  // conceptos del grupo elegido
-  seleccionados: new Set(),  // ids marcados
-  resultados: [],            // objetos calculados editables
-  inpcFaltantes: {}          // {periodo: valor} capturados por usuario
-};
-
-/* ══════════════════════════════════════════
-   HELPERS de cálculo (reutilizados por el wizard)
-   ══════════════════════════════════════════ */
-
-/* Busca en fiscal_obligaciones (desglose mensual real) el período más
-   antiguo de esta empresa+categoría dentro del año de inicio. Si no
-   existe, aproxima al 1-enero y lo marca como estimado. */
-function calcObtenerFechaOrigen(row){
-  const candidatos = (typeof obligaciones !== 'undefined' && Array.isArray(obligaciones) ? obligaciones : []).filter(o =>
-    o.empresa === row.empresa && o.categoria === row.categoria &&
-    o.periodo && o.periodo.startsWith(String(row.anio_inicio))
-  ).sort((a,b)=> a.periodo.localeCompare(b.periodo));
-  if (candidatos.length) {
-    return { periodo: candidatos[0].periodo, fecha: candidatos[0].periodo + '-01', estimado: false };
-  }
-  const periodo = `${row.anio_inicio}-01`;
-  return { periodo, fecha: periodo + '-01', estimado: true };
+function calcSemaforoStatus(fechaLimite){
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const f   = new Date(fechaLimite + 'T00:00:00');
+  const d   = Math.floor((f - hoy) / 86400000);
+  if (d > 5)  return { code:'verde',    dias:d,         str:d+'d' };
+  if (d >= 0) return { code:'amarillo', dias:d,         str:d+'d' };
+  const a = Math.abs(d);
+  if (a <= 90)return { code:'naranja',  dias:a,         str:'+'+a+'d' };
+              return { code:'rojo',     dias:a,         str:'+'+a+'d' };
 }
 
-function calcMesActualPeriodo(){
-  const hoy = new Date();
-  return `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+/* Estado de filtros del calendario */
+let oblFiltroStatus = '';
+let oblDetalleAbierto = null;
+
+function oblFiltrarStatus(code){
+  oblFiltroStatus = (oblFiltroStatus === code) ? '' : code;
+  renderObligaciones();
 }
-
-/* "Por cada mes o fracción que transcurra" (art. 21 CFF): una fracción
-   de mes cuenta como mes completo para efectos de recargos. */
-function calcMesesMora(fechaOrigenISO){
-  const d1 = new Date(fechaOrigenISO+'T00:00:00');
-  const d2 = new Date();
-  let meses = (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
-  if (d2.getDate() > d1.getDate()) meses += 1;
-  return Math.max(meses, 0);
-}
-
-/* ══════════════════════════════════════════
-   TABLA DE INPC — vive en Supabase (fiscal_inpc), compartida
-   para todo el equipo. Se carga automáticamente al arranque.
-   ══════════════════════════════════════════ */
-let inpcCache = {}; // { 'YYYY-MM': valor }
-
-async function cargarInpc(){
-  try {
-    const { data, error } = await sb.from('fiscal_inpc').select('anio,mes,valor').order('anio',{ascending:true}).order('mes',{ascending:true});
-    if (error) throw error;
-    inpcCache = {};
-    (data||[]).forEach(r => {
-      const periodo = `${r.anio}-${String(r.mes).padStart(2,'0')}`;
-      inpcCache[periodo] = Number(r.valor);
-    });
-  } catch(e) {
-    console.warn('fiscal_inpc no disponible (¿falta correr fiscal_inpc_migration_v2.sql?):', e.message);
-    inpcCache = {};
-  }
-  renderInpcResumen();
-}
-
-function renderInpcResumen(){
-  const el = document.getElementById('inpcResumen');
-  if (!el) return;
-  const periodos = Object.keys(inpcCache).sort();
-  if (!periodos.length) {
-    el.innerHTML = '<span style="color:var(--red)">⚠️ Aún no hay valores de INPC en Supabase — corre <code>fiscal_inpc_migration_v2.sql</code> para cargar la serie histórica desde enero 2020.</span>';
-    return;
-  }
-  const primero = periodos[0];
-  const ultimo = periodos[periodos.length-1];
-  const ultimoValor = inpcCache[ultimo];
-  el.innerHTML = `✅ <b>${periodos.length}</b> periodos cargados (${primero} → ${ultimo}). Último INPC: <b>${ultimoValor.toFixed(3)}</b> · Fuente: INEGI (base 2ª quincena julio 2018 = 100), publicado en DOF conforme al art. 20-Bis del CFF.`;
-}
-
-async function inpcGuardarMasivo(registros){
-  // Convertir {periodo:'YYYY-MM', valor} → {anio, mes, valor, fuente} (nuevo schema)
-  const registrosNuevoSchema = registros.map(r=>{
-    const [a,m] = String(r.periodo).split('-');
-    return { anio: parseInt(a,10), mes: parseInt(m,10), valor: Number(r.valor), fuente: r.fuente || 'Manual' };
-  }).filter(r => !isNaN(r.anio) && r.mes>=1 && r.mes<=12 && r.valor>0);
-  if (!registrosNuevoSchema.length) { alert('Formato inválido de registros INPC.'); return false; }
-  const { error } = await sb.from('fiscal_inpc').upsert(registrosNuevoSchema, { onConflict:'anio,mes' });
-  if (error) { alert('No se pudo guardar el INPC en Supabase: ' + error.message + ' — ¿corriste fiscal_inpc_migration_v2.sql?'); return false; }
-  await cargarInpc();
-  return true;
-}
-
-function calcClaveGrupo(r){
-  if (calcAgrupacion === 'categoria') return r.categoria;
-  if (calcAgrupacion === 'vigencia') return r.anio_inicio === r.anio_fin ? String(r.anio_inicio) : `${r.anio_inicio}–${r.anio_fin}`;
-  return r.empresa;
-}
-function calcEtiquetaGrupo(clave){
-  return calcAgrupacion === 'categoria' ? catT(clave) : clave;
-}
-function calcSetAgrupacion(modo){
-  calcAgrupacion = modo;
-  calcRenderKPIs();
-}
-
-/* ══════════════════════════════════════════
-   VISTA PRINCIPAL: barra de agrupador + grid de KPIs mini
-   Cada KPI es una tarjeta clickeable que abre el wizard.
-   ══════════════════════════════════════════ */
-function calcRenderKPIs(){
-  const barra = document.getElementById('calcAgrupadorBar');
-  const grid = document.getElementById('calcKpisGrid');
-  if (!barra || !grid) return;
-  if (!cxcImpuestos.length) {
-    barra.innerHTML = '';
-    grid.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Sin conceptos en CxC Fiscal.</div>';
-    return;
-  }
-
-  // Barra de chips
-  const modos = [
-    { key:'empresa',   label:'🏢 Por Empresa' },
-    { key:'categoria', label:'📋 Por Tipo de impuesto' },
-    { key:'vigencia',  label:'📅 Por Año' }
-  ];
-  barra.innerHTML = `<span class="lbl">Agrupar:</span>` +
-    modos.map(m => `<button class="kpi-chip ${calcAgrupacion===m.key?'active':''}" onclick="calcSetAgrupacion('${m.key}')">${m.label}</button>`).join('');
-
-  // Agrupar conceptos
-  const grupos = {};
-  cxcImpuestos.forEach(r => {
-    const clave = calcClaveGrupo(r);
-    (grupos[clave] = grupos[clave] || []).push(r);
-  });
-  const clavesOrdenadas = Object.keys(grupos).sort((a,b) => a.localeCompare(b,'es'));
-
-  // Iconos y labels por tipo de agrupación
-  const configAgr = {
-    empresa:   { icon:'🏢', label:'Empresa' },
-    categoria: { icon:'📋', label:'Tipo de impuesto' },
-    vigencia:  { icon:'📅', label:'Año fiscal' }
-  }[calcAgrupacion] || { icon:'📊', label:'Grupo' };
-
-  grid.innerHTML = clavesOrdenadas.map(clave => {
-    const items = grupos[clave];
-    const total = items.reduce((s,r) => s + Number(r.monto||0), 0);
-    const fiduciarios = items.filter(r => r.fiduciario === true || /Retenido|IMSS|INFONAVIT/i.test(r.categoria)).length;
-    const claveEsc = String(clave).replace(/'/g,"\\'").replace(/"/g,'&quot;');
-    return `
-      <div class="kpi-mini" onclick="calcAbrirWizard('${claveEsc}')" title="Abrir asistente de cálculo">
-        <div class="kpi-mini-icon">${configAgr.icon}</div>
-        <div class="kpi-mini-label">${configAgr.label}</div>
-        <div class="kpi-mini-title">${calcEtiquetaGrupo(clave)}</div>
-        <div class="kpi-mini-count">${items.length} concepto${items.length===1?'':'s'}</div>
-        <div class="kpi-mini-total">${fmtMoney(total)}</div>
-        ${fiduciarios > 0 ? `<div class="kpi-mini-alert">⚠ ${fiduciarios} fiduciario${fiduciarios===1?'':'s'}</div>` : ''}
-        <span class="kpi-mini-arrow">→</span>
-      </div>`;
-  }).join('');
-}
-
-/* ══════════════════════════════════════════
-   WIZARD — asistente paso a paso
-   Paso 1: Selección de conceptos del grupo
-   Paso 2: Actualización INPC (auto, editable)
-   Paso 3: Recargos + Multas + Condonación + LIF (elegibles)
-   Paso 4: Resumen final + acciones
-   ══════════════════════════════════════════ */
-function calcAbrirWizard(claveGrupo){
-  const conceptos = cxcImpuestos.filter(r => calcClaveGrupo(r) === claveGrupo);
-  if (!conceptos.length) { alert('Este grupo no tiene conceptos.'); return; }
-
-  wizEstado = {
-    claveGrupo,
-    paso: 1,
-    conceptosDisponibles: conceptos,
-    seleccionados: new Set(conceptos.map(r => String(r.id))),  // por defecto, todos marcados
-    resultados: [],
-    inpcFaltantes: {}
-  };
-
-  document.getElementById('wizTitulo').innerHTML = `🧮 Asistente de cálculo: ${calcEtiquetaGrupo(claveGrupo)}`;
-  document.getElementById('wizSubtitulo').textContent = `${conceptos.length} concepto${conceptos.length===1?'':'s'} · Total ${fmtMoney(conceptos.reduce((s,r)=>s+Number(r.monto||0),0))}`;
-  document.getElementById('calcWizardModal').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-  calcWizardIr(1);
-}
-
-function calcCerrarWizard(ev){
-  if (ev && ev.target !== ev.currentTarget && !ev.currentTarget.classList.contains('calc-modal-close')) return;
-  document.getElementById('calcWizardModal').style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-function calcWizardIr(paso){
-  wizEstado.paso = paso;
-  // Renderizar barra de pasos
-  const pasos = [
-    { n:1, label:'Selección' },
-    { n:2, label:'INPC' },
-    { n:3, label:'Recargos y multas' },
-    { n:4, label:'Resumen' }
-  ];
-  document.getElementById('wizSteps').innerHTML = pasos.map(p => {
-    const clase = p.n < paso ? 'done' : (p.n === paso ? 'active' : '');
-    const num = p.n < paso ? '✓' : p.n;
-    return `<div class="wizard-step-item ${clase}"><span class="num">${num}</span>${p.label}</div>`;
-  }).join('');
-
-  if (paso === 1) calcWizardPaso1();
-  else if (paso === 2) calcWizardPaso2();
-  else if (paso === 3) calcWizardPaso3();
-  else if (paso === 4) calcWizardPaso4();
-}
-
-/* ---------- PASO 1: Selección ---------- */
-function calcWizardPaso1(){
-  const body = document.getElementById('wizBody');
-  const items = wizEstado.conceptosDisponibles;
-  const totalSel = items.filter(r => wizEstado.seleccionados.has(String(r.id))).reduce((s,r)=>s+Number(r.monto||0),0);
-  const todosSel = items.every(r => wizEstado.seleccionados.has(String(r.id)));
-
-  body.innerHTML = `
-    <p>Marca los conceptos a incluir. Todos vienen marcados por defecto.</p>
-    <div class="wiz-select-header">
-      <input type="checkbox" id="wizSelAll" ${todosSel?'checked':''} onchange="calcWizardToggleAll(this.checked)">
-      <label for="wizSelAll">${todosSel?'Deseleccionar todos':'Seleccionar todos'}</label>
-      <span style="flex:1"></span>
-      <span class="counter">${wizEstado.seleccionados.size}/${items.length}</span>
-    </div>
-    <div class="wiz-select-grid">
-      ${items.map(r => {
-        const marcado = wizEstado.seleccionados.has(String(r.id));
-        const regimen = calcRegimenPorCategoria(r.categoria);
-        const vigencia = r.anio_inicio === r.anio_fin ? r.anio_inicio : `${r.anio_inicio}–${r.anio_fin}`;
-        const detalle = calcAgrupacion === 'empresa' ? catT(r.categoria)
-                      : calcAgrupacion === 'categoria' ? r.empresa
-                      : `${r.empresa} · ${catT(r.categoria)}`;
-        const esFid = r.fiduciario === true || /Retenido|IMSS|INFONAVIT/i.test(r.categoria);
-        const icono = ICONO_REGIMEN[regimen.key] || '📄';
-        return `
-          <div class="wiz-concept-kpi ${marcado?'selected':''}" role="checkbox" aria-checked="${marcado}" tabindex="0"
-               onclick="calcWizardToggleConcepto('${r.id}')"
-               onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();calcWizardToggleConcepto('${r.id}')}">
-            <span class="kpi-check">${marcado?'✓':''}</span>
-            <div class="kpi-icon">${icono}</div>
-            <div class="kpi-label">${regimen.label} · ${vigencia}</div>
-            <div class="kpi-title">${detalle}</div>
-            ${esFid ? '<span class="kpi-fid">⚠ Fiduciario</span>' : ''}
-            <div class="kpi-monto">${fmtMoney(r.monto)}</div>
-          </div>`;
-      }).join('')}
-    </div>`;
-
-  document.getElementById('wizNav').innerHTML = `
-    <button class="btn-secondary btn" onclick="calcCerrarWizard()">Cancelar</button>
-    <span class="spacer"></span>
-    <span class="info">Total seleccionado: <b id="wizTotalSel">${fmtMoney(totalSel)}</b></span>
-    <button class="btn" onclick="calcWizardPreparar()" ${wizEstado.seleccionados.size===0?'disabled':''}>Continuar →</button>`;
-}
-
-function calcWizardToggleConcepto(id){
-  const s = String(id);
-  if (wizEstado.seleccionados.has(s)) wizEstado.seleccionados.delete(s);
-  else wizEstado.seleccionados.add(s);
-  calcWizardPaso1();
-}
-function calcWizardToggleAll(marcar){
-  wizEstado.seleccionados.clear();
-  if (marcar) wizEstado.conceptosDisponibles.forEach(r => wizEstado.seleccionados.add(String(r.id)));
-  calcWizardPaso1();
-}
-
-/* Preparar resultados iniciales antes de ir al paso 2 */
-function calcWizardPreparar(){
-  if (wizEstado.seleccionados.size === 0) { alert('Selecciona al menos un concepto.'); return; }
-  const seleccionados = wizEstado.conceptosDisponibles.filter(r => wizEstado.seleccionados.has(String(r.id)));
-  wizEstado.resultados = seleccionados.map(r => {
-    const regimen = calcRegimenPorCategoria(r.categoria);
-    const origen = calcObtenerFechaOrigen(r);
-    const cond = CONDONACION_INFO[regimen.key];
-    return {
-      id: r.id, empresa: r.empresa, categoria: r.categoria,
-      regimen: regimen.key, regimenLabel: regimen.label,
-      montoHistorico: Number(r.monto),
-      origenPeriodo: origen.periodo, estimado: origen.estimado,
-      inpcOrigen: null, inpcHoy: null,
-      factorActualizacion: 1, actualizacionAplicada: false,
-      montoActualizado: Number(r.monto),
-      mesesMora: 0, recargos: 0, total: Number(r.monto),
-      // Elegibles (default: activados y máximos)
-      aplicarRecargos: true,
-      multaEstimada: 0, aplicarMulta: false,
-      pctCondonacion: 0, maxPctCondonacion: cond.maxPct, notaCondonacion: cond.nota,
-      estimuloLif: false,
-      montoConCondonacion: Number(r.monto)
-    };
-  });
-  // Recalcular cada uno con INPC actual + mora
-  wizEstado.resultados.forEach((_, i) => calcWizardRecalcular(i));
-  calcWizardIr(2);
-}
-
-/* Recalcula el resultado i tomando en cuenta valores actuales de INPC, multas, condonación y LIF */
-function calcWizardRecalcular(i){
-  const res = wizEstado.resultados[i];
-  if (!res) return;
-  const mesActual = calcMesActualPeriodo();
-  const inpcOrig = wizEstado.inpcFaltantes[res.origenPeriodo] ?? inpcCache[res.origenPeriodo];
-  const inpcHoy  = wizEstado.inpcFaltantes[mesActual] ?? inpcCache[mesActual];
-  res.inpcOrigen = inpcOrig || null;
-  res.inpcHoy = inpcHoy || null;
-  res.actualizacionAplicada = !!(inpcOrig && inpcHoy);
-  res.factorActualizacion = res.actualizacionAplicada ? (inpcHoy / inpcOrig) : 1;
-  res.montoActualizado = res.montoHistorico * res.factorActualizacion;
-  res.mesesMora = calcMesesMora(res.origenPeriodo + '-01');
-  const tasa = TASA_RECARGO_MORA[res.regimen] || 0;
-  res.recargos = res.aplicarRecargos ? (res.montoActualizado * tasa * res.mesesMora) : 0;
-  const multa = res.aplicarMulta ? res.multaEstimada * (1 - res.pctCondonacion) : 0;
-  res.total = res.montoActualizado + res.recargos;
-  res.montoConCondonacion = res.estimuloLif
-    ? res.montoActualizado
-    : res.montoActualizado + res.recargos + multa;
-}
-
-/* ---------- PASO 2: Actualización INPC ---------- */
-function calcWizardPaso2(){
-  const body = document.getElementById('wizBody');
-  const mesActual = calcMesActualPeriodo();
-  // Detectar INPCs faltantes
-  const periodosNecesarios = new Set([mesActual]);
-  wizEstado.resultados.forEach(r => periodosNecesarios.add(r.origenPeriodo));
-  const faltantes = Array.from(periodosNecesarios).filter(p =>
-    !(p in inpcCache) && !(p in wizEstado.inpcFaltantes)
-  ).sort();
-
-  const inpcInputHTML = faltantes.length ? `
-    <div class="wiz-inpc-input" style="margin-bottom:10px;padding:8px 10px">
-      <b>📐 Faltan INPCs.</b> Captúralos aquí — se guardan en Supabase.
-      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
-        ${faltantes.map(p => `
-          <div style="display:flex;align-items:center;gap:8px">
-            <label style="font-size:11px;flex:1">INPC ${p}${p===mesActual?' (actual)':''}</label>
-            <input type="number" step="0.00001" placeholder="132.37300" style="width:120px;padding:4px 6px;font-size:11.5px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text)"
-              onchange="calcWizardSetInpcFaltante('${p}', this.value)">
-          </div>
-        `).join('')}
-      </div>
-    </div>` : '';
-
-  body.innerHTML = `
-    <p style="margin:0 0 10px 0;font-size:11.5px;color:var(--muted)">
-      Actualización por inflación · <b>Art. 17-A CFF</b>. INPCs se cargan automáticamente desde Supabase. Edita el <b>periodo origen</b> si conoces la fecha real.
-    </p>
-    ${inpcInputHTML}
-    <div id="wizPaso2Conceptos">
-      ${wizEstado.resultados.map((res, i) => calcWizardRenderConceptoINPC(res, i)).join('')}
-    </div>`;
-
-  document.getElementById('wizNav').innerHTML = `
-    <button class="btn-secondary btn" onclick="calcWizardIr(1)">← Atrás</button>
-    <span class="spacer"></span>
-    <button class="btn" onclick="calcWizardIr(3)">Continuar a recargos →</button>`;
-}
-
-function calcWizardRenderConceptoINPC(res, i){
-  const esFid = res.regimen === 'CFF_RETENIDO' || /Retenido/i.test(res.categoria) || /IMSS|INFONAVIT/.test(res.regimen);
-  return `
-    <div class="wiz-concept-card">
-      <div class="head">
-        <b>${res.empresa}</b>
-        <span class="badge">${catT(res.categoria)}</span>
-        <span class="badge">${res.regimenLabel}</span>
-        ${esFid ? '<span class="badge fid">⚠️ Fiduciario</span>' : ''}
-        ${res.estimado ? '<span class="badge" title="Periodo estimado al 1-ene del año fiscal">📍 Estimado</span>' : ''}
-        <span style="flex:1"></span>
-        <span style="font-weight:700">${fmtMoney(res.montoHistorico)}</span>
-      </div>
-      <div class="row">
-        <span class="lbl">Periodo de origen</span>
-        <input type="month" value="${res.origenPeriodo}" onchange="calcWizardSetPeriodoOrigen(${i}, this.value)">
-      </div>
-      <div class="row">
-        <span class="lbl">INPC origen (${res.origenPeriodo})</span>
-        <span class="val">${res.inpcOrigen ? res.inpcOrigen.toFixed(5) : '<span style="color:var(--red)">Falta</span>'}</span>
-      </div>
-      <div class="row">
-        <span class="lbl">INPC actual (${calcMesActualPeriodo()})</span>
-        <span class="val">${res.inpcHoy ? res.inpcHoy.toFixed(5) : '<span style="color:var(--red)">Falta</span>'}</span>
-      </div>
-      ${res.actualizacionAplicada ? `
-        <div class="row calc">
-          <span class="lbl">Factor de actualización</span>
-          <span class="val">× ${res.factorActualizacion.toFixed(6)}</span>
-        </div>
-        <div class="row calc">
-          <span class="lbl">Monto actualizado</span>
-          <span class="val big">${fmtMoney(res.montoActualizado)}</span>
-        </div>
-        <div style="font-size:11px;color:var(--muted);padding-top:6px;border-top:1px dashed var(--border);margin-top:6px">
-          Incremento por inflación: <b>${fmtMoney(res.montoActualizado - res.montoHistorico)}</b> (${((res.factorActualizacion-1)*100).toFixed(2)}%)
-        </div>
-      ` : `<div class="wiz-inpc-input">⚠️ Sin INPC de origen o actual — no se aplicó actualización. Captura los valores arriba.</div>`}
-    </div>`;
-}
-
-function calcWizardSetPeriodoOrigen(i, valor){
-  if (!valor) return;
-  wizEstado.resultados[i].origenPeriodo = valor;
-  wizEstado.resultados[i].estimado = false;
-  calcWizardRecalcular(i);
-  calcWizardPaso2();
-}
-function calcWizardSetInpcFaltante(periodo, valor){
-  const v = parseFloat(valor);
-  if (isNaN(v) || v <= 0) { delete wizEstado.inpcFaltantes[periodo]; return; }
-  wizEstado.inpcFaltantes[periodo] = v;
-  wizEstado.resultados.forEach((_, i) => calcWizardRecalcular(i));
-  calcWizardPaso2();
-}
-
-/* ---------- PASO 3: Recargos + Multas + Condonación + LIF ---------- */
-function calcWizardPaso3(){
-  const body = document.getElementById('wizBody');
-  body.innerHTML = `
-    <p style="margin:0 0 12px 0;font-size:13px;color:var(--muted)">
-      Todo lo aplicable está <b>pre-calculado y activado</b> por defecto. Desactiva o ajusta lo que no aplique a tu caso.
-      Las <b>tasas de recargos</b> vienen automáticamente del régimen (Art. 21 CFF · Art. 40-A LSS · Ley INFONAVIT · CF BC).
-    </p>
-    <div id="wizPaso3Conceptos">
-      ${wizEstado.resultados.map((res, i) => calcWizardRenderConceptoRecargos(res, i)).join('')}
-    </div>`;
-
-  document.getElementById('wizNav').innerHTML = `
-    <button class="btn-secondary btn" onclick="calcWizardIr(2)">← Atrás</button>
-    <span class="spacer"></span>
-    <button class="btn" onclick="calcWizardIr(4)">Ver resumen →</button>`;
-}
-
-function calcWizardRenderConceptoRecargos(res, i){
-  const tasa = TASA_RECARGO_MORA[res.regimen] || 0;
-  const tasaPct = (tasa * 100).toFixed(2);
-  const esCFF = (res.regimen === 'CFF' || res.regimen === 'CFF_RETENIDO');
-  const maxCondPct = Math.round(res.maxPctCondonacion * 100);
-  return `
-    <div class="wiz-concept-card">
-      <div class="head">
-        <b>${res.empresa}</b>
-        <span class="badge">${catT(res.categoria)}</span>
-        <span class="badge">${res.regimenLabel}</span>
-        <span style="flex:1"></span>
-        <span style="font-weight:600;font-size:13px">${fmtMoney(res.montoActualizado)}</span>
-      </div>
-
-      <!-- Recargos -->
-      <div class="row">
-        <span class="lbl">Meses de mora (calculados)</span>
-        <span class="val">${res.mesesMora} · tasa ${tasaPct}%/mes</span>
-      </div>
-      <div class="row">
-        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
-          <input type="checkbox" ${res.aplicarRecargos?'checked':''} onchange="calcWizardSetCampo(${i}, 'aplicarRecargos', this.checked)">
-          <span class="lbl" style="color:var(--text);font-weight:500">Aplicar recargos por mora</span>
-        </label>
-        <span class="val ${res.aplicarRecargos?'':'val'}" style="${res.aplicarRecargos?'color:var(--accent,#0057B8);font-weight:600':'color:var(--muted)'}">${fmtMoney(res.recargos)}</span>
-      </div>
-
-      <!-- Multa + Condonación -->
-      <div class="row" style="align-items:flex-start">
-        <div style="display:flex;flex-direction:column;gap:6px;flex:1">
-          <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
-            <input type="checkbox" ${res.aplicarMulta?'checked':''} onchange="calcWizardSetCampo(${i}, 'aplicarMulta', this.checked)">
-            <span class="lbl" style="color:var(--text);font-weight:500">Aplicar multa</span>
-          </label>
-          ${res.aplicarMulta ? `
-            <div style="display:flex;gap:8px;align-items:center;padding-left:22px">
-              <span style="font-size:11px;color:var(--muted)">Monto:</span>
-              <input type="number" step="0.01" value="${res.multaEstimada}" style="width:120px"
-                onchange="calcWizardSetCampo(${i}, 'multaEstimada', this.value)">
-            </div>
-            ${maxCondPct > 0 ? `
-              <div class="cond-slider" style="padding-left:22px">
-                <span style="font-size:11px;color:var(--muted)">Condonación:</span>
-                <input type="range" min="0" max="${maxCondPct}" value="${Math.round(res.pctCondonacion*100)}"
-                  oninput="calcWizardSetCampo(${i}, 'pctCondonacion', this.value); document.getElementById('wizPct${i}').textContent = this.value + '%'">
-                <span class="pct" id="wizPct${i}">${Math.round(res.pctCondonacion*100)}%</span>
-                <span style="font-size:10.5px;color:var(--muted)">(máx. ${maxCondPct}%)</span>
-              </div>
-              <div style="font-size:10.5px;color:var(--muted);padding-left:22px;font-style:italic">${res.notaCondonacion}</div>
-            ` : `
-              <div style="font-size:10.5px;color:var(--muted);padding-left:22px;font-style:italic">
-                ⚠️ No procede condonación en este régimen. ${res.notaCondonacion}
-              </div>
-            `}
-          ` : ''}
-        </div>
-        <span class="val" style="${res.aplicarMulta?'color:var(--accent,#0057B8);font-weight:600':'color:var(--muted)'}">
-          ${res.aplicarMulta ? fmtMoney(res.multaEstimada * (1 - res.pctCondonacion)) : '—'}
-        </span>
-      </div>
-
-      <!-- Estímulo LIF 2026 -->
-      ${esCFF ? `
-        <div class="toggles">
-          <label>
-            <input type="checkbox" ${res.estimuloLif?'checked':''} onchange="calcWizardSetCampo(${i}, 'estimuloLif', this.checked)">
-            <span>⭐ Estímulo LIF 2026 <span style="font-size:10.5px;color:var(--muted)">(100% multas + recargos, si ingresos 2024 ≤ $300M y crédito firme)</span></span>
-          </label>
-        </div>
-      ` : ''}
-
-      <div class="row" style="border-top:2px solid var(--border);padding-top:8px;margin-top:8px">
-        <span class="lbl" style="font-size:13px;font-weight:600;color:var(--text)">Total del concepto</span>
-        <span class="val big" style="color:var(--accent,#0057B8)">${fmtMoney(res.montoConCondonacion)}</span>
-      </div>
-    </div>`;
-}
-
-function calcWizardSetCampo(i, campo, valor){
-  const res = wizEstado.resultados[i];
-  if (!res) return;
-  if (campo === 'aplicarRecargos') res.aplicarRecargos = !!valor;
-  else if (campo === 'aplicarMulta') { res.aplicarMulta = !!valor; if (!valor) { res.multaEstimada = 0; res.pctCondonacion = 0; } }
-  else if (campo === 'multaEstimada') res.multaEstimada = parseFloat(valor) || 0;
-  else if (campo === 'pctCondonacion') res.pctCondonacion = Math.min(Math.max(parseFloat(valor)||0, 0), res.maxPctCondonacion*100) / 100;
-  else if (campo === 'estimuloLif') res.estimuloLif = !!valor;
-  calcWizardRecalcular(i);
-  // Re-render selectivo: solo repaint total, evita recrear inputs (perdería focus)
-  if (campo === 'aplicarRecargos' || campo === 'aplicarMulta' || campo === 'estimuloLif') {
-    calcWizardPaso3();
-  } else {
-    // Solo actualizar totales visibles
-    calcWizardPaso3();
-  }
-}
-
-/* ---------- PASO 4: Resumen final ---------- */
-function calcWizardPaso4(){
-  const body = document.getElementById('wizBody');
-  const totales = wizEstado.resultados.reduce((acc, res) => {
-    acc.historico += res.montoHistorico;
-    acc.actualizado += res.montoActualizado;
-    acc.recargos += res.recargos;
-    acc.multaNeta += res.aplicarMulta ? res.multaEstimada * (1 - res.pctCondonacion) : 0;
-    acc.total += res.montoConCondonacion;
-    return acc;
-  }, { historico:0, actualizado:0, recargos:0, multaNeta:0, total:0 });
-
-  const ahorroLif = wizEstado.resultados
-    .filter(r => r.estimuloLif)
-    .reduce((s, r) => s + r.recargos + (r.aplicarMulta ? r.multaEstimada * (1 - r.pctCondonacion) : 0), 0);
-
-  // Guardar en calcResultados para que calcVerDetalle pueda leer
-  calcResultados = wizEstado.resultados.slice();
-
-  body.innerHTML = `
-    <p>Resumen del cálculo. Puedes ver el desglose legal de cada concepto o guardar los montos actualizados.</p>
-    <div class="wiz-summary-list">
-      ${wizEstado.resultados.map((res, i) => `
-        <div class="wiz-summary-item">
-          <div class="top">
-            <span class="name"><b>${res.empresa}</b> · ${catT(res.categoria)}</span>
-            <span class="total">${fmtMoney(res.montoConCondonacion)}</span>
-          </div>
-          <div class="subline">${res.regimenLabel}${res.estimuloLif?' · ⭐ LIF 2026':''}</div>
-          <div class="breakdown">
-            <div><span>Hist:</span> <b>${fmtMoney(res.montoHistorico)}</b></div>
-            <div><span>Actual:</span> <b>${fmtMoney(res.montoActualizado)}</b></div>
-            <div><span>Recargos:</span> <b>${fmtMoney(res.recargos)}</b></div>
-            ${res.aplicarMulta ? `<div><span>Multa:</span> <b>${fmtMoney(res.multaEstimada * (1 - res.pctCondonacion))}</b></div>` : ''}
-          </div>
-          <div class="actions">
-            <button class="btn-secondary btn" onclick="calcVerDetalle(${i})">🔍 Ver desglose legal</button>
-          </div>
-        </div>
-      `).join('')}
-    </div>
-    <div class="wiz-total-card">
-      <div class="lbl">Total a pagar · ${wizEstado.resultados.length} concepto${wizEstado.resultados.length===1?'':'s'}</div>
-      <div class="amount">${fmtMoney(totales.total)}</div>
-      <div class="breakdown">
-        vs. histórico: <b>+${fmtMoney(totales.total - totales.historico)}</b> (${totales.historico>0?((totales.total/totales.historico - 1)*100).toFixed(1):'0'}%)
-        ${ahorroLif > 0 ? `<br>Ahorro LIF 2026: <b style="color:#22c55e">${fmtMoney(ahorroLif)}</b>` : ''}
-      </div>
-    </div>
-    <div class="excel-warn" style="margin-top:10px;font-size:10.5px">
-      ⚠️ Apoyo interno — valida con el fiscalista antes de pagar.
-    </div>`;
-
-  const hayInpcNuevo = Object.keys(wizEstado.inpcFaltantes).length > 0;
-  document.getElementById('wizNav').innerHTML = `
-    <button class="btn-secondary btn" onclick="calcWizardIr(3)">← Atrás</button>
-    <span class="spacer"></span>
-    ${hayInpcNuevo ? `<span class="info">📐 ${Object.keys(wizEstado.inpcFaltantes).length} INPC nuevo(s) se guardarán en Supabase</span>` : ''}
-    <button class="btn-secondary btn" onclick="calcCerrarWizard()">Cerrar</button>
-    <button class="btn-danger" onclick="calcWizardGuardar()">💾 Guardar en Supabase</button>`;
-}
-
-async function calcWizardGuardar(){
-  // Primero persistir INPCs capturados
-  const inpcRegs = Object.entries(wizEstado.inpcFaltantes).map(([periodo, valor]) => ({ periodo, valor }));
-  if (inpcRegs.length) {
-    try { await inpcGuardarMasivo(inpcRegs); } catch(e){ console.warn('Error guardando INPCs:', e); }
-  }
-  // Luego persistir resultados (montos actualizados en fiscal_cxc_impuestos)
-  await calcGuardarEnSupabase();
-  calcCerrarWizard();
-  calcRenderKPIs();
-}
-
-
-/* ══════════════════════════════════════════
-   Modal de desglose detallado del cálculo fiscal
-   Muestra el paso a paso con fundamento legal.
-   ══════════════════════════════════════════ */
-function calcVerDetalle(iOrRes){
-  const res = (typeof iOrRes === 'object' && iOrRes !== null) ? iOrRes : calcResultados[iOrRes];
-  if (!res) return;
-  const mesActual = calcMesActualPeriodo();
-  const inpcOrigen = inpcCache[res.origenPeriodo];
-  const inpcHoy = inpcCache[mesActual];
-  const tasaMensual = TASA_RECARGO_MORA[res.regimen] || 0;
-  const tasaPct = (tasaMensual*100).toFixed(2);
-
-  // Base legal por régimen
-  const baseLegal = {
-    CFF:          { actualizacion:'Art. 17-A CFF', recargos:'Art. 21 CFF + Art. 11 LIF 2026', autoridad:'SAT' },
-    CFF_RETENIDO: { actualizacion:'Art. 17-A CFF', recargos:'Art. 21 CFF + Art. 11 LIF 2026', autoridad:'SAT' },
-    IMSS:         { actualizacion:'Art. 40-A LSS (supletorio CFF)', recargos:'Art. 40-A LSS', autoridad:'IMSS' },
-    INFONAVIT:    { actualizacion:'Art. 30 Ley INFONAVIT (supletorio CFF)', recargos:'Art. 30 Ley INFONAVIT', autoridad:'INFONAVIT' },
-    BC_ISN:       { actualizacion:'Cód. Fiscal del Estado de BC', recargos:'Ley de Ingresos del Estado de BC 2026', autoridad:'Sría. de Hacienda BC' },
-  }[res.regimen] || { actualizacion:'Art. 17-A CFF', recargos:'Art. 21 CFF', autoridad:'SAT' };
-
-  // Determinar si es fiduciario (retenido a terceros)
-  const esFiduciario = res.regimen === 'CFF_RETENIDO' || /Retenido/i.test(res.categoria) || /IMSS|INFONAVIT/.test(res.regimen);
-
-  const html = `
-    <!-- PASO 1: Datos base -->
-    <div class="calc-step">
-      <div class="calc-step-title"><span class="calc-step-num">1</span>Datos base de la obligación</div>
-      <div class="calc-row"><span class="calc-row-label">Empresa</span><span class="calc-row-value">${res.empresa}</span></div>
-      <div class="calc-row"><span class="calc-row-label">Categoría</span><span class="calc-row-value">${catT(res.categoria)}</span></div>
-      <div class="calc-row"><span class="calc-row-label">Régimen aplicable</span><span class="calc-row-value">${res.regimenLabel}</span></div>
-      <div class="calc-row"><span class="calc-row-label">Autoridad</span><span class="calc-row-value">${baseLegal.autoridad}</span></div>
-      <div class="calc-row"><span class="calc-row-label">Naturaleza</span><span class="calc-row-value">${esFiduciario ? '⚠️ Fiduciario (retenido a terceros)' : 'No fiduciario'}</span></div>
-      <div class="calc-row"><span class="calc-row-label">Monto histórico</span><span class="calc-row-value big">${fmtMoney(res.montoHistorico)}</span></div>
-    </div>
-
-    <!-- PASO 2: Actualización por INPC -->
-    <div class="calc-step">
-      <div class="calc-step-title"><span class="calc-step-num">2</span>Actualización por inflación (INPC)</div>
-      ${res.actualizacionAplicada ? `
-        <div class="calc-row"><span class="calc-row-label">INPC del mes de origen (${res.origenPeriodo}${res.estimado?' — estimado':''})</span><span class="calc-row-value">${inpcOrigen.toFixed(5)}</span></div>
-        <div class="calc-row"><span class="calc-row-label">INPC del mes actual (${mesActual})</span><span class="calc-row-value">${inpcHoy.toFixed(5)}</span></div>
-        <div class="calc-formula">Factor = INPC(${mesActual}) ÷ INPC(${res.origenPeriodo}) = ${inpcHoy.toFixed(5)} ÷ ${inpcOrigen.toFixed(5)} = <b>${res.factorActualizacion.toFixed(6)}</b></div>
-        <div class="calc-formula">Monto actualizado = ${fmtMoney(res.montoHistorico)} × ${res.factorActualizacion.toFixed(6)} = <b>${fmtMoney(res.montoActualizado)}</b></div>
-        <div class="calc-row"><span class="calc-row-label">Incremento por inflación</span><span class="calc-row-value">${fmtMoney(res.montoActualizado - res.montoHistorico)} (${((res.factorActualizacion-1)*100).toFixed(2)}%)</span></div>
-        <div class="calc-legal">Fundamento: ${baseLegal.actualizacion} — El monto se actualiza multiplicándolo por el factor obtenido de dividir el INPC del mes anterior al pago entre el INPC del mes anterior al que debió pagarse.</div>
-      ` : `
-        <div class="calc-warn-box">⚠️ No se aplicó actualización — falta el INPC del mes de origen (${res.origenPeriodo}) en la tabla. Captúralo para calcular correctamente.</div>
-      `}
-      ${res.estimado ? `<div class="calc-warn-box">⚠️ El período de origen es <b>estimado</b> (se asumió 1 de enero del año fiscal). Para precisión total, expande el esquema de <code>fiscal_obligaciones</code> con período mensual real.</div>` : ''}
-    </div>
-
-    <!-- PASO 3: Recargos -->
-    <div class="calc-step">
-      <div class="calc-step-title"><span class="calc-step-num">3</span>Recargos por mora</div>
-      <div class="calc-row"><span class="calc-row-label">Meses completos transcurridos</span><span class="calc-row-value">${res.mesesMora}</span></div>
-      <div class="calc-row"><span class="calc-row-label">Tasa mensual aplicable</span><span class="calc-row-value">${tasaPct}% mensual</span></div>
-      <div class="calc-formula">Recargos = Monto actualizado × Tasa × Meses de mora
-Recargos = ${fmtMoney(res.montoActualizado)} × ${(tasaMensual).toFixed(4)} × ${res.mesesMora} = <b>${fmtMoney(res.recargos)}</b></div>
-      <div class="calc-legal">Fundamento: ${baseLegal.recargos} — Los recargos se causan por cada mes o fracción de mora, sobre el monto ya actualizado. Tope legal: 5 años de recargos (art. 21 CFF) salvo prescripción por otra causa.</div>
-    </div>
-
-    <!-- PASO 4: Multa y condonación (si aplica) -->
-    ${(res.multaEstimada > 0 || res.pctCondonacion > 0) ? `
-    <div class="calc-step">
-      <div class="calc-step-title"><span class="calc-step-num">4</span>Multa y condonación</div>
-      <div class="calc-row"><span class="calc-row-label">Multa estimada (capturada)</span><span class="calc-row-value">${fmtMoney(res.multaEstimada)}</span></div>
-      <div class="calc-row"><span class="calc-row-label">% de condonación aplicado</span><span class="calc-row-value">${(res.pctCondonacion*100).toFixed(0)}% (máx. permitido: ${(res.maxPctCondonacion*100).toFixed(0)}%)</span></div>
-      <div class="calc-formula">Multa después de condonación = ${fmtMoney(res.multaEstimada)} × (1 − ${res.pctCondonacion.toFixed(2)}) = <b>${fmtMoney(res.multaEstimada*(1-res.pctCondonacion))}</b></div>
-      <div class="calc-legal">${res.notaCondonacion}</div>
-    </div>
-    ` : ''}
-
-    <!-- PASO 5: Estímulo LIF 2026 (si aplica) -->
-    ${res.estimuloLif ? `
-    <div class="calc-step" style="background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.4)">
-      <div class="calc-step-title"><span class="calc-step-num" style="background:#22c55e">★</span>Estímulo fiscal LIF 2026 aplicado</div>
-      <div class="calc-formula">Con estímulo: se cubre solo el monto actualizado = <b>${fmtMoney(res.montoActualizado)}</b>
-Ahorro vs pago normal: <b>${fmtMoney(res.recargos + res.multaEstimada*(1-res.pctCondonacion))}</b></div>
-      <div class="calc-legal">Fundamento: Art. Vigésimo Segundo Transitorio LIF 2026 — Estímulo del 100% sobre multas, recargos y gastos de ejecución para contribuyentes con ingresos 2024 ≤ $300M MXN y créditos firmes/consentidos. NO aplica a listados 69-B/69-B Bis.</div>
-      <div class="calc-warn-box">⚠️ Antes de pagar, valida con el fiscalista: (a) ingresos 2024 ≤ $300M, (b) el crédito debe estar firme/consentido, (c) no haber usado programa de condonación anterior.</div>
-    </div>
-    ` : ''}
-
-    <!-- PASO FINAL: Total -->
-    <div class="calc-step calc-step-total">
-      <div class="calc-step-title"><span class="calc-step-num" style="background:var(--red)">✓</span>Total a pagar</div>
-      <div class="calc-row"><span class="calc-row-label">Monto actualizado</span><span class="calc-row-value">${fmtMoney(res.montoActualizado)}</span></div>
-      <div class="calc-row"><span class="calc-row-label">+ Recargos</span><span class="calc-row-value">${fmtMoney(res.recargos)}</span></div>
-      ${res.multaEstimada > 0 ? `<div class="calc-row"><span class="calc-row-label">+ Multa (con condonación)</span><span class="calc-row-value">${fmtMoney(res.multaEstimada*(1-res.pctCondonacion))}</span></div>` : ''}
-      ${res.estimuloLif ? `<div class="calc-row"><span class="calc-row-label">− Estímulo LIF 2026</span><span class="calc-row-value" style="color:#22c55e">−${fmtMoney(res.recargos + res.multaEstimada*(1-res.pctCondonacion))}</span></div>` : ''}
-      <div class="calc-row" style="border-top:1px solid var(--border);padding-top:8px;margin-top:6px"><span class="calc-row-label" style="font-size:15px;font-weight:600">TOTAL A PAGAR</span><span class="calc-row-value total">${fmtMoney(res.montoConCondonacion)}</span></div>
-    </div>
-
-    ${esFiduciario ? `
-    <div class="calc-warn-box">
-      <b>⚠️ Alerta legal — Concepto fiduciario:</b> Este monto corresponde a dinero retenido/descontado a terceros que la empresa debía enterar al fisco. El tratamiento legal es más estricto: la condonación normalmente no procede y existe riesgo de <b>responsabilidad penal por defraudación fiscal equiparada</b> (arts. 108–109 CFF). Prioriza el pago con el fiscalista antes que cualquier trámite de reducción.
-    </div>
-    ` : ''}
-
-    <div style="text-align:center;margin-top:14px;font-size:11.5px;color:var(--muted)">
-      Este desglose es una herramienta de apoyo interno de MI Global. NO sustituye la determinación oficial de la autoridad ni la asesoría de un fiscalista licenciado.<br>
-      Cálculo generado ${new Date().toLocaleString('es-MX')} · SIF Fiscal v${APP_VERSION}
-    </div>
-  `;
-
-  document.getElementById('calcDetalleTitulo').innerHTML = `🔍 Desglose: ${res.empresa} · ${catT(res.categoria)}`;
-  document.getElementById('calcDetalleBody').innerHTML = html;
-  document.getElementById('calcDetalleModal').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
-
-function calcCerrarDetalle(ev){
-  if (ev && ev.target !== ev.currentTarget && !ev.currentTarget.classList.contains('calc-modal-close')) return;
-  document.getElementById('calcDetalleModal').style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-// Cerrar modal con ESC
-document.addEventListener('keydown', function(e){
-  if (e.key !== 'Escape') return;
-  const detalleModal = document.getElementById('calcDetalleModal');
-  const wizardModal = document.getElementById('calcWizardModal');
-  if (detalleModal && detalleModal.style.display === 'flex') { calcCerrarDetalle(); return; }
-  if (wizardModal && wizardModal.style.display === 'flex') { calcCerrarWizard(); return; }
-});
-
-async function calcGuardarEnSupabase(){
-  if (!calcResultados.length) return;
-  const hoy = new Date().toISOString().slice(0,10);
-  let errores = 0;
-  for (const res of calcResultados) {
-    const { error } = await sb.from('fiscal_cxc_impuestos').update({
-      monto_actualizado: res.montoActualizado,
-      recargos_calculados: res.recargos,
-      meses_mora: res.mesesMora,
-      calculo_estimado: res.estimado,
-      fecha_ultimo_calculo: hoy,
-      multa_estimada: res.multaEstimada,
-      pct_condonacion: res.pctCondonacion,
-      estimulo_lif_2026: res.estimuloLif,
-      monto_con_condonacion: res.montoConCondonacion
-    }).eq('id', res.id);
-    if (error) { console.error(error); errores++; }
-  }
-  if (errores) {
-    alert(`Se guardaron ${calcResultados.length-errores} de ${calcResultados.length}. ${errores} fallaron — revisa que hayas corrido fiscal-actualizacion-migration.sql en Supabase.`);
-  } else {
-    alert(`✅ Actualizado en Supabase: ${calcResultados.length} concepto(s).`);
-  }
-  await cargarCxc();
-}
-
-/* ══════════════════════════════════════════
-   CARGA MASIVA DESDE EXCEL — Cédula Fiscal Corporativa
-   Lee la hoja "Resumen" y genera dos derivaciones:
-   1) Obligaciones MENSUALES en fiscal_obligaciones (una por mes con monto>0)
-   2) Registros ANUALES en fiscal_cxc_impuestos (uno por año+empresa+categoría)
-
-   REEMPLAZA TODO el histórico previo en ambas tablas al confirmar.
-   ══════════════════════════════════════════ */
-
-/* Mapa de nombres largos del Excel → categorías canónicas del sistema (ES).
-   Cada key es un patrón regex case-insensitive. La categoría canónica es
-   la que se guarda en Supabase y luego se traduce en la UI con catT(). */
-const EXCEL_CAT_MAP = [
-  { pat:/imss/i,                                                        cat:'IMSS / Seguridad Social',           fid:true  },
-  { pat:/infonavit|rcv/i,                                               cat:'INFONAVIT / RCV',                    fid:true  },
-  { pat:/isn|state\s*tax\s*on\s*payroll/i,                              cat:'ISN Estatal',                        fid:false },
-  { pat:/(iva\s*ret\.?\s*|iva\s*withheld|third\s*party.*iva)/i,         cat:'IVA Retenido a Terceros',            fid:true  },
-  { pat:/(isr\s*ret\.?\s*terceros|isr\s*withheld|third\s*party.*isr)/i, cat:'ISR Retenido a Terceros',            fid:true  },
-  { pat:/(isr\s*ret\.?\s*emple|employees.*withholding)/i,               cat:'ISR Retenido a Empleados',           fid:true  },
-  { pat:/isr\s*propio|income\s*tax/i,                                   cat:'ISR Propio',                         fid:false },
-  { pat:/\biva\b|vat/i,                                                 cat:'IVA',                                fid:false },
-];
-
-/* Devuelve { categoria, fiduciario } o null si no matchea */
-function excelMapImpuesto(txt){
-  if (!txt) return null;
-  for (const {pat, cat, fid} of EXCEL_CAT_MAP) {
-    if (pat.test(txt)) return { categoria: cat, fiduciario: fid };
-  }
-  return null;
-}
-
-/* Fecha límite estándar SAT: día 17 del mes siguiente al del periodo.
-   Ej: periodo 2025-06 → fecha_limite 2025-07-17. Si el mes+1 excede diciembre,
-   avanza al enero del año siguiente. */
-function excelFechaLimiteSAT(anio, mesIdx0){
-  const mesSig = mesIdx0 + 1; // 0=enero → 1=febrero
-  const anioLim = mesSig > 11 ? anio + 1 : anio;
-  const mesLim = mesSig > 11 ? 0 : mesSig;
-  const d = new Date(anioLim, mesLim, 17);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const MESES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-/* Datos parseados en memoria mientras se muestra el preview */
-let excelParsedObligaciones = null; // array para fiscal_obligaciones
-let excelParsedCxc = null;          // array para fiscal_cxc_impuestos
-let excelActiveSuffix = '';         // '' (Calendario SAT) o '_cxc' (CxC Fiscal) — dónde renderizar el preview
-
-/* Drag & drop handlers para las zonas de upload (Calendario SAT y CxC Fiscal) */
-document.addEventListener('DOMContentLoaded', () => {
-  ['excelDrop'].forEach(id => {
-    const drop = document.getElementById(id);
-    if (!drop) return;
-    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
-    drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
-    drop.addEventListener('drop', e => {
-      e.preventDefault();
-      drop.classList.remove('drag');
-      if (e.dataTransfer.files.length) excelProcessFile(e.dataTransfer.files[0], '');
-    });
-  });
-});
-
-function excelHandleInput(ev){
-  const f = ev.target.files && ev.target.files[0];
-  if (!f) return;
-  const suffix = ev.target.id === 'excelInput_cxc' ? '_cxc' : '';
-  excelProcessFile(f, suffix);
-}
-
-async function excelProcessFile(file, suffix=''){
-  if (typeof XLSX === 'undefined') { alert(t('cal.excel.err_lib')); return; }
-  if (!requirePermCarga()) return;
-  excelActiveSuffix = (suffix === '_cxc') ? '_cxc' : '';
-
-  try {
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type:'array' });
-    const sheetName = wb.SheetNames.find(s => /resumen/i.test(s)) || wb.SheetNames[0];
-    if (!sheetName || !/resumen/i.test(sheetName)) {
-      // Si no hay hoja "Resumen", fallback: usar la primera hoja con Año/Empresa/Impuesto
-      const ok = wb.SheetNames.some(s => /resumen/i.test(s));
-      if (!ok) { alert(t('cal.excel.err_sheet')); return; }
-    }
-    const ws = wb.Sheets[sheetName];
-    // header:1 → array de arrays. defval:'' → celdas vacías como string vacío.
-    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
-    if (!rows.length) { alert(t('cal.excel.err_empty')); return; }
-
-    // Encontrar la fila de headers (busca "Año", "Empresa", "Impuesto" en las primeras 3 filas)
-    let headerIdx = -1;
-    for (let i = 0; i < Math.min(3, rows.length); i++) {
-      const r = rows[i].map(c => String(c).toLowerCase().trim());
-      if (r.includes('año') && r.includes('empresa') && r.some(c => c.includes('impuesto'))) {
-        headerIdx = i; break;
-      }
-    }
-    if (headerIdx < 0) { alert(t('cal.excel.err_empty')); return; }
-
-    const headers = rows[headerIdx].map(c => String(c).trim());
-    // Mapear índices de columnas conocidas
-    const colAnio = headers.findIndex(h => /^año$/i.test(h));
-    const colEmp  = headers.findIndex(h => /^empresa$/i.test(h));
-    const colImp  = headers.findIndex(h => /impuesto/i.test(h) && !/año/i.test(h));
-    const colTotal = headers.findIndex(h => /^total$/i.test(h));
-    // Columnas de meses: buscar por nombre EN o ES
-    const colMeses = MESES_EN.map((mEn, i) => {
-      const idx = headers.findIndex(h => new RegExp(`^${mEn}$`, 'i').test(h) || new RegExp(`^${MESES_ES[i]}$`, 'i').test(h));
-      return idx;
-    });
-
-    // Recorrer filas de datos
-    const obligaciones = [];
-    const cxcRegistros = [];
-    const cxcKeys = new Set(); // dedup (anio+empresa+categoria)
-    const empresasSet = new Set();
-    const aniosSet = new Set();
-
-    for (let i = headerIdx + 1; i < rows.length; i++) {
-      const r = rows[i];
-      if (!r || !r.length) continue;
-      const anio = parseInt(r[colAnio], 10);
-      const empresa = String(r[colEmp] || '').trim();
-      const impuestoRaw = String(r[colImp] || '').trim();
-      if (!anio || !empresa || !impuestoRaw) continue;
-
-      const mapeo = excelMapImpuesto(impuestoRaw);
-      if (!mapeo) continue; // impuesto no reconocido, ignorar
-
-      const totalRow = parseFloat(r[colTotal]) || 0;
-      // Si el total es 0, ignoramos la fila completa
-      if (totalRow <= 0) continue;
-
-      empresasSet.add(empresa);
-      aniosSet.add(anio);
-
-      // ─── Derivación 1: OBLIGACIONES MENSUALES ────────
-      for (let m = 0; m < 12; m++) {
-        const idx = colMeses[m];
-        if (idx < 0) continue;
-        const monto = parseFloat(r[idx]) || 0;
-        if (monto <= 0) continue;
-        const periodo = `${anio}-${String(m+1).padStart(2,'0')}`;
-        obligaciones.push({
-          concepto: `${mapeo.categoria} — ${empresa} (${periodo})`,
-          periodicidad: 'Mensual',
-          fecha_limite: excelFechaLimiteSAT(anio, m),
-          // NOTA: si la tabla fiscal_obligaciones no tiene estas columnas
-          // extras, Supabase las ignorará silenciosamente o dará error.
-          // Se dejan por si el usuario amplió el esquema.
-          monto: monto,
-          empresa: empresa,
-          categoria: mapeo.categoria,
-          periodo: periodo,
-          origen: 'excel',
-        });
-      }
-
-      // ─── Derivación 2: CxC ANUAL ────────
-      const key = `${anio}|${empresa}|${mapeo.categoria}`;
-      if (cxcKeys.has(key)) {
-        // Ya existe (posible por duplicados en el Excel): sumar montos
-        const existente = cxcRegistros.find(x => `${x.anio_inicio}|${x.empresa}|${x.categoria}` === key);
-        if (existente) existente.monto = Number(existente.monto) + totalRow;
-      } else {
-        cxcKeys.add(key);
-        cxcRegistros.push({
-          empresa: empresa,
-          categoria: mapeo.categoria,
-          monto: totalRow,
-          anio_inicio: anio,
-          anio_fin: anio,
-          fiduciario: mapeo.fiduciario,
-          estatus: 'Pendiente',
-          origen: 'excel',
-        });
-      }
-    }
-
-    if (obligaciones.length === 0 && cxcRegistros.length === 0) {
-      alert(t('cal.excel.err_empty'));
-      return;
-    }
-
-    excelParsedObligaciones = obligaciones;
-    excelParsedCxc = cxcRegistros;
-    excelRenderPreview(aniosSet, empresasSet);
-  } catch (e) {
-    console.error('excelProcessFile error:', e);
-    alert('❌ ' + (e.message || e));
-  }
-}
-
-function excelRenderPreview(aniosSet, empresasSet){
-  const el = document.getElementById('excelPreview' + excelActiveSuffix);
-  if (!el) return;
-  // Ocultar el otro preview por si estuviera abierto
-  const other = document.getElementById('excelPreview' + (excelActiveSuffix === '_cxc' ? '' : '_cxc'));
-  if (other) { other.style.display = 'none'; other.innerHTML = ''; }
-  const anios = Array.from(aniosSet).sort();
-  const empresas = Array.from(empresasSet).sort();
-  el.style.display = 'block';
-  el.innerHTML = `
-    <div class="excel-preview">
-      <h3>${t('cal.excel.preview_title')}</h3>
-      <div class="stats">
-        <div class="stat"><div class="lbl">${t('cal.excel.stat.anios')}</div><div class="val">${anios.length}</div></div>
-        <div class="stat"><div class="lbl">${t('cal.excel.stat.empresas')}</div><div class="val">${empresas.length}</div></div>
-        <div class="stat"><div class="lbl">${t('cal.excel.stat.oblig')}</div><div class="val">${excelParsedObligaciones.length}</div></div>
-        <div class="stat"><div class="lbl">${t('cal.excel.stat.cxc')}</div><div class="val">${excelParsedCxc.length}</div></div>
-      </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:8px">
-        ${anios.length ? anios[0]+'–'+anios[anios.length-1] : ''} · ${empresas.join(', ')}
-      </div>
-      <div class="excel-warn">${t('cal.excel.warn')}</div>
-      <div class="excel-actions">
-        <button class="btn btn-secondary" onclick="excelCancelar()">${t('cal.excel.btn_cancel')}</button>
-        <button class="btn-danger" onclick="excelConfirmarYAplicar()">${t('cal.excel.btn_apply')}</button>
-      </div>
-    </div>
-  `;
-}
-
-function excelCancelar(){
-  excelParsedObligaciones = null;
-  excelParsedCxc = null;
-  ['', '_cxc'].forEach(sfx => {
-    const el = document.getElementById('excelPreview' + sfx);
-    if (el) { el.style.display='none'; el.innerHTML=''; }
-    const inp = document.getElementById('excelInput' + sfx);
-    if (inp) inp.value = '';
-  });
-  excelActiveSuffix = '';
-}
-
-/* Permiso: solo admin_master puede cargar el Excel (reemplaza todo el histórico) */
-function requirePermCarga(){
-  if (!currentUser || currentUser.rol !== 'admin_master') {
-    alert('🔒 Solo admin_master puede cargar el Excel (reemplaza todo el histórico).');
-    return false;
-  }
-  return true;
-}
-
-async function excelConfirmarYAplicar(){
-  if (!requirePermCarga()) return;
-  if (!excelParsedObligaciones || !excelParsedCxc) return;
-  if (!confirm(t('cal.excel.confirm_msg'))) return;
-
-  const preview = document.getElementById('excelPreview' + excelActiveSuffix);
-  const setEstado = (txt) => {
-    if (preview) preview.querySelector('.excel-actions')?.insertAdjacentHTML('beforebegin',
-      `<div id="excelStatus" style="color:var(--accent);font-size:13px;margin-top:8px">⏳ ${txt}</div>`);
-    const st = document.getElementById('excelStatus');
-    if (st) st.textContent = '⏳ ' + txt;
-  };
-  try {
-    setEstado(t('cal.excel.uploading'));
-
-    // 1) DELETE ALL en ambas tablas.
-    // Supabase requiere una condición WHERE. Usamos "id NOT NULL" que matchea todo.
-    const del1 = await sb.from('fiscal_cxc_impuestos').delete().not('id', 'is', null);
-    if (del1.error) throw del1.error;
-    const del2 = await sb.from('fiscal_obligaciones').delete().not('id', 'is', null);
-    if (del2.error) throw del2.error;
-
-    // 2) INSERT en batches. Supabase soporta insert masivo pero conviene lotes.
-    const BATCH = 500;
-    // Preparar payload obligaciones — usar solo columnas conocidas del esquema
-    // actual (concepto, periodicidad, fecha_limite). Si la tabla se amplió con
-    // monto/empresa/categoria/periodo/origen, también las envía; Supabase
-    // ignora columnas inexistentes solo si están en el schema; si no, dará
-    // error. Para robustez, primero intenta con schema extendido; si falla,
-    // reintenta con schema mínimo.
-    async function insertBatched(table, rows){
-      for (let i = 0; i < rows.length; i += BATCH) {
-        const slice = rows.slice(i, i + BATCH);
-        const { error } = await sb.from(table).insert(slice);
-        if (error) throw error;
-      }
-    }
-
-    // Obligaciones: intentar schema extendido; si error de columna, retry con mínimo
-    try {
-      await insertBatched('fiscal_obligaciones', excelParsedObligaciones);
-    } catch (e) {
-      console.warn('Obligaciones con schema extendido falló, retry con mínimo:', e.message);
-      const minimal = excelParsedObligaciones.map(o => ({
-        concepto: o.concepto,
-        periodicidad: o.periodicidad,
-        fecha_limite: o.fecha_limite,
-      }));
-      await insertBatched('fiscal_obligaciones', minimal);
-    }
-
-    // CxC: mismo patrón, intentar con "origen"; fallback sin ella
-    try {
-      await insertBatched('fiscal_cxc_impuestos', excelParsedCxc);
-    } catch (e) {
-      console.warn('CxC con schema extendido falló, retry sin origen:', e.message);
-      const minimalCxc = excelParsedCxc.map(c => ({
-        empresa: c.empresa,
-        categoria: c.categoria,
-        monto: c.monto,
-        anio_inicio: c.anio_inicio,
-        anio_fin: c.anio_fin,
-        fiduciario: c.fiduciario,
-        estatus: c.estatus,
-      }));
-      await insertBatched('fiscal_cxc_impuestos', minimalCxc);
-    }
-
-    setEstado(t('cal.excel.ok'));
-    // Recargar ambos datasets
-    await Promise.all([cargarObligaciones(), cargarCxc()]);
-    setTimeout(() => excelCancelar(), 1500);
-  } catch (e) {
-    console.error('excelConfirmarYAplicar error:', e);
-    const st = document.getElementById('excelStatus');
-    if (st) { st.textContent = '❌ ' + (e.message || e); st.style.color = 'var(--red)'; }
-    else alert('❌ ' + (e.message || e));
-  }
-}
+function oblAplicarFiltros(){ renderObligaciones(); }
 
 /* ================= OBLIGACIONES ================= */
 async function cargarObligaciones(){
@@ -2693,333 +872,347 @@ async function cargarObligaciones(){
   renderObligaciones();
 }
 async function agregarObligacion(){
-  const concepto = document.getElementById('oblConcepto').value.trim();
+  const concepto     = document.getElementById('oblConcepto').value.trim();
+  const empresa      = document.getElementById('oblEmpresa').value || '';
+  const tipo         = document.getElementById('oblTipo').value || '';
   const periodicidad = document.getElementById('oblPeriodicidad').value;
-  const fecha = document.getElementById('oblFecha').value;
-  if(!concepto || !fecha){ alert('Completa concepto y fecha.'); return; }
+  const fecha        = document.getElementById('oblFecha').value;
+  const monto        = parseFloat(document.getElementById('oblMonto').value) || 0;
+  if(!concepto || !fecha){ alert('Completa al menos el concepto y la fecha límite.'); return; }
 
   const btn = document.getElementById('btnAgregarObligacion');
-  btn.disabled = true;
-  const { error } = await sb.from('fiscal_obligaciones').insert({
-    concepto, periodicidad, fecha_limite: fecha, creado_por: currentUserId
-  });
-  btn.disabled = false;
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const payload = { concepto, periodicidad, fecha_limite: fecha, creado_por: currentUserId };
+  /* Campos opcionales: se guardan si la columna existe en Supabase */
+  if(empresa) payload.empresa = empresa;
+  if(tipo)    payload.tipo    = tipo;
+  if(monto)   payload.monto   = monto;
+
+  const { error } = await sb.from('fiscal_obligaciones').insert(payload);
+  btn.disabled = false; btn.textContent = '+ Agregar obligación';
   if (error) { console.error(error); alert('No se pudo guardar: ' + error.message); return; }
 
-  document.getElementById('oblConcepto').value='';
-  document.getElementById('oblFecha').value='';
+  ['oblConcepto','oblFecha','oblMonto'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('oblEmpresa').value = '';
+  document.getElementById('oblTipo').value = '';
   await cargarObligaciones();
 }
 async function eliminarObligacion(id){
+  if(!confirm('¿Eliminar esta obligación?')) return;
   const { error } = await sb.from('fiscal_obligaciones').delete().eq('id', id);
   if (error) { alert('No se pudo eliminar: ' + error.message); return; }
   await cargarObligaciones();
 }
-function renderObligaciones(){
-  const tbody = document.getElementById('tblObligaciones');
-  tbody.innerHTML = obligaciones.map((o)=>{
-    const dr = diasRestantes(o.fecha_limite);
-    let badge = 'badge-green', txt = t('obl.on_time');
-    if(dr < 0){ badge='badge-red'; txt=t('obl.overdue'); }
-    else if(dr <= 3){ badge='badge-red'; txt=t('obl.urgent'); }
-    else if(dr <= 7){ badge='badge-yellow'; txt=t('obl.soon'); }
-    // Traducir periodicidad si tiene clave conocida
-    const perKey = 'periodicidad.' + (o.periodicidad === 'Única' ? 'Unica' : (o.periodicidad || ''));
-    const perTxt = t(perKey) !== perKey ? t(perKey) : (o.periodicidad || '');
-    return `<tr>
-      <td>${o.concepto}</td><td>${perTxt}</td><td>${o.fecha_limite}</td>
-      <td>${dr}</td>
-      <td><span class="badge ${badge}">${txt}</span></td>
-      <td><button class="btn-secondary btn" style="padding:4px 10px;font-size:11px" onclick="eliminarObligacion('${o.id}')">${t('obl.remove')}</button></td>
-    </tr>`;
-  }).join('') || `<tr><td colspan="6" style="color:var(--muted)">${t('obl.empty')}</td></tr>`;
+function oblToggleDetalle(id){ oblDetalleAbierto = (oblDetalleAbierto === id) ? null : id; renderObligaciones(); }
 
-  if(obligaciones.length){
+function renderObligaciones(){
+  /* ── Leer filtros ── */
+  const fEmp  = (document.getElementById('oblFiltroEmpresaSel') || {}).value || '';
+  const fTipo = (document.getElementById('oblFiltroTipoSel')    || {}).value || '';
+
+  /* ── Filtrar + ordenar ── */
+  const ORDER = { rojo:0, naranja:1, amarillo:2, verde:3 };
+  let rows = obligaciones.map(o => ({ ...o, _st: calcSemaforoStatus(o.fecha_limite) }));
+  if(fEmp)            rows = rows.filter(r => (r.empresa || '') === fEmp);
+  if(fTipo)           rows = rows.filter(r => (r.tipo    || '') === fTipo);
+  if(oblFiltroStatus) rows = rows.filter(r => r._st.code === oblFiltroStatus);
+  rows.sort((a,b) => (ORDER[a._st.code] - ORDER[b._st.code]) || (b._st.dias - a._st.dias));
+
+  /* ── KPI semáforo (sobre todos los datos, sin filtros de empresa/tipo) ── */
+  const allRows = obligaciones.map(o => ({ ...o, _st: calcSemaforoStatus(o.fecha_limite) }));
+  ['rojo','naranja','amarillo','verde'].forEach(code => {
+    const subset = allRows.filter(r => r._st.code === code);
+    const n      = subset.length;
+    const m      = subset.reduce((t,r) => t + (parseFloat(r.monto)||0), 0);
+    const el = document.getElementById('kpiSem-'+code);
+    if(!el) return;
+    document.getElementById('kpiSemN-'+code).textContent = n;
+    document.getElementById('kpiSemM-'+code).textContent =
+      (m > 0 ? fmtMoney(m) + ' · ' : '') +
+      (code==='rojo'?'>90d vencido':code==='naranja'?'1–90d vencido':code==='amarillo'?'0–5d restantes':'>5d restantes');
+    el.classList.toggle('activo', oblFiltroStatus === code);
+  });
+
+  /* ── Label del filtro activo ── */
+  const lbl = document.getElementById('oblFiltroStatusLbl');
+  if(lbl){
+    lbl.style.display = oblFiltroStatus ? '' : 'none';
+    const txt = document.getElementById('oblFiltroStatusTxt');
+    if(txt && oblFiltroStatus) txt.textContent = SEM_CFG[oblFiltroStatus]?.label || oblFiltroStatus;
+  }
+  const conteo = document.getElementById('oblConteoFiltro');
+  if(conteo) conteo.textContent = rows.length + ' / ' + obligaciones.length;
+
+  /* ── Tabla ── */
+  const tbody = document.getElementById('tblObligaciones');
+  if(!rows.length){
+    tbody.innerHTML = '<tr><td colspan="10" style="color:var(--muted);padding:24px;text-align:center">Sin obligaciones con los filtros seleccionados.</td></tr>';
+  } else {
+    tbody.innerHTML = rows.map((o, i) => {
+      const s   = o._st;
+      const cfg = SEM_CFG[s.code];
+      const recargo = (s.code !== 'verde' && s.code !== 'amarillo' && parseFloat(o.monto) > 0)
+        ? fmtMoney(Math.round(parseFloat(o.monto) * (s.dias/30) * 0.0207))
+        : null;
+      const detOpen = oblDetalleAbierto === o.id;
+      return `
+      <tr onclick="oblToggleDetalle('${o.id}')"
+          style="cursor:pointer;background:${detOpen?'var(--surface2)':''}">
+        <td style="color:var(--muted);font-size:10px">${i+1}</td>
+        <td style="font-weight:600">${o.empresa || '—'}</td>
+        <td>
+          <div style="font-weight:500">${o.tipo || o.concepto}</div>
+          ${o.tipo ? '<div style="font-size:10px;color:var(--muted)">'+o.concepto+'</div>' : ''}
+        </td>
+        <td style="color:var(--muted);font-size:11px">${o.periodicidad}</td>
+        <td style="font-family:monospace;font-size:11px">${o.fecha_limite}</td>
+        <td style="text-align:center">
+          <span class="dias-chip ${s.code}">${s.str}</span>
+        </td>
+        <td style="text-align:right;font-family:monospace;font-size:11px;font-weight:600">
+          ${parseFloat(o.monto) > 0 ? fmtMoney(o.monto) : '—'}
+        </td>
+        <td><span class="sem-chip ${s.code}">${cfg.label}</span></td>
+        <td style="font-size:10px">
+          <div style="font-weight:600;color:${s.code==='rojo'?'var(--red)':s.code==='amarillo'?'var(--yellow)':s.code==='verde'?'var(--green)':'#f97316'}">${s.code==='rojo'?'Crítico':s.code==='naranja'?'Alto':s.code==='amarillo'?'Medio':'Bajo'}</div>
+          <div style="color:var(--muted)">${cfg.accion}</div>
+        </td>
+        <td onclick="event.stopPropagation()">
+          <button class="btn-secondary btn" style="padding:3px 8px;font-size:10px" onclick="eliminarObligacion('${o.id}')">Quitar</button>
+        </td>
+      </tr>
+      ${detOpen ? `<tr class="obl-detail-row"><td colspan="10" class="obl-detail">
+        <b>Fundamento legal:</b> ${cfg.legal}
+        ${recargo ? ' &nbsp;·&nbsp; <b>Recargo estimado (aprox.):</b> ' + recargo + ' ('+s.dias+'d × 2.07%/mes)' : ''}
+        ${(o.tipo||'').includes('Ret.')||( o.tipo||'').includes('Retenido') ? ' &nbsp;·&nbsp; <span style="color:#f59e0b">⚠️ Fiduciario — menor elegibilidad de condonación (art.70-A CFF). Riesgo penal si omisión dolosa (arts.108-109 CFF).</span>' : ''}
+      </td></tr>` : ''}`;
+    }).join('');
+  }
+
+  /* ── Actualizar KPI global "Próximo vencimiento" ── */
+  const criticos = allRows.filter(r => r._st.code === 'rojo' || r._st.code === 'naranja' || r._st.code === 'amarillo');
+  if(criticos.length){
+    const prox = criticos.sort((a,b) => ORDER[a._st.code]-ORDER[b._st.code] || a._st.dias-b._st.dias)[0];
+    document.getElementById('kpiProximo').textContent = prox.fecha_limite;
+    document.getElementById('kpiProximoSub').textContent = (prox.empresa ? prox.empresa+' · ' : '') + (prox.tipo || prox.concepto) + ' · ' + prox._st.str;
+  } else if(obligaciones.length){
     const prox = obligaciones[0];
     document.getElementById('kpiProximo').textContent = prox.fecha_limite;
     document.getElementById('kpiProximoSub').textContent = prox.concepto;
   } else {
     document.getElementById('kpiProximo').textContent = '—';
-    document.getElementById('kpiProximoSub').textContent = '—';
+    document.getElementById('kpiProximoSub').textContent = 'Sin obligaciones registradas';
   }
 }
 
 /* ================= IMPUESTOS ================= */
-/* ══════════════════════════════════════════
-   SIMULADOR DE ACTUALIZACIÓN Y RECARGOS (monto libre)
-   Reusa la misma lógica legal que la actualización de CxC Fiscal:
-   INPC (art. 17-A CFF) + recargos (art. 21 CFF / LSS / INFONAVIT / BC)
-   + multa opcional + condonación + estímulo LIF 2026.
-   ══════════════════════════════════════════ */
-let simResultado = null;
-
-async function simularActualizacion(){
-  const empresa = (document.getElementById('simEmpresa').value || 'Simulación').trim() || 'Simulación';
-  const categoria = document.getElementById('simCategoria').value;
-  const periodoOrigen = document.getElementById('simPeriodoOrigen').value;
-  const monto = parseFloat(document.getElementById('simMonto').value) || 0;
-  const multaEstimada = parseFloat(document.getElementById('simMulta').value) || 0;
-  const pctCondCap = Math.max(0, Math.min(100, parseFloat(document.getElementById('simCondonacion').value) || 0));
-  const estimuloLif = document.getElementById('simEstimuloLif').checked;
-
-  if (!periodoOrigen) { alert('Selecciona el periodo de origen (mes en que debió pagarse).'); return; }
-  if (monto <= 0) { alert('Captura un monto histórico mayor a 0.'); return; }
-
-  const mesActual = calcMesActualPeriodo();
-  // Verificar/pedir INPCs faltantes (mes origen y mes actual)
-  const faltantes = [periodoOrigen, mesActual].filter(p => !inpcCache[p]);
-  if (faltantes.length) {
-    simRenderInpcForm(faltantes, () => simularActualizacion());
-    return;
-  }
-  document.getElementById('simInpcForm').style.display = 'none';
-
-  const regimen = calcRegimenPorCategoria(categoria);
-  const cond = CONDONACION_INFO[regimen.key];
-  const inpcOrigen = inpcCache[periodoOrigen];
-  const inpcHoy = inpcCache[mesActual];
-  const factorActualizacion = inpcHoy / inpcOrigen;
-  const montoActualizado = monto * factorActualizacion;
-
-  // Meses de mora: fracción cuenta como mes completo (art. 21 CFF).
-  // Como origen es un mes YYYY-MM, tomamos día 1 y contamos hasta hoy.
-  const fechaOrigenISO = `${periodoOrigen}-01`;
-  const mesesMora = calcMesesMora(fechaOrigenISO);
-  const tasa = TASA_RECARGO_MORA[regimen.key];
-  const recargos = montoActualizado * tasa * mesesMora;
-
-  // Condonación: se topa al máximo legal por régimen
-  const maxPct = cond.maxPct;
-  const pctCondonacion = Math.min(pctCondCap/100, maxPct);
-  const lifAplica = estimuloLif && (regimen.key === 'CFF' || regimen.key === 'CFF_RETENIDO');
-
-  const total = montoActualizado + recargos;
-  const montoConCondonacion = lifAplica
-    ? montoActualizado /* estímulo LIF 2026: 100% multas+recargos+gastos ejecución */
-    : total + multaEstimada * (1 - pctCondonacion);
-
-  simResultado = {
-    empresa, categoria, regimen: regimen.key, regimenLabel: regimen.label,
-    montoHistorico: monto, origenPeriodo: periodoOrigen, estimado: false,
-    mesesMora, factorActualizacion, actualizacionAplicada: true,
-    montoActualizado, recargos, total,
-    multaEstimada, pctCondonacion, maxPctCondonacion: maxPct, notaCondonacion: cond.nota,
-    estimuloLif: lifAplica, montoConCondonacion
-  };
-
-  simRenderPreview();
-  // Refleja el resultado en el KPI del encabezado como referencia rápida
-  const kpi = document.getElementById('kpiImpuestoMes');
-  if (kpi) kpi.textContent = fmtMoney(montoConCondonacion);
-}
-
-function simRenderInpcForm(faltantes, onDone){
-  const el = document.getElementById('simInpcForm');
-  el.style.display = 'block';
-  el.innerHTML = `
-    <div class="excel-preview">
-      <h3>📐 Captura los valores de INPC que faltan</h3>
-      <div class="desc">No están en la tabla de INPC cargada. Captúralos aquí (se guardan en Supabase para todo el equipo).</div>
-      <div class="grid-3" style="margin-top:8px">
-        ${faltantes.map(p => `<div class="field"><label>INPC ${p}</label><input type="number" step="0.00001" id="siminpc_${p.replace('-','_')}" placeholder="Ej. 132.37300"></div>`).join('')}
-      </div>
-      <div class="excel-actions" style="margin-top:10px">
-        <button class="btn-secondary btn" onclick="document.getElementById('simInpcForm').style.display='none'">Cancelar</button>
-        <button class="btn" onclick="simGuardarInpcYReintentar(${JSON.stringify(faltantes)})">Guardar INPC y reintentar</button>
-      </div>
-    </div>`;
-  window._simRetry = onDone;
-}
-
-async function simGuardarInpcYReintentar(faltantes){
-  const registros = [];
-  for (const p of faltantes) {
-    const v = parseFloat(document.getElementById(`siminpc_${p.replace('-','_')}`).value);
-    if (isNaN(v) || v <= 0) { alert(`Captura un INPC válido para ${p}.`); return; }
-    registros.push({ periodo: p, valor: v, fuente: 'Captura simulador' });
-  }
-  const ok = await inpcGuardarMasivo(registros);
-  if (!ok) return;
-  if (typeof window._simRetry === 'function') window._simRetry();
-}
-
-function simRenderPreview(){
-  const el = document.getElementById('simPreview');
-  if (!simResultado) { el.style.display='none'; return; }
-  el.style.display = 'block';
-  const r = simResultado;
-  el.innerHTML = `
-    <div class="excel-preview">
-      <h3>📊 Resultado de la simulación — actualización, recargos y condonación</h3>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Empresa</th><th>Categoría</th><th>Histórico</th><th>Actualizado</th><th>Recargos</th><th>Meses mora</th>
-            <th>Multa</th><th>% Condonación</th><th>Estímulo LIF 2026</th><th>Total</th><th>Desglose</th>
-          </tr></thead>
-          <tbody>
-            <tr>
-              <td>${r.empresa}</td>
-              <td>${catT(r.categoria)}<div style="font-size:10px;color:var(--muted)">${r.regimenLabel}</div></td>
-              <td>${fmtMoney(r.montoHistorico)}</td>
-              <td>${fmtMoney(r.montoActualizado)}</td>
-              <td>${fmtMoney(r.recargos)}</td>
-              <td>${r.mesesMora}</td>
-              <td>${fmtMoney(r.multaEstimada)}</td>
-              <td>${(r.pctCondonacion*100).toFixed(0)}%<div style="font-size:10px;color:var(--muted)">máx. ${(r.maxPctCondonacion*100).toFixed(0)}%</div></td>
-              <td>${r.estimuloLif ? '✅ Sí' : '—'}</td>
-              <td><b>${fmtMoney(r.montoConCondonacion)}</b></td>
-              <td><button class="btn" style="padding:6px 10px;font-size:12px;white-space:nowrap" onclick="simVerDetalle()">🔍 Ver desglose</button></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="excel-warn" style="margin-top:10px">⚠️ Simulación de apoyo — el sistema no determina multas oficiales ni garantiza que la autoridad otorgue la condonación. Antes de pagar o negociar, valida con el fiscalista.</div>
-      <div class="excel-actions">
-        <button class="btn-secondary btn" onclick="document.getElementById('simPreview').style.display='none'">Cerrar</button>
-      </div>
-    </div>`;
-}
-
-function simVerDetalle(){
-  if (!simResultado) return;
-  calcVerDetalle(simResultado);
-}
-
-/* ══════════════════════════════════════════
-   ETAPA 5.1 — AUTO-UPDATER (cero caché)
-   Elimina la necesidad de Ctrl+Shift+R para todos los usuarios.
-   Frentes:
-     1) Meta tags no-cache en <head> (ya insertados)
-     2) APP_VERSION única por deploy (bumpear en cada push)
-     3) Chequeo periódico: fetch index.html, comparar versión
-     4) Barrido preventivo de Service Workers y Cache Storage
-══════════════════════════════════════════ */
-
-/* Barrido preventivo: si algún día se registró un Service Worker o quedó
-   cache residual, lo eliminamos al abrir la app. Sin efectos secundarios
-   si no hay nada que limpiar. */
-async function upBarrerResiduos() {
-  try {
-    if ('serviceWorker' in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      for (const r of regs) {
-        try { await r.unregister(); console.log('[updater] SW desregistrado:', r.scope); }
-        catch(e) { console.warn('[updater] no se pudo desregistrar SW:', e); }
-      }
-    }
-    if ('caches' in window) {
-      const keys = await caches.keys();
-      for (const k of keys) {
-        try { await caches.delete(k); console.log('[updater] cache borrado:', k); }
-        catch(e) { console.warn('[updater] no se pudo borrar cache:', e); }
-      }
-    }
-  } catch(e) { console.warn('[updater] barrerResiduos:', e); }
-}
-
-/* Extrae el APP_VERSION de un blob de texto HTML remoto */
-function upExtraerVersion(html) {
-  const m = html && html.match(/const\s+APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
-  return m ? m[1] : null;
-}
-
-/* Chequea si hay versión nueva en el servidor. Si la hay, muestra banner.
-   Cache-busting: query string único + header no-store.
-   Anti-loop guard: si ya se aplicaron 2+ updates en esta sesión, no revisar más
-   (protege contra loops de recarga por cache CDN que sirve versión vieja tras update). */
-const UPDATE_COUNT_KEY = 'sif_fiscal_update_count_session';
-const UPDATE_LAST_APPLY_KEY = 'sif_fiscal_last_update_apply_ts';
-
-function upContadorUpdates() {
-  return Number(sessionStorage.getItem(UPDATE_COUNT_KEY) || 0);
-}
-function upTsUltimoUpdate() {
-  return Number(sessionStorage.getItem(UPDATE_LAST_APPLY_KEY) || 0);
-}
-
-async function checkForUpdates() {
-  try {
-    // Guard 1: si ya se aplicaron 2 updates en esta sesión, no revisar más
-    if (upContadorUpdates() >= 2) {
-      console.warn('[updater] Anti-loop: 2 updates ya aplicados en esta sesión. Check desactivado. Si sigues viendo la versión vieja, haz "Clear Site Data" + Cmd+Q y reabre.');
-      return;
-    }
-    // Guard 2: período de gracia de 60s tras aplicar un update (dar tiempo al CDN a propagar)
-    if (Date.now() - upTsUltimoUpdate() < 60000) return;
-
-    const url = location.pathname.replace(/[^/]+$/, '') + 'index.html?_=' + Date.now();
-    const res = await fetch(url, { cache: 'no-store', headers: { 'Cache-Control':'no-cache' } });
-    if (!res.ok) return;
-    const html = await res.text();
-    const remota = upExtraerVersion(html);
-    if (!remota) return; // no encontró marca en HTML remoto — no interfiere
-    if (remota !== APP_VERSION) {
-      console.log('[updater] Versión nueva detectada: local='+APP_VERSION+' remota='+remota);
-      showUpdateBanner(remota);
-    }
-  } catch(e) {
-    // Silencioso: sin red, sin problema. Se reintenta en el siguiente ciclo.
+async function cargarImpuestos(){
+  const { data, error } = await sb.from('fiscal_calculos_impuestos').select('*').order('creado_en', { ascending: false });
+  if (error) { console.error(error); setSyncError('Error leyendo cálculos de impuestos'); return; }
+  calculosImpuestos = data || [];
+  renderImpuestos();
+  if (calculosImpuestos.length) {
+    document.getElementById('kpiImpuestoMes').textContent = fmtMoney(calculosImpuestos[0].total);
   }
 }
+async function calcularImpuesto(){
+  const periodo = document.getElementById('impPeriodo').value || '—';
+  const ingresos = parseFloat(document.getElementById('impIngresos').value)||0;
+  const deducciones = parseFloat(document.getElementById('impDeducciones').value)||0;
+  const tasaIsr = parseFloat(document.getElementById('impTasaIsr').value)||0;
+  const tasaIva = parseFloat(document.getElementById('impTasaIva').value)||0;
+  const ivaAcreditable = parseFloat(document.getElementById('impIvaAcreditable').value)||0;
 
-let _upBannerVisible = false;
-function showUpdateBanner(remotaVer) {
-  if (_upBannerVisible) return;
-  _upBannerVisible = true;
-  const el = document.getElementById('updateBanner');
-  if (!el) { applyUpdate(); return; } // fallback: si no está el banner, recarga directo
-  const msg = el.querySelector('.msg');
-  if (msg) msg.innerHTML = '🔄 Nueva versión disponible ('+remotaVer+'). Recárgala para verla — se recargará sola en <span id="upCountdown">30</span>s.';
-  el.classList.add('visible');
-  // Cuenta regresiva y recarga automática a los 30s si el usuario no hace click
-  let restante = 30;
-  const iv = setInterval(() => {
-    restante--;
-    const c = document.getElementById('upCountdown');
-    if (c) c.textContent = restante;
-    if (restante <= 0) { clearInterval(iv); applyUpdate(); }
-  }, 1000);
-}
+  const utilidad = Math.max(ingresos - deducciones, 0);
+  const isr = utilidad * (tasaIsr/100);
+  const ivaTrasladado = ingresos * (tasaIva/100);
+  const ivaCargo = Math.max(ivaTrasladado - ivaAcreditable, 0);
+  const total = isr + ivaCargo;
 
-/* Aplica la actualización: limpia todo lo cacheable y recarga forzado.
-   Anti-loop: incrementa contador de sesión; si excede el tope, no recarga. */
-async function applyUpdate() {
-  const count = upContadorUpdates();
-  if (count >= 2) {
-    console.warn('[updater] Anti-loop: ya se aplicaron', count, 'updates en esta sesión. Cancelando reload. Si el problema persiste, haz "Clear Site Data" manual.');
-    _upBannerVisible = false;
-    const el = document.getElementById('updateBanner');
-    if (el) el.classList.remove('visible');
-    return;
-  }
-  sessionStorage.setItem(UPDATE_COUNT_KEY, String(count + 1));
-  sessionStorage.setItem(UPDATE_LAST_APPLY_KEY, String(Date.now()));
-  try { await upBarrerResiduos(); } catch(e) {}
-  try {
-    // Reemplaza URL con timestamp para que ni el navegador ni el CDN sirvan el HTML viejo
-    const url = location.pathname + '?_=' + Date.now() + (location.hash || '');
-    location.replace(url);
-  } catch(e) {
-    location.reload();
-  }
-}
+  document.getElementById('rUtilidad').textContent = fmtMoney(utilidad);
+  document.getElementById('rIsr').textContent = fmtMoney(isr);
+  document.getElementById('rIvaTrasladado').textContent = fmtMoney(ivaTrasladado);
+  document.getElementById('rIvaCargo').textContent = fmtMoney(ivaCargo);
+  document.getElementById('rTotal').textContent = fmtMoney(total);
+  document.getElementById('impResultado').style.display = 'block';
 
-/* Arranque: barrer al abrir + primer check a los 5s + repetir cada 5 min */
-(function upBootstrap() {
-  upBarrerResiduos();
-  setTimeout(checkForUpdates, 5000);
-  setInterval(checkForUpdates, 5 * 60 * 1000);
-  // Además, revisar al volver a poner la pestaña en foco (móviles regresan del background)
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') checkForUpdates();
+  const btn = document.getElementById('btnCalcularImpuesto');
+  btn.disabled = true;
+  const { error } = await sb.from('fiscal_calculos_impuestos').insert({
+    periodo, ingresos, deducciones, tasa_isr: tasaIsr, tasa_iva: tasaIva,
+    iva_acreditable: ivaAcreditable, utilidad, isr, iva_cargo: ivaCargo, total,
+    creado_por: currentUserId
   });
-  window.addEventListener('focus', checkForUpdates);
-})();
+  btn.disabled = false;
+  if (error) { alert('No se pudo guardar el cálculo: ' + error.message); return; }
+  await cargarImpuestos();
+}
+function renderImpuestos(){
+  const tbody = document.getElementById('tblImpuestos');
+  tbody.innerHTML = calculosImpuestos.map(c=>`<tr>
+      <td>${c.periodo}</td><td>${fmtMoney(c.utilidad)}</td><td>${fmtMoney(c.isr)}</td>
+      <td>${fmtMoney(c.iva_cargo)}</td><td>${fmtMoney(c.total)}</td>
+    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">Sin cálculos registrados.</td></tr>';
+}
+
+/* ================= CFDI ================= */
+async function cargarCfdi(){
+  const { data, error } = await sb.from('fiscal_cfdi').select('*').order('fecha', { ascending: false });
+  if (error) { console.error(error); setSyncError('Error leyendo CFDI'); return; }
+  cfdis = data || [];
+  renderCfdi();
+}
+async function agregarCfdi(){
+  const tipo = document.getElementById('cfdiTipo').value;
+  const rfc = document.getElementById('cfdiRfc').value.trim();
+  const folio = document.getElementById('cfdiFolio').value.trim();
+  const fecha = document.getElementById('cfdiFecha').value;
+  const monto = parseFloat(document.getElementById('cfdiMonto').value)||0;
+  const estatus = document.getElementById('cfdiEstatus').value;
+  if(!rfc || !folio || !fecha){ alert('Completa RFC, folio y fecha.'); return; }
+
+  const btn = document.getElementById('btnAgregarCfdi');
+  btn.disabled = true;
+  const { error } = await sb.from('fiscal_cfdi').insert({
+    tipo, rfc, folio_uuid: folio, fecha, monto, estatus, creado_por: currentUserId
+  });
+  btn.disabled = false;
+  if (error) { alert('No se pudo guardar el CFDI: ' + error.message); return; }
+
+  ['cfdiRfc','cfdiFolio','cfdiFecha','cfdiMonto'].forEach(id=>document.getElementById(id).value='');
+  await cargarCfdi();
+}
+async function cambiarEstatusCfdi(id, estatusActual){
+  const orden = ['Pendiente','Conciliado','Cancelado'];
+  const siguiente = orden[(orden.indexOf(estatusActual)+1)%orden.length];
+  const { error } = await sb.from('fiscal_cfdi').update({ estatus: siguiente }).eq('id', id);
+  if (error) { alert('No se pudo actualizar: ' + error.message); return; }
+  await cargarCfdi();
+}
+function renderCfdi(){
+  const tbody = document.getElementById('tblCfdi');
+  tbody.innerHTML = cfdis.map((c)=>{
+    const badge = c.estatus==='Conciliado'?'badge-green':c.estatus==='Cancelado'?'badge-red':'badge-yellow';
+    return `<tr>
+      <td>${c.tipo}</td><td>${c.rfc}</td><td style="font-size:10.5px">${c.folio_uuid}</td><td>${c.fecha}</td>
+      <td>${fmtMoney(c.monto)}</td>
+      <td><span class="badge ${badge}" style="cursor:pointer" onclick="cambiarEstatusCfdi('${c.id}','${c.estatus}')">${c.estatus}</span></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin CFDI registrados.</td></tr>';
+
+  document.getElementById('kpiCfdiTotal').textContent = cfdis.length;
+  document.getElementById('kpiCfdiPend').textContent = cfdis.filter(c=>c.estatus==='Pendiente').length;
+}
+
+/* ================= PROVISIONES ================= */
+async function cargarProvisiones(){
+  const { data, error } = await sb.from('fiscal_provisiones').select('*').order('periodo', { ascending: false });
+  if (error) { console.error(error); setSyncError('Error leyendo provisiones'); return; }
+  provisiones = data || [];
+  renderProvisiones();
+}
+async function agregarProvision(){
+  const concepto = document.getElementById('provConcepto').value.trim();
+  const periodo = document.getElementById('provPeriodo').value;
+  const provisionado = parseFloat(document.getElementById('provProvisionado').value)||0;
+  const pagado = parseFloat(document.getElementById('provPagado').value)||0;
+  if(!concepto || !periodo){ alert('Completa concepto y periodo.'); return; }
+
+  const btn = document.getElementById('btnAgregarProvision');
+  btn.disabled = true;
+  const { error } = await sb.from('fiscal_provisiones').insert({
+    concepto, periodo, monto_provisionado: provisionado, monto_pagado: pagado, creado_por: currentUserId
+  });
+  btn.disabled = false;
+  if (error) { alert('No se pudo guardar: ' + error.message); return; }
+
+  ['provConcepto','provPeriodo','provProvisionado','provPagado'].forEach(id=>document.getElementById(id).value='');
+  await cargarProvisiones();
+}
+function renderProvisiones(){
+  const tbody = document.getElementById('tblProvisiones');
+  tbody.innerHTML = provisiones.map(p=>{
+    const dif = p.monto_provisionado - p.monto_pagado;
+    const estatus = dif<=0 ? '<span class="badge badge-green">Cubierto</span>' : '<span class="badge badge-yellow">Pendiente</span>';
+    return `<tr>
+      <td>${p.concepto}</td><td>${p.periodo}</td><td>${fmtMoney(p.monto_provisionado)}</td>
+      <td>${fmtMoney(p.monto_pagado)}</td><td>${fmtMoney(dif)}</td><td>${estatus}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin provisiones registradas.</td></tr>';
+}
+
+/* ================= DEUDA FISCAL ================= */
+function actualizarTasaRecargo(){
+  const sel = document.getElementById('deuTipoRecargo');
+  document.getElementById('deuTasaRecargo').value = sel.value;
+}
+function mesesEntre(f1,f2){
+  const d1 = new Date(f1+"T00:00:00"), d2 = new Date(f2+"T00:00:00");
+  let meses = (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
+  if(d2.getDate() >= d1.getDate()) meses += 1;
+  return Math.max(meses,0);
+}
+async function cargarDeudas(){
+  const { data, error } = await sb.from('fiscal_deudas').select('*').order('creado_en', { ascending: false });
+  if (error) { console.error(error); setSyncError('Error leyendo deudas'); return; }
+  deudas = data || [];
+  renderDeudas();
+}
+async function calcularDeuda(){
+  const concepto = document.getElementById('deuConcepto').value.trim() || 'Adeudo sin nombre';
+  const monto = parseFloat(document.getElementById('deuMonto').value)||0;
+  const fVenc = document.getElementById('deuFechaVenc').value;
+  const fPago = document.getElementById('deuFechaPago').value || new Date().toISOString().slice(0,10);
+  const inpcIni = parseFloat(document.getElementById('deuInpcIni').value)||0;
+  const inpcFin = parseFloat(document.getElementById('deuInpcFin').value)||0;
+  const tasaRecargo = parseFloat(document.getElementById('deuTasaRecargo').value)||0;
+  const multa = parseFloat(document.getElementById('deuMulta').value)||0;
+
+  if(!monto || !fVenc){ alert('Captura al menos el monto y la fecha de vencimiento.'); return; }
+
+  const meses = mesesEntre(fVenc, fPago);
+  let factor = 1;
+  if(inpcIni > 0 && inpcFin > 0){
+    factor = inpcFin / inpcIni;
+    if(factor < 1) factor = 1;
+  }
+  const montoActualizado = monto * factor;
+  const recargos = montoActualizado * (tasaRecargo/100) * meses;
+  const total = montoActualizado + recargos + multa;
+
+  document.getElementById('dMeses').textContent = meses;
+  document.getElementById('dFactor').textContent = factor.toFixed(4);
+  document.getElementById('dMontoAct').textContent = fmtMoney(montoActualizado);
+  document.getElementById('dRecargos').textContent = fmtMoney(recargos);
+  document.getElementById('dMulta').textContent = fmtMoney(multa);
+  document.getElementById('dTotal').textContent = fmtMoney(total);
+  document.getElementById('deuResultado').style.display = 'block';
+
+  const btn = document.getElementById('btnCalcularDeuda');
+  btn.disabled = true;
+  const { error } = await sb.from('fiscal_deudas').insert({
+    concepto, monto_historico: monto, fecha_vencimiento: fVenc, fecha_pago: fPago,
+    inpc_inicial: inpcIni || null, inpc_final: inpcFin || null, tasa_recargo: tasaRecargo,
+    meses, factor_actualizacion: factor, monto_actualizado: montoActualizado,
+    recargos, multa, total, creado_por: currentUserId
+  });
+  btn.disabled = false;
+  if (error) { alert('No se pudo guardar el adeudo: ' + error.message); return; }
+  await cargarDeudas();
+}
+function renderDeudas(){
+  const tbody = document.getElementById('tblDeudas');
+  tbody.innerHTML = deudas.map(d=>`<tr>
+      <td>${d.concepto}</td><td>${fmtMoney(d.monto_historico)}</td><td>${fmtMoney(d.monto_actualizado)}</td>
+      <td>${fmtMoney(d.recargos)}</td><td>${fmtMoney(d.multa)}</td><td><b>${fmtMoney(d.total)}</b></td>
+    </tr>`).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin adeudos registrados.</td></tr>';
+
+  const totalDeuda = deudas.reduce((s,d)=>s+Number(d.total||0),0);
+  document.getElementById('kpiDeudaTotal').textContent = fmtMoney(totalDeuda);
+}
 
 /* ---------- INIT ---------- */
 bootstrapAuth();
 </script>
 </body>
 </html>
-
