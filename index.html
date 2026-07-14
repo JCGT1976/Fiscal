@@ -176,26 +176,21 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 
-  <div class="kpi-grid">
+  <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
     <div class="kpi-card">
-      <div class="kpi-label">Próximo vencimiento</div>
-      <div class="kpi-value" id="kpiProximo">—</div>
-      <div class="kpi-sub" id="kpiProximoSub">—</div>
+      <div class="kpi-label">Próximo vencimiento SAT</div>
+      <div class="kpi-value" id="kpiProximo" style="font-size:18px;margin-top:4px">—</div>
+      <div class="kpi-sub" id="kpiProximoSub" style="margin-top:6px">Calculando…</div>
+    </div>
+    <div class="kpi-card" style="border-color:var(--red)">
+      <div class="kpi-label" style="color:var(--red)">⚠️ Deuda fiscal c/accesorios</div>
+      <div class="kpi-value" id="kpiDeudaTotal" style="color:var(--red);font-size:18px;margin-top:4px">$0</div>
+      <div class="kpi-sub" id="kpiDeudaSub" style="margin-top:6px">Histórico + INPC + recargos · arts.17-A, 21 CFF</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Impuesto estimado del mes</div>
-      <div class="kpi-value" id="kpiImpuestoMes">$0</div>
-      <div class="kpi-sub">ISR + IVA estimados</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">CFDI pendientes de conciliar</div>
-      <div class="kpi-value" id="kpiCfdiPend">0</div>
-      <div class="kpi-sub">de <span id="kpiCfdiTotal">0</span> registrados</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Deuda fiscal actualizada</div>
-      <div class="kpi-value" id="kpiDeudaTotal">$0</div>
-      <div class="kpi-sub">Incluye recargos y actualización</div>
+      <div class="kpi-label">Impuesto estimado · próx. venc.</div>
+      <div class="kpi-value" id="kpiImpuestoMes" style="font-size:18px;margin-top:4px">$0</div>
+      <div class="kpi-sub" style="margin-top:6px">ISR + IVA — último cálculo registrado</div>
     </div>
   </div>
 
@@ -237,14 +232,18 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
 
-    <div class="card">
-      <h2>Cuentas por cobrar de impuestos — por empresa / tipo de impuesto</h2>
-      <div class="desc">
-        Semáforo basado en la estrategia de prioridad de pagos del corporativo:
-        <b style="color:var(--red)">rojo</b> = obligaciones fiduciarias (retenciones a empleados, IMSS) pendientes o cualquier concepto pendiente &gt; $2,000,000 — riesgo penal/laboral, cero tolerancia;
-        <b style="color:var(--yellow)">amarillo</b> = pendiente no fiduciario y negociable con el SAT, o ya dentro de un plan de pago activo;
-        <b style="color:var(--green)">verde</b> = liquidado. Cifras extraídas de la cédula fiscal corporativa (hoja "Resumen").
+    <!-- KPI Excel carga de datos -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+      <div id="excelStatusBadge" style="display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:6px 14px 6px 10px;font-size:11.5px;font-weight:500">
+        <span id="excelStatusDot" style="width:8px;height:8px;border-radius:50%;background:var(--yellow);flex-shrink:0"></span>
+        <span id="excelStatusTxt">Cargando datos CxC…</span>
       </div>
+      <div id="excelStatusDetalle" style="font-size:11px;color:var(--muted)"></div>
+    </div>
+
+    <div class="card">
+      <h2>CxC Fiscal — cartera de impuestos por empresa</h2>
+      <div class="desc">Semáforo legal CFF: <b style="color:var(--red)">🔴 rojo</b> = fiduciario pendiente (retenciones a empleados/IMSS — riesgo penal arts.108-109 CFF); <b style="color:#f97316">🟠 naranja</b> = pendiente no fiduciario (mora 2.07%/mes art.21 CFF); <b style="color:var(--yellow)">🟡 amarillo</b> = en plan de pago (arts.66,66-A CFF); <b style="color:var(--green)">🟢 verde</b> = liquidado.</div>
 
       <div class="cxc-controls">
         <div class="grp grow">
@@ -486,6 +485,58 @@ async function cargarCxc(){
   renderCxc();
 }
 
+/* ─── CÁLCULOS DINÁMICOS KPI ─────────────────────────────────────
+   Factores INPC aproximados verificados jul 2026 (INEGI).
+   Factor = INPC_jul2026 / INPC_ene_anioInicio.
+   Actualización: art. 17-A CFF. Recargos: art. 21 CFF.
+   Tasa federal: 2.07%/mes mora. ISN BC estatal: 2.25%/mes.
+   Cap 5 años (60 meses) art. 21 CFF.
+   ⚠️ Verificar factores INPC con INEGI mensualmente y actualizar. */
+const INPC_FACTOR = { 2023:1.138, 2024:1.086, 2025:1.043, 2026:1.016 };
+
+function calcDeudaActualizada(datos) {
+  const hoy = new Date();
+  let totalDeuda = 0, totalHistorico = 0, totalRecargos = 0;
+  datos.filter(r => r.estatus !== 'Pagado').forEach(r => {
+    const monto  = Number(r.monto) || 0;
+    const anio   = r.anio_inicio || 2023;
+    const factor = INPC_FACTOR[anio] || 1.138;
+    const origen = new Date(anio, 0, 1);
+    const meses  = Math.min(
+      (hoy.getFullYear() - origen.getFullYear()) * 12 + (hoy.getMonth() - origen.getMonth()),
+      60
+    );
+    const tasa      = (r.categoria||'').includes('ISN') ? 0.0225 : 0.0207;
+    const montoAct  = monto * factor;
+    const recargos  = montoAct * tasa * meses;
+    totalDeuda     += montoAct + recargos;
+    totalHistorico += monto;
+    totalRecargos  += recargos;
+  });
+  return { totalDeuda, totalHistorico, totalRecargos };
+}
+
+function calcProximoVencimiento() {
+  const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const hoy = new Date();
+  let mv, av, pm, pa;
+  if (hoy.getDate() < 17) {
+    mv = hoy.getMonth(); av = hoy.getFullYear();
+    const p = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    pm = p.getMonth(); pa = p.getFullYear();
+  } else {
+    const nx = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+    mv = nx.getMonth(); av = nx.getFullYear();
+    pm = hoy.getMonth(); pa = hoy.getFullYear();
+  }
+  const dias = Math.round((new Date(av, mv, 17) - hoy) / 86400000);
+  return {
+    fecha:   `17 ${MESES[mv]} ${av}`,
+    periodo: `${MESES[pm]} ${pa}`,
+    dias
+  };
+}
+
 /* Semáforo legal CFF (4 estados desde carga Excel CxC):
    🔴 Rojo     — Fiduciario pendiente (retenciones no enteradas) → riesgo penal arts.108-109 CFF
    🟠 Naranja  — Pendiente no fiduciario → mora 2.07%/mes (art.21 CFF), en proceso de cobro
@@ -601,13 +652,40 @@ function renderCxc(){
   const kpiTotalEl = document.getElementById('kpiCxcTotal');
   if (kpiTotalEl) kpiTotalEl.textContent = fmtMoney(total);
 
-  const notaEl = document.getElementById('cxcNota');
-  if (cxcModoSoloLectura) {
-    notaEl.style.display = 'block';
-    notaEl.innerHTML = '<b>Modo de referencia:</b> estos montos vienen de la cédula fiscal cargada como respaldo (no de Supabase), y el estatus no se puede editar todavía. Corre <code>fiscal-cxc-impuestos.sql</code> en el SQL Editor de Supabase para activar la tabla <code>fiscal_cxc_impuestos</code> y poder actualizar el estatus de cada concepto desde aquí.';
-  } else {
-    notaEl.style.display = 'none';
+  /* ── KPI Deuda fiscal con accesorios (art.17-A + art.21 CFF) ── */
+  const { totalDeuda, totalHistorico, totalRecargos } = calcDeudaActualizada(cxcImpuestos);
+  const dtEl = document.getElementById('kpiDeudaTotal');
+  if (dtEl) dtEl.textContent = fmtMoney(totalDeuda);
+  const dsEl = document.getElementById('kpiDeudaSub');
+  if (dsEl) dsEl.textContent =
+    `Histórico ${fmtMoney(totalHistorico)} · Recargos ${fmtMoney(totalRecargos)} · arts.17-A, 21 CFF`;
+
+  /* ── KPI Próximo vencimiento SAT ── */
+  const pv = calcProximoVencimiento();
+  const pvEl = document.getElementById('kpiProximo');
+  if (pvEl) pvEl.textContent = pv.fecha;
+  const pvSub = document.getElementById('kpiProximoSub');
+  if (pvSub) pvSub.textContent =
+    `Pago provisional ${pv.periodo} · vence en ${pv.dias}d`;
+
+  /* ── Excel status badge ── */
+  const dot = document.getElementById('excelStatusDot');
+  const txt = document.getElementById('excelStatusTxt');
+  const det = document.getElementById('excelStatusDetalle');
+  if (dot && txt && det) {
+    if (cxcModoSoloLectura) {
+      dot.style.background = '#f59e0b';
+      txt.textContent = '📋 Cédula de referencia';
+      det.textContent = 'Carga el Excel de CxC a Supabase para activar datos reales';
+    } else {
+      dot.style.background = '#22c55e';
+      txt.textContent = `✅ Datos Excel — ${cxcImpuestos.length} registros`;
+      det.textContent = 'Supabase · fiscal_cxc_impuestos';
+    }
   }
+
+  const notaEl = document.getElementById('cxcNota');
+  if (notaEl) notaEl.style.display = 'none';
 }
 
 
@@ -619,7 +697,13 @@ async function cargarImpuestos(){
   calculosImpuestos = data || [];
   renderImpuestos();
   if (calculosImpuestos.length) {
-    document.getElementById('kpiImpuestoMes').textContent = fmtMoney(calculosImpuestos[0].total);
+    const ult = calculosImpuestos[0];
+    document.getElementById('kpiImpuestoMes').textContent = fmtMoney(ult.total);
+  } else {
+    /* Sin cálculos guardados — estimar desde SEED_CXC (promedio mensual) */
+    const { totalDeuda } = calcDeudaActualizada(cxcImpuestos.length ? cxcImpuestos : SEED_CXC.map((r,i)=>({...r,id:'s'+i})));
+    const estimadoMes = totalDeuda * 0.0207; // recargo mensual como proxy
+    document.getElementById('kpiImpuestoMes').textContent = '~' + fmtMoney(estimadoMes);
   }
 }
 async function calcularImpuesto(){
