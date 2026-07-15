@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es" data-theme="light" data-lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -155,12 +155,20 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- ═══════════ ACCESO DENEGADO ═══════════ -->
+<div id="accessDenied" style="display:none;min-height:100vh;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;text-align:center;padding:40px">
+  <div style="font-size:48px">🚫</div>
+  <h2 id="adTitle" style="font-size:20px;font-weight:700;color:var(--text)">Acceso no autorizado</h2>
+  <p id="adMsg" style="font-size:14px;color:var(--muted);max-width:360px">No tienes permiso para acceder al módulo Fiscal. Contacta al administrador.</p>
+  <button id="adBtn" onclick="volverPortal()" style="margin-top:8px;padding:10px 24px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">← Volver al Portal</button>
+</div>
+
 <div id="app" class="wrap">
 
   <div class="topbar">
     <div class="topbar-left">
-      <h1>Módulo Fiscal</h1>
-      <div class="sub">SIF · MI Global — CxC Fiscal · Cálculo de Impuestos</div>
+      <h1 data-i18n="title">Módulo Fiscal</h1>
+      <div class="sub" data-i18n="subtitle">SIF · MI Global — CxC Fiscal · Cálculo de Impuestos</div>
     </div>
     <div class="topbar-right">
       <span class="sync-badge" id="syncBadge"><span class="sync-dot" id="syncDot"></span><span id="syncTxt">Conectado a Supabase</span></span>
@@ -172,32 +180,33 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
       <button class="btn-ghost" onclick="toggleTheme()">🌓</button>
-      <button class="btn-ghost" onclick="volverPortal()">← Portal</button>
-      <button class="btn-ghost" onclick="cerrarSesion()">Cerrar sesión</button>
+      <button class="btn-ghost" id="btnLang" onclick="toggleLang()" style="font-weight:700;font-size:11px;letter-spacing:.06em">EN</button>
+      <button class="btn-ghost" data-i18n="portal_btn" onclick="volverPortal()">← Portal</button>
+      <button class="btn-ghost" data-i18n="logout_btn" onclick="cerrarSesion()">Cerrar sesión</button>
     </div>
   </div>
 
   <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
     <div class="kpi-card">
-      <div class="kpi-label">Próximo vencimiento SAT</div>
+      <div class="kpi-label" data-i18n="kpi1_label">Próximo vencimiento SAT</div>
       <div class="kpi-value" id="kpiProximo" style="font-size:18px;margin-top:4px">—</div>
       <div class="kpi-sub" id="kpiProximoSub" style="margin-top:6px">Calculando…</div>
     </div>
     <div class="kpi-card" style="border-color:var(--red)">
-      <div class="kpi-label" style="color:var(--red)">⚠️ Deuda fiscal c/accesorios</div>
+      <div class="kpi-label" style="color:var(--red)" data-i18n="kpi2_label">⚠️ Deuda fiscal c/accesorios</div>
       <div class="kpi-value" id="kpiDeudaTotal" style="color:var(--red);font-size:18px;margin-top:4px">$0</div>
-      <div class="kpi-sub" id="kpiDeudaSub" style="margin-top:6px">Histórico + INPC + recargos · arts.17-A, 21 CFF</div>
+      <div class="kpi-sub" id="kpiDeudaSub" style="margin-top:6px" data-i18n="kpi2_sub">Histórico + INPC + recargos · arts.17-A, 21 CFF</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Impuesto estimado · próx. venc.</div>
+      <div class="kpi-label" data-i18n="kpi3_label">Impuesto estimado · próx. venc.</div>
       <div class="kpi-value" id="kpiImpuestoMes" style="font-size:18px;margin-top:4px">$0</div>
-      <div class="kpi-sub" style="margin-top:6px">ISR + IVA — último cálculo registrado</div>
+      <div class="kpi-sub" style="margin-top:6px" data-i18n="kpi3_sub">ISR + IVA — último cálculo registrado</div>
     </div>
   </div>
 
   <div class="nav-tabs">
-    <button class="nav-tab active" data-view="cxc" onclick="showView('cxc')">🚦 CxC Fiscal</button>
-    <button class="nav-tab" data-view="impuestos" onclick="showView('impuestos')">🧮 Cálculo de Impuestos</button>
+    <button class="nav-tab active" data-view="cxc" data-i18n="tab_cxc" onclick="showView('cxc')">🚦 CxC Fiscal</button>
+    <button class="nav-tab" data-view="impuestos" data-i18n="tab_imp" onclick="showView('impuestos')">🧮 Cálculo de Impuestos</button>
   </div>
 
   <!-- ===================== CxC FISCAL (semáforo de riesgo) ===================== -->
@@ -205,31 +214,31 @@ tr:last-child td{border-bottom:none}
     <div class="kpi-grid" id="kpiSemaforoGrid" style="margin-bottom:16px">
       <div class="kpi-card kpi-semaforo" id="kpiSem-rojo" onclick="cxcFiltrarStatus('rojo')"
            style="border-color:var(--red);cursor:pointer;user-select:none">
-        <div class="kpi-label" style="color:var(--red)">🔴 Embargo cuentas</div>
+        <div class="kpi-label" style="color:var(--red)" data-i18n="sem_rojo_label">🔴 Embargo cuentas</div>
         <div class="kpi-value" id="kpiSemN-rojo" style="color:var(--red)">0</div>
         <div class="kpi-sub" id="kpiSemM-rojo">$0</div>
-        <div class="kpi-legal">Arts.145,151 CFF — Fiduciario pendiente. Riesgo penal arts.108-109 CFF.</div>
+        <div class="kpi-legal" data-i18n="sem_rojo_legal">Arts.145,151 CFF — Fiduciario pendiente. Riesgo penal arts.108-109 CFF.</div>
       </div>
       <div class="kpi-card kpi-semaforo" id="kpiSem-naranja" onclick="cxcFiltrarStatus('naranja')"
            style="border-color:#f97316;cursor:pointer;user-select:none">
-        <div class="kpi-label" style="color:#9a3412">🟠 Notificado/Avisos</div>
+        <div class="kpi-label" style="color:#9a3412" data-i18n="sem_naranja_label">🟠 Notificado/Avisos</div>
         <div class="kpi-value" id="kpiSemN-naranja" style="color:#9a3412">0</div>
         <div class="kpi-sub" id="kpiSemM-naranja">$0</div>
-        <div class="kpi-legal">Pendiente no fiduciario. Recargos 2.07%/mes (art.21 CFF). En proceso de cobro.</div>
+        <div class="kpi-legal" data-i18n="sem_naranja_legal">Pendiente no fiduciario. Recargos 2.07%/mes (art.21 CFF). En proceso de cobro.</div>
       </div>
       <div class="kpi-card kpi-semaforo" id="kpiSem-amarillo" onclick="cxcFiltrarStatus('amarillo')"
            style="border-color:var(--yellow);cursor:pointer;user-select:none">
-        <div class="kpi-label" style="color:var(--yellow)">🟡 Por vencer / En plan</div>
+        <div class="kpi-label" style="color:var(--yellow)" data-i18n="sem_amarillo_label">🟡 Por vencer / En plan</div>
         <div class="kpi-value" id="kpiSemN-amarillo" style="color:var(--yellow)">0</div>
         <div class="kpi-sub" id="kpiSemM-amarillo">$0</div>
-        <div class="kpi-legal">En plan de pago con autoridad. Regularización activa (arts.66,66-A CFF).</div>
+        <div class="kpi-legal" data-i18n="sem_amarillo_legal">En plan de pago con autoridad. Regularización activa (arts.66,66-A CFF).</div>
       </div>
       <div class="kpi-card kpi-semaforo" id="kpiSem-verde" onclick="cxcFiltrarStatus('verde')"
            style="border-color:var(--green);cursor:pointer;user-select:none">
-        <div class="kpi-label" style="color:var(--green)">🟢 Liquidado</div>
+        <div class="kpi-label" style="color:var(--green)" data-i18n="sem_verde_label">🟢 Liquidado</div>
         <div class="kpi-value" id="kpiSemN-verde" style="color:var(--green)">0</div>
         <div class="kpi-sub" id="kpiSemM-verde">$0</div>
-        <div class="kpi-legal">Obligación cubierta. Sin mora ni riesgo (art.6 CFF).</div>
+        <div class="kpi-legal" data-i18n="sem_verde_legal">Obligación cubierta. Sin mora ni riesgo (art.6 CFF).</div>
       </div>
     </div>
 
@@ -237,12 +246,13 @@ tr:last-child td{border-bottom:none}
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
       <div id="excelStatusBadge" style="display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:6px 14px 6px 10px;font-size:11.5px;font-weight:500">
         <span id="excelStatusDot" style="width:8px;height:8px;border-radius:50%;background:var(--yellow);flex-shrink:0"></span>
-        <span id="excelStatusTxt">Cargando datos CxC…</span>
+        <span id="excelStatusTxt" data-i18n="excel_loading">Cargando datos CxC…</span>
       </div>
       <div id="excelStatusDetalle" style="font-size:11px;color:var(--muted)"></div>
       <!-- Botón carga masiva (solo admin_master, se muestra desde bootstrapAuth) -->
       <button id="btnCargarExcel" onclick="document.getElementById('inputExcelCxc').click()"
-              style="display:none;margin-left:auto;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(0,120,200,.25)">
+              style="display:none;margin-left:auto;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(0,120,200,.25)"
+              data-i18n="btn_cargar_excel">
         📤 Cargar Excel
       </button>
       <input type="file" id="inputExcelCxc" accept=".xlsx,.xls" style="display:none"
@@ -250,39 +260,46 @@ tr:last-child td{border-bottom:none}
     </div>
 
     <div class="card">
-      <h2>CxC Fiscal — cartera de impuestos por empresa</h2>
-      <div class="desc">Semáforo legal CFF: <b style="color:var(--red)">🔴 rojo</b> = fiduciario pendiente (retenciones a empleados/IMSS — riesgo penal arts.108-109 CFF); <b style="color:#f97316">🟠 naranja</b> = pendiente no fiduciario (mora 2.07%/mes art.21 CFF); <b style="color:var(--yellow)">🟡 amarillo</b> = en plan de pago (arts.66,66-A CFF); <b style="color:var(--green)">🟢 verde</b> = liquidado.</div>
+      <h2 data-i18n="cxc_title">CxC Fiscal — cartera de impuestos por empresa</h2>
+      <div class="desc" data-i18n="cxc_desc" data-i18n-mode="html">Semáforo legal CFF: <b style="color:var(--red)">🔴 rojo</b> = fiduciario pendiente (retenciones a empleados/IMSS — riesgo penal arts.108-109 CFF); <b style="color:#f97316">🟠 naranja</b> = pendiente no fiduciario (mora 2.07%/mes art.21 CFF); <b style="color:var(--yellow)">🟡 amarillo</b> = en plan de pago (arts.66,66-A CFF); <b style="color:var(--green)">🟢 verde</b> = liquidado.</div>
 
       <div class="cxc-controls">
         <div class="grp grow">
-          <label style="margin-bottom:0">Empresa</label>
+          <label style="margin-bottom:0" data-i18n="filter_empresa">Empresa</label>
           <div id="cxcFiltros" class="chips"></div>
         </div>
         <div class="grp grow">
-          <label style="margin-bottom:0">Tipo de impuesto</label>
+          <label style="margin-bottom:0" data-i18n="filter_tipo">Tipo de impuesto</label>
           <div id="cxcFiltrosCategoria" class="chips"></div>
         </div>
         <div class="grp">
-          <label style="margin-bottom:0">Ordenar por</label>
+          <label style="margin-bottom:0" data-i18n="filter_orden">Ordenar por</label>
           <select id="cxcOrden" onchange="cxcSetOrden(this.value)">
-            <option value="monto_desc">Monto (mayor a menor)</option>
-            <option value="monto_asc">Monto (menor a mayor)</option>
-            <option value="empresa">Empresa (A-Z)</option>
-            <option value="categoria">Tipo de impuesto (A-Z)</option>
-            <option value="anio_asc">Año (más antiguo primero)</option>
-            <option value="anio_desc">Año (más reciente primero)</option>
+            <option value="monto_desc" data-i18n-opt="ord_monto_desc">Monto (mayor a menor)</option>
+            <option value="monto_asc" data-i18n-opt="ord_monto_asc">Monto (menor a mayor)</option>
+            <option value="empresa" data-i18n-opt="ord_empresa">Empresa (A-Z)</option>
+            <option value="categoria" data-i18n-opt="ord_categoria">Tipo de impuesto (A-Z)</option>
+            <option value="anio_asc" data-i18n-opt="ord_anio_asc">Año (más antiguo primero)</option>
+            <option value="anio_desc" data-i18n-opt="ord_anio_desc">Año (más reciente primero)</option>
           </select>
         </div>
       </div>
 
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Empresa</th><th>Tipo de impuesto</th><th>Monto</th><th>Vigencia</th><th>Estatus</th><th>Semáforo legal</th></tr></thead>
+          <thead><tr>
+            <th data-i18n="th_empresa">Empresa</th>
+            <th data-i18n="th_tipo">Tipo de impuesto</th>
+            <th data-i18n="th_monto">Monto</th>
+            <th data-i18n="th_vigencia">Vigencia</th>
+            <th data-i18n="th_estatus">Estatus</th>
+            <th data-i18n="th_semaforo">Semáforo legal</th>
+          </tr></thead>
           <tbody id="tblCxc"><tr><td colspan="7" style="color:var(--muted)">Cargando…</td></tr></tbody>
         </table>
       </div>
       <div class="note" id="cxcNota" style="display:none"></div>
-      <div class="note">
+      <div class="note" data-i18n="cxc_note" data-i18n-mode="html">
         <b>Nota sobre periodicidad:</b> esta cartera se registra a nivel anual (vigencia por año, no por mes), tomada de la cédula fiscal corporativa consolidada 2023–2026. El filtro de "Tipo de impuesto" y el orden por "Año" ya están disponibles arriba. Si necesitas desglose mes por mes, hay que ampliar la tabla <code>fiscal_cxc_impuestos</code> con un campo de periodo mensual y volver a cargar los montos con ese detalle — avísame y lo preparamos.
       </div>
     </div>
@@ -291,32 +308,38 @@ tr:last-child td{border-bottom:none}
   <!-- ===================== CALCULO DE IMPUESTOS ===================== -->
   <div class="view" id="view-impuestos">
     <div class="card">
-      <h2>Simulador de ISR / IVA del periodo</h2>
-      <div class="desc">Estimación simplificada de pago provisional. No sustituye el cálculo oficial de tu contador — úsalo como control preventivo.</div>
+      <h2 data-i18n="calc_title">Simulador de ISR / IVA del periodo</h2>
+      <div class="desc" data-i18n="calc_desc">Estimación simplificada de pago provisional. No sustituye el cálculo oficial de tu contador — úsalo como control preventivo.</div>
       <div class="grid-3">
-        <div class="field"><label>Periodo</label><input id="impPeriodo" type="month"></div>
-        <div class="field"><label>Ingresos gravables</label><input id="impIngresos" type="number" step="0.01" placeholder="0.00"></div>
-        <div class="field"><label>Deducciones autorizadas</label><input id="impDeducciones" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label data-i18n="lbl_periodo">Periodo</label><input id="impPeriodo" type="month"></div>
+        <div class="field"><label data-i18n="lbl_ingresos">Ingresos gravables</label><input id="impIngresos" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label data-i18n="lbl_deducciones">Deducciones autorizadas</label><input id="impDeducciones" type="number" step="0.01" placeholder="0.00"></div>
       </div>
       <div class="grid-3">
-        <div class="field"><label>Tasa ISR aplicable (%)</label><input id="impTasaIsr" type="number" step="0.01" value="30"></div>
-        <div class="field"><label>Tasa IVA (%)</label><input id="impTasaIva" type="number" step="0.01" value="16"></div>
-        <div class="field"><label>IVA acreditable del periodo</label><input id="impIvaAcreditable" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label data-i18n="lbl_tasa_isr">Tasa ISR aplicable (%)</label><input id="impTasaIsr" type="number" step="0.01" value="30"></div>
+        <div class="field"><label data-i18n="lbl_tasa_iva">Tasa IVA (%)</label><input id="impTasaIva" type="number" step="0.01" value="16"></div>
+        <div class="field"><label data-i18n="lbl_iva_acred">IVA acreditable del periodo</label><input id="impIvaAcreditable" type="number" step="0.01" placeholder="0.00"></div>
       </div>
-      <button class="btn" id="btnCalcularImpuesto" onclick="calcularImpuesto()">Calcular y guardar en historial</button>
+      <button class="btn" id="btnCalcularImpuesto" data-i18n="btn_calcular" onclick="calcularImpuesto()">Calcular y guardar en historial</button>
       <div class="result-box" id="impResultado" style="display:none">
-        <div class="result-row"><span class="muted">Utilidad fiscal (ingresos − deducciones)</span><span id="rUtilidad">$0</span></div>
-        <div class="result-row"><span class="muted">ISR estimado</span><span id="rIsr">$0</span></div>
-        <div class="result-row"><span class="muted">IVA trasladado</span><span id="rIvaTrasladado">$0</span></div>
-        <div class="result-row"><span class="muted">IVA a favor / a cargo</span><span id="rIvaCargo">$0</span></div>
-        <div class="result-row total"><span>Total estimado a pagar</span><span id="rTotal">$0</span></div>
+        <div class="result-row"><span class="muted" data-i18n="res_utilidad">Utilidad fiscal (ingresos − deducciones)</span><span id="rUtilidad">$0</span></div>
+        <div class="result-row"><span class="muted" data-i18n="res_isr">ISR estimado</span><span id="rIsr">$0</span></div>
+        <div class="result-row"><span class="muted" data-i18n="res_iva_tras">IVA trasladado</span><span id="rIvaTrasladado">$0</span></div>
+        <div class="result-row"><span class="muted" data-i18n="res_iva_cargo">IVA a favor / a cargo</span><span id="rIvaCargo">$0</span></div>
+        <div class="result-row total"><span data-i18n="res_total">Total estimado a pagar</span><span id="rTotal">$0</span></div>
       </div>
     </div>
     <div class="card">
-      <h2>Historial de cálculos</h2>
+      <h2 data-i18n="hist_title">Historial de cálculos</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Periodo</th><th>Utilidad fiscal</th><th>ISR</th><th>IVA a cargo</th><th>Total</th></tr></thead>
+          <thead><tr>
+            <th data-i18n="th_periodo">Periodo</th>
+            <th data-i18n="th_utilidad">Utilidad fiscal</th>
+            <th data-i18n="th_isr">ISR</th>
+            <th data-i18n="th_iva_cargo">IVA a cargo</th>
+            <th data-i18n="th_total">Total</th>
+          </tr></thead>
           <tbody id="tblImpuestos"><tr><td colspan="5" style="color:var(--muted)">Cargando…</td></tr></tbody>
         </table>
       </div>
@@ -330,24 +353,24 @@ tr:last-child td{border-bottom:none}
 <div id="cxcUploadModal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);width:min(960px,94vw);max-height:88vh;overflow:hidden;display:none;flex-direction:column">
   <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff">
     <div>
-      <div style="font-size:15px;font-weight:700">📤 Vista previa — Carga masiva CxC Fiscal</div>
+      <div style="font-size:15px;font-weight:700" data-i18n="modal_title">📤 Vista previa — Carga masiva CxC Fiscal</div>
       <div id="cxcUploadSubtitle" style="font-size:11.5px;opacity:.85;margin-top:2px">—</div>
     </div>
-    <button onclick="cerrarModalCarga()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px">✕ Cerrar</button>
+    <button onclick="cerrarModalCarga()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px" data-i18n="modal_close">✕ Cerrar</button>
   </div>
   <div id="cxcUploadResumen" style="padding:12px 22px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:20px;flex-wrap:wrap;font-size:12px"></div>
   <div style="overflow:auto;flex:1">
     <table id="cxcUploadTabla" style="width:100%;border-collapse:collapse;font-size:12px">
       <thead style="position:sticky;top:0;background:var(--surface2);z-index:1">
         <tr>
-          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Acción</th>
-          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Empresa</th>
-          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Categoría</th>
-          <th style="padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)">Año</th>
-          <th style="padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)">Fid.</th>
-          <th style="padding:10px 12px;text-align:right;border-bottom:1px solid var(--border)">Monto anterior</th>
-          <th style="padding:10px 12px;text-align:right;border-bottom:1px solid var(--border)">Monto nuevo</th>
-          <th style="padding:10px 12px;text-align:right;border-bottom:1px solid var(--border)">Δ</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)" data-i18n="modal_th_accion">Acción</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)" data-i18n="modal_th_empresa">Empresa</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)" data-i18n="modal_th_cat">Categoría</th>
+          <th style="padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)" data-i18n="modal_th_anio">Año</th>
+          <th style="padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)" data-i18n="modal_th_fid">Fid.</th>
+          <th style="padding:10px 12px;text-align:right;border-bottom:1px solid var(--border)" data-i18n="modal_th_ant">Monto anterior</th>
+          <th style="padding:10px 12px;text-align:right;border-bottom:1px solid var(--border)" data-i18n="modal_th_nuevo">Monto nuevo</th>
+          <th style="padding:10px 12px;text-align:right;border-bottom:1px solid var(--border)" data-i18n="modal_th_delta">Δ</th>
         </tr>
       </thead>
       <tbody id="cxcUploadTbody"></tbody>
@@ -355,10 +378,10 @@ tr:last-child td{border-bottom:none}
     <div id="cxcUploadSkipped" style="padding:12px 22px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);display:none"></div>
   </div>
   <div style="padding:16px 22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--surface2);gap:12px">
-    <div id="cxcUploadStatus" style="font-size:12px;color:var(--muted)">Revisa la propuesta antes de confirmar.</div>
+    <div id="cxcUploadStatus" style="font-size:12px;color:var(--muted)" data-i18n="modal_status">Revisa la propuesta antes de confirmar.</div>
     <div style="display:flex;gap:10px">
-      <button onclick="cerrarModalCarga()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer">Cancelar</button>
-      <button id="btnConfirmarCarga" onclick="confirmarCargaMasiva()" style="background:var(--green);color:#000;border:none;border-radius:8px;padding:9px 22px;font-size:12px;font-weight:700;cursor:pointer">✓ Confirmar carga</button>
+      <button onclick="cerrarModalCarga()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer" data-i18n="modal_cancel">Cancelar</button>
+      <button id="btnConfirmarCarga" onclick="confirmarCargaMasiva()" style="background:var(--green);color:#000;border:none;border-radius:8px;padding:9px 22px;font-size:12px;font-weight:700;cursor:pointer" data-i18n="modal_confirm">✓ Confirmar carga</button>
     </div>
   </div>
 </div>
@@ -397,6 +420,22 @@ async function bootstrapAuth() {
       try {
         const { data: user } = await sb.from('usuarios').select('*').eq('auth_id', session.user.id).maybeSingle();
         if (user) {
+          // ── Verificar acceso al módulo Fiscal ──
+          const modulos = Array.isArray(user.modulos) ? user.modulos : [];
+          const tieneAcceso = user.rol === 'admin_master' || modulos.includes('fiscal');
+          if (!tieneAcceso) {
+            // Mostrar pantalla de acceso denegado
+            document.getElementById('bootLoader').style.display = 'none';
+            const adDiv = document.getElementById('accessDenied');
+            adDiv.style.display = 'flex';
+            const savedLang = (()=>{ try{ return localStorage.getItem('fiscal_lang')||'es'; }catch(e){ return 'es'; } })();
+            const T = LANG[savedLang] || LANG.es;
+            document.getElementById('adTitle').textContent = T.access_denied_title;
+            document.getElementById('adMsg').textContent = T.access_denied_msg;
+            document.getElementById('adBtn').textContent = T.access_back;
+            document.getElementById('btnLang') && (document.getElementById('btnLang').onclick = function(){ toggleLang(); });
+            return;
+          }
           currentUserRol = user.rol || null;
           document.getElementById('userName').textContent = user.nombre || user.username || 'Usuario';
           document.getElementById('userRole').textContent = user.rol || '—';
@@ -417,6 +456,9 @@ async function bootstrapAuth() {
 
   document.getElementById('bootLoader').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+  // Restaurar idioma guardado
+  const savedLang = (()=>{ try{ return localStorage.getItem('fiscal_lang')||'es'; }catch(e){ return 'es'; } })();
+  applyLang(savedLang);
   await cargarTodo();
 }
 function getInitials(nom){
@@ -431,11 +473,13 @@ async function cerrarSesion(){
 }
 function setSyncError(msg){
   document.getElementById('syncDot').classList.add('error');
-  document.getElementById('syncTxt').textContent = msg || 'Error de conexión con Supabase';
+  const T = LANG[document.documentElement.dataset.lang || 'es'];
+  document.getElementById('syncTxt').textContent = msg || T.sync_err;
 }
 function setSyncOk(){
   document.getElementById('syncDot').classList.remove('error');
-  document.getElementById('syncTxt').textContent = 'Conectado a Supabase';
+  const T = LANG[document.documentElement.dataset.lang || 'es'];
+  document.getElementById('syncTxt').textContent = T.sync_ok;
 }
 
 /* ---------- Estado en memoria (espejo de las tablas fiscal_*) ---------- */
@@ -459,6 +503,126 @@ function diasRestantes(fechaStr){
 function toggleTheme(){
   const html = document.documentElement;
   html.dataset.theme = html.dataset.theme === "light" ? "dark" : "light";
+}
+
+/* ---------- IDIOMA ES / EN ---------- */
+const LANG = {
+  es: {
+    title:'Módulo Fiscal', subtitle:'SIF · MI Global — CxC Fiscal · Cálculo de Impuestos',
+    sync_ok:'Conectado a Supabase', sync_err:'Error de conexión con Supabase',
+    portal_btn:'← Portal', logout_btn:'Cerrar sesión',
+    kpi1_label:'Próximo vencimiento SAT',
+    kpi2_label:'⚠️ Deuda fiscal c/accesorios', kpi2_sub:'Histórico + INPC + recargos · arts.17-A, 21 CFF',
+    kpi3_label:'Impuesto estimado · próx. venc.', kpi3_sub:'ISR + IVA — último cálculo registrado',
+    tab_cxc:'🚦 CxC Fiscal', tab_imp:'🧮 Cálculo de Impuestos',
+    sem_rojo_label:'🔴 Embargo cuentas', sem_naranja_label:'🟠 Notificado/Avisos',
+    sem_amarillo_label:'🟡 Por vencer / En plan', sem_verde_label:'🟢 Liquidado',
+    sem_rojo_legal:'Arts.145,151 CFF — Fiduciario pendiente. Riesgo penal arts.108-109 CFF.',
+    sem_naranja_legal:'Pendiente no fiduciario. Recargos 2.07%/mes (art.21 CFF). En proceso de cobro.',
+    sem_amarillo_legal:'En plan de pago con autoridad. Regularización activa (arts.66,66-A CFF).',
+    sem_verde_legal:'Obligación cubierta. Sin mora ni riesgo (art.6 CFF).',
+    excel_loading:'Cargando datos CxC…', btn_cargar_excel:'📤 Cargar Excel',
+    cxc_title:'CxC Fiscal — cartera de impuestos por empresa',
+    cxc_desc:'Semáforo legal CFF: <b style="color:var(--red)">🔴 rojo</b> = fiduciario pendiente (retenciones a empleados/IMSS — riesgo penal arts.108-109 CFF); <b style="color:#f97316">🟠 naranja</b> = pendiente no fiduciario (mora 2.07%/mes art.21 CFF); <b style="color:var(--yellow)">🟡 amarillo</b> = en plan de pago (arts.66,66-A CFF); <b style="color:var(--green)">🟢 verde</b> = liquidado.',
+    filter_empresa:'Empresa', filter_tipo:'Tipo de impuesto', filter_orden:'Ordenar por',
+    ord_monto_desc:'Monto (mayor a menor)', ord_monto_asc:'Monto (menor a mayor)',
+    ord_empresa:'Empresa (A-Z)', ord_categoria:'Tipo de impuesto (A-Z)',
+    ord_anio_asc:'Año (más antiguo primero)', ord_anio_desc:'Año (más reciente primero)',
+    th_empresa:'Empresa', th_tipo:'Tipo de impuesto', th_monto:'Monto',
+    th_vigencia:'Vigencia', th_estatus:'Estatus', th_semaforo:'Semáforo legal',
+    cxc_note:'<b>Nota sobre periodicidad:</b> esta cartera se registra a nivel anual (vigencia por año, no por mes), tomada de la cédula fiscal corporativa consolidada 2023–2026. El filtro de "Tipo de impuesto" y el orden por "Año" ya están disponibles arriba. Si necesitas desglose mes por mes, hay que ampliar la tabla <code>fiscal_cxc_impuestos</code> con un campo de periodo mensual y volver a cargar los montos con ese detalle — avísame y lo preparamos.',
+    calc_title:'Simulador de ISR / IVA del periodo',
+    calc_desc:'Estimación simplificada de pago provisional. No sustituye el cálculo oficial de tu contador — úsalo como control preventivo.',
+    lbl_periodo:'Periodo', lbl_ingresos:'Ingresos gravables', lbl_deducciones:'Deducciones autorizadas',
+    lbl_tasa_isr:'Tasa ISR aplicable (%)', lbl_tasa_iva:'Tasa IVA (%)', lbl_iva_acred:'IVA acreditable del periodo',
+    btn_calcular:'Calcular y guardar en historial',
+    res_utilidad:'Utilidad fiscal (ingresos − deducciones)', res_isr:'ISR estimado',
+    res_iva_tras:'IVA trasladado', res_iva_cargo:'IVA a favor / a cargo', res_total:'Total estimado a pagar',
+    hist_title:'Historial de cálculos',
+    th_periodo:'Periodo', th_utilidad:'Utilidad fiscal', th_isr:'ISR', th_iva_cargo:'IVA a cargo', th_total:'Total',
+    modal_title:'📤 Vista previa — Carga masiva CxC Fiscal', modal_close:'✕ Cerrar',
+    modal_cancel:'Cancelar', modal_confirm:'✓ Confirmar carga',
+    modal_status:'Revisa la propuesta antes de confirmar.',
+    modal_th_accion:'Acción', modal_th_empresa:'Empresa', modal_th_cat:'Categoría',
+    modal_th_anio:'Año', modal_th_fid:'Fid.', modal_th_ant:'Monto anterior',
+    modal_th_nuevo:'Monto nuevo', modal_th_delta:'Δ',
+    access_denied_title:'Acceso no autorizado',
+    access_denied_msg:'No tienes permiso para acceder al módulo Fiscal. Contacta al administrador.',
+    access_back:'← Volver al Portal',
+  },
+  en: {
+    title:'Fiscal Module', subtitle:'SIF · MI Global — Tax Receivables · Tax Calculator',
+    sync_ok:'Connected to Supabase', sync_err:'Supabase connection error',
+    portal_btn:'← Portal', logout_btn:'Sign out',
+    kpi1_label:'Next SAT due date',
+    kpi2_label:'⚠️ Tax debt w/surcharges', kpi2_sub:'Historical + INPC + surcharges · arts.17-A, 21 CFF',
+    kpi3_label:'Estimated tax · next due', kpi3_sub:'ISR + VAT — last recorded calculation',
+    tab_cxc:'🚦 Tax Receivables', tab_imp:'🧮 Tax Calculator',
+    sem_rojo_label:'🔴 Account seizure', sem_naranja_label:'🟠 Notified/Notices',
+    sem_amarillo_label:'🟡 Due soon / Payment plan', sem_verde_label:'🟢 Settled',
+    sem_rojo_legal:'Arts.145,151 CFF — Fiduciary pending. Criminal risk arts.108-109 CFF.',
+    sem_naranja_legal:'Non-fiduciary pending. Surcharges 2.07%/mo (art.21 CFF). Collection in progress.',
+    sem_amarillo_legal:'Active payment plan with authority. Regularization (arts.66,66-A CFF).',
+    sem_verde_legal:'Obligation covered. No default or risk (art.6 CFF).',
+    excel_loading:'Loading data…', btn_cargar_excel:'📤 Upload Excel',
+    cxc_title:'Tax Receivables — corporate tax portfolio',
+    cxc_desc:'Legal traffic light CFF: <b style="color:var(--red)">🔴 red</b> = fiduciary pending (employee/IMSS withholdings — criminal risk arts.108-109 CFF); <b style="color:#f97316">🟠 orange</b> = non-fiduciary pending (surcharge 2.07%/mo art.21 CFF); <b style="color:var(--yellow)">🟡 yellow</b> = payment plan (arts.66,66-A CFF); <b style="color:var(--green)">🟢 green</b> = settled.',
+    filter_empresa:'Company', filter_tipo:'Tax type', filter_orden:'Sort by',
+    ord_monto_desc:'Amount (high to low)', ord_monto_asc:'Amount (low to high)',
+    ord_empresa:'Company (A-Z)', ord_categoria:'Tax type (A-Z)',
+    ord_anio_asc:'Year (oldest first)', ord_anio_desc:'Year (newest first)',
+    th_empresa:'Company', th_tipo:'Tax type', th_monto:'Amount',
+    th_vigencia:'Period', th_estatus:'Status', th_semaforo:'Legal traffic light',
+    cxc_note:'<b>Note on periodicity:</b> this portfolio is recorded annually (yearly validity, not monthly), sourced from the consolidated 2023–2026 corporate tax ledger. The "Tax type" filter and "Year" sorting are available above. For month-by-month breakdown, <code>fiscal_cxc_impuestos</code> would need a monthly period field — let us know and we\'ll set it up.',
+    calc_title:'ISR / VAT Period Simulator',
+    calc_desc:'Simplified provisional payment estimate. Does not replace your accountant\'s official calculation — use as a preventive control.',
+    lbl_periodo:'Period', lbl_ingresos:'Taxable income', lbl_deducciones:'Authorized deductions',
+    lbl_tasa_isr:'Applicable ISR rate (%)', lbl_tasa_iva:'VAT rate (%)', lbl_iva_acred:'Creditable VAT for period',
+    btn_calcular:'Calculate and save to history',
+    res_utilidad:'Taxable profit (income − deductions)', res_isr:'Estimated ISR',
+    res_iva_tras:'VAT transferred', res_iva_cargo:'VAT in favor / owed', res_total:'Total estimated to pay',
+    hist_title:'Calculation history',
+    th_periodo:'Period', th_utilidad:'Taxable profit', th_isr:'ISR', th_iva_cargo:'VAT owed', th_total:'Total',
+    modal_title:'📤 Preview — Bulk upload CxC Fiscal', modal_close:'✕ Close',
+    modal_cancel:'Cancel', modal_confirm:'✓ Confirm upload',
+    modal_status:'Review the proposal before confirming.',
+    modal_th_accion:'Action', modal_th_empresa:'Company', modal_th_cat:'Category',
+    modal_th_anio:'Year', modal_th_fid:'Fid.', modal_th_ant:'Previous amount',
+    modal_th_nuevo:'New amount', modal_th_delta:'Δ',
+    access_denied_title:'Unauthorized',
+    access_denied_msg:'You do not have permission to access the Fiscal module. Contact your administrator.',
+    access_back:'← Back to Portal',
+  }
+};
+
+function applyLang(lang){
+  const T = LANG[lang] || LANG.es;
+  document.documentElement.dataset.lang = lang;
+  document.documentElement.lang = lang === 'en' ? 'en' : 'es';
+  try { localStorage.setItem('fiscal_lang', lang); } catch(e){}
+  const btn = document.getElementById('btnLang');
+  if (btn) btn.textContent = lang === 'es' ? 'EN' : 'ES';
+  // Texto plano
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (T[key] === undefined) return;
+    if (el.dataset.i18nMode === 'html') { el.innerHTML = T[key]; }
+    else { el.textContent = T[key]; }
+  });
+  // Opciones del select de orden
+  document.querySelectorAll('[data-i18n-opt]').forEach(el => {
+    const key = el.dataset.i18nOpt;
+    if (T[key] !== undefined) el.textContent = T[key];
+  });
+  // Sync badge (puede estar en estado ok o error)
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncTxt');
+  if (txt) txt.textContent = (dot && dot.classList.contains('error')) ? T.sync_err : T.sync_ok;
+}
+
+function toggleLang(){
+  const cur = document.documentElement.dataset.lang || 'es';
+  applyLang(cur === 'es' ? 'en' : 'es');
 }
 
 /* ---------- TABS ---------- */
