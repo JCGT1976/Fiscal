@@ -441,8 +441,8 @@ async function bootstrapAuth() {
           document.getElementById('userRole').textContent = user.rol || '—';
           const av = document.getElementById('userAvatar');
           if (av) av.textContent = getInitials(user.nombre || user.username || '?');
-          /* Mostrar botón de carga masiva solo a admin_master */
-          if (currentUserRol === 'admin_master') {
+          /* Mostrar botón de carga masiva a admin_master y cohost */
+          if (currentUserRol === 'admin_master' || currentUserRol === 'cohost') {
             const btn = document.getElementById('btnCargarExcel');
             if (btn) btn.style.display = 'inline-flex';
           }
@@ -997,8 +997,8 @@ function mapearTipoImpuesto(tipoExcel){
 let cargaMasivaPropuesta = null;
 
 async function procesarExcelCxc(file){
-  if (currentUserRol !== 'admin_master') {
-    alert('Solo admin_master puede realizar carga masiva.');
+  if (currentUserRol !== 'admin_master' && currentUserRol !== 'cohost') {
+    alert('Solo admin_master o cohost pueden realizar carga masiva.');
     return;
   }
   try {
@@ -1139,7 +1139,7 @@ function cerrarModalCarga(){
 }
 
 async function confirmarCargaMasiva(){
-  if (currentUserRol !== 'admin_master') { alert('Solo admin_master.'); return; }
+  if (currentUserRol !== 'admin_master' && currentUserRol !== 'cohost') { alert('Solo admin_master o cohost.'); return; }
   if (!cargaMasivaPropuesta || !cargaMasivaPropuesta.length) return;
 
   const btn = document.getElementById('btnConfirmarCarga');
