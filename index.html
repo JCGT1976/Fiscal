@@ -515,6 +515,12 @@ tr:last-child td{border-bottom:none}
           </select>
           <button onclick="abrirModalNuevoEvento()" style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer">+ Registrar gestión</button>
           <button onclick="abrirModalNuevoPeriodo()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">+ Nuevo período</button>
+          <button id="btnCargarExcelIva" onclick="document.getElementById('inputExcelIva').click()"
+                  style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,120,200,.25)">
+            📤 Cargar Excel
+          </button>
+          <input type="file" id="inputExcelIva" accept=".xlsx,.xls" style="display:none"
+                 onchange="if(this.files[0]){procesarExcelIvaRec(this.files[0]);this.value='';}">
         </div>
       </div>
     </div>
@@ -908,7 +914,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.8';
+const APP_VERSION   = '2026.07.17.9';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -3348,6 +3354,184 @@ async function guardarNuevoPeriodo(){
   } catch(e){
     console.error(e);
     mostrarToast('Error al guardar: '+(e.message||e), '#e11d48');
+  }
+}
+
+/* ---------- CARGA MASIVA DESDE EXCEL (hoja "Datos") ---------- */
+const REC_MONTHS = {jan:1,feb:2,mar:3,apr:4,abr:4,may:5,jun:6,jul:7,aug:8,ago:8,sep:9,oct:10,nov:11,dec:12,dic:12,ene:1};
+const REC_MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const REC_PRIO_MAP = {dep_vencido:1, requerimiento:2, aprobado_pdte:2, en_proceso:3, no_solicitado:4, devuelto:5};
+
+function _recParsePeriodo(txt){
+  if(!txt) return null;
+  const s = String(txt).trim().toLowerCase();
+  const m = s.match(/^([a-z]{3})-?(\d{2,4})$/);
+  if(!m) return null;
+  const mes = REC_MONTHS[m[1]];
+  if(!mes) return null;
+  let yy = m[2]; if(yy.length===2) yy = '20'+yy;
+  return { anio: parseInt(yy), mes, periodo: `${REC_MONTH_NAMES[mes-1]}-${yy.slice(-2)}` };
+}
+function _recParseExcelDate(v){
+  if(!v && v!==0) return null;
+  if(v instanceof Date) return v.toISOString().slice(0,10);
+  if(typeof v === 'number'){
+    const d = XLSX.SSF.parse_date_code(v);
+    if(!d) return null;
+    return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+  }
+  if(typeof v === 'string'){
+    const d = new Date(v);
+    if(!isNaN(d)) return d.toISOString().slice(0,10);
+  }
+  return null;
+}
+function _recMapEstado(estado, observaciones, monto_aprobado, monto_devuelto){
+  const s = String(estado || '').toLowerCase();
+  const obs = String(observaciones || '').toLowerCase();
+  if(obs.includes('requerimiento')) return 'requerimiento';
+  if(s.includes('devuelto')) return 'devuelto';
+  if(s.includes('dep.vencido') || s.includes('vencido')) return 'dep_vencido';
+  if(s.includes('en proceso') || s.includes('en revisión') || s.includes('revision')) return 'en_proceso';
+  if(s.includes('no solicitado') || s.includes('pendiente solicitar')) return 'no_solicitado';
+  if(monto_aprobado > 0 && monto_devuelto === 0) return 'aprobado_pdte';
+  return 'no_solicitado';
+}
+
+async function procesarExcelIvaRec(file){
+  if (currentUserRol !== 'admin_master' && currentUserRol !== 'cohost') {
+    mostrarToast('Solo admin_master o cohost pueden hacer carga masiva','#e11d48');
+    return;
+  }
+  const empresa = document.getElementById('recEmpresa').value || 'Internacional';
+  try {
+    mostrarToast('⏳ Leyendo archivo…','#0284c7');
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array' });
+
+    // Verificar que exista la hoja "Datos"
+    const sheetName = wb.SheetNames.find(n => n.toLowerCase().trim() === 'datos');
+    if (!sheetName){
+      mostrarToast('El archivo no contiene la hoja "Datos". Hojas: '+wb.SheetNames.join(', '), '#e11d48');
+      return;
+    }
+
+    const ws = wb.Sheets[sheetName];
+    const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:null, raw:true });
+
+    // Buscar fila de headers (contiene "N°" + "Periodo")
+    let hIdx = -1;
+    for (let i=0; i<Math.min(aoa.length,25); i++){
+      const row = (aoa[i]||[]).map(c=>String(c||'').toLowerCase().trim());
+      if (row.includes('n°') && row.includes('periodo')) { hIdx = i; break; }
+      if (row.includes('periodo') && row.some(c=>c.includes('a favor'))) { hIdx = i; break; }
+    }
+    if (hIdx < 0){
+      mostrarToast('No encontré fila de headers en la hoja "Datos"', '#e11d48');
+      return;
+    }
+
+    const headers = aoa[hIdx].map(h=>String(h||'').trim());
+    const dataRows = aoa.slice(hIdx+1);
+    const col = {};
+    headers.forEach((h,i)=>{
+      const k = h.toLowerCase();
+      if (k.includes('periodo') && !k.includes('label')) col.periodo=i;
+      else if (k.includes('a favor')) col.a_favor=i;
+      else if (k.includes('solicitado')) col.solicitado=i;
+      else if (k.includes('aprobado')) col.aprobado=i;
+      else if (k.includes('devuelto')) col.devuelto=i;
+      else if (k.includes('estado')) col.estado=i;
+      else if (k.includes('días sat') || k.includes('dias sat')) col.dias=i;
+      else if (k.includes('f.presentación') || k.includes('f.presentacion')) col.fpres=i;
+      else if (k.includes('f.pago')) col.fpago=i;
+      else if (k.includes('f.depósito') || k.includes('f.deposito')) col.fdep=i;
+      else if (k.includes('observaciones')) col.obs=i;
+    });
+
+    // Parsear filas válidas
+    const parsed = [];
+    for (const row of dataRows){
+      if (!row || row.every(c=>c===null||c==='')) continue;
+      const per = _recParsePeriodo(row[col.periodo]);
+      if (!per) continue;
+      const monto_favor      = Number(row[col.a_favor]     ?? 0)||0;
+      const monto_solicitado = Number(row[col.solicitado]  ?? 0)||0;
+      const monto_aprobado   = Number(row[col.aprobado]    ?? 0)||0;
+      const monto_devuelto   = Number(row[col.devuelto]    ?? 0)||0;
+      const observaciones    = row[col.obs] ? String(row[col.obs]).trim() : null;
+      const estado           = _recMapEstado(row[col.estado], observaciones, monto_aprobado, monto_devuelto);
+      const prioridad        = REC_PRIO_MAP[estado] || 4;
+      const dias_sat_raw     = row[col.dias];
+      const dias_sat         = (dias_sat_raw!==null && dias_sat_raw!=='') ? parseInt(dias_sat_raw) : null;
+
+      parsed.push({
+        empresa,
+        periodo: per.periodo,
+        anio: per.anio,
+        mes: per.mes,
+        monto_favor, monto_solicitado, monto_aprobado, monto_devuelto,
+        estado, prioridad,
+        f_presentacion:  _recParseExcelDate(row[col.fpres]),
+        f_deposito_prog: _recParseExcelDate(row[col.fpago]),
+        f_deposito_real: _recParseExcelDate(row[col.fdep]),
+        dias_sat: isNaN(dias_sat) ? null : dias_sat,
+        observaciones,
+        updated_by: currentUserId
+      });
+    }
+
+    if (!parsed.length){
+      mostrarToast('No se encontraron filas válidas en "Datos"', '#e11d48');
+      return;
+    }
+
+    // Comparar con existentes para conteo INSERT/UPDATE
+    const { data: existing } = await sb.from('fiscal_iva_devoluciones')
+      .select('anio,mes,monto_favor,monto_solicitado,monto_aprobado,monto_devuelto,estado')
+      .eq('empresa', empresa);
+    const exMap = new Map();
+    (existing||[]).forEach(r=> exMap.set(`${r.anio}-${r.mes}`, r));
+
+    let ins=0, upd=0, same=0;
+    let totFavor=0, totDev=0;
+    parsed.forEach(r=>{
+      totFavor += r.monto_favor; totDev += r.monto_devuelto;
+      const ex = exMap.get(`${r.anio}-${r.mes}`);
+      if (!ex) ins++;
+      else if (Number(ex.monto_favor)===r.monto_favor &&
+               Number(ex.monto_solicitado)===r.monto_solicitado &&
+               Number(ex.monto_aprobado)===r.monto_aprobado &&
+               Number(ex.monto_devuelto)===r.monto_devuelto &&
+               ex.estado===r.estado) same++;
+      else upd++;
+    });
+
+    const msg = `📊 Vista previa carga IVA — ${empresa}\n\n`+
+                `Hoja: "${sheetName}"\n`+
+                `Filas parseadas: ${parsed.length}\n\n`+
+                `🟢 Nuevos (INSERT): ${ins}\n`+
+                `🟡 Actualizar (UPDATE): ${upd}\n`+
+                `⚪ Sin cambio: ${same}\n\n`+
+                `💰 Total a favor: $${totFavor.toLocaleString('es-MX')}\n`+
+                `✅ Recuperado: $${totDev.toLocaleString('es-MX')}\n`+
+                `⏳ Pendiente: $${(totFavor-totDev).toLocaleString('es-MX')}\n\n`+
+                `¿Confirmar carga?`;
+    if (!confirm(msg)) { mostrarToast('Carga cancelada','#64748b'); return; }
+
+    mostrarToast(`⏳ Subiendo ${parsed.length} registros…`, '#0284c7');
+    const { error } = await sb.from('fiscal_iva_devoluciones')
+      .upsert(parsed, { onConflict: 'empresa,anio,mes' });
+    if (error) throw error;
+
+    auditLog({ accion:'IVA_CARGA_MASIVA', tabla:'fiscal_iva_devoluciones', empresa,
+      input_json:{ filas:parsed.length, ins, upd, same, totFavor, totDev },
+      fundamento:'Carga masiva desde Excel — hoja Datos' });
+    mostrarToast(`✅ Carga exitosa: ${ins} nuevos, ${upd} actualizados, ${same} sin cambio`, '#059669');
+    await cargarRecuperaciones();
+  } catch(e){
+    console.error('procesarExcelIvaRec', e);
+    mostrarToast('Error al procesar Excel: '+(e.message||e), '#e11d48');
   }
 }
 
