@@ -210,6 +210,8 @@ tr:last-child td{border-bottom:none}
   <div class="nav-tabs">
     <button class="nav-tab active" data-view="cxc" data-i18n="tab_cxc" onclick="showView('cxc')">🚦 CxC Fiscal</button>
     <button class="nav-tab" data-view="impuestos" data-i18n="tab_imp" onclick="showView('impuestos')">🧮 Cálculo de Impuestos</button>
+    <button class="nav-tab" data-view="gobernanza" id="tabGobernanza" style="display:none" onclick="showView('gobernanza');cargarGobernanza()">🔐 Gobernanza</button>
+    <button class="nav-tab" data-view="grupo" id="tabGrupo" onclick="showView('grupo');cargarGrupo()">🏢 Grupo</button>
   </div>
 
   <!-- ===================== CxC FISCAL (semáforo de riesgo) ===================== -->
@@ -502,6 +504,98 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
   </div>
+
+  <!-- ═══════════ VISTA: GOBERNANZA (Ola 2) ═══════════ -->
+  <div class="view" id="view-gobernanza">
+    <div class="card">
+      <h2>🔐 Gobernanza — flujo de aprobación fiscal</h2>
+      <div class="desc">Cada obligación pasa por un flujo de 5 estados: <b>Borrador → En revisión → Firmada → Autorizada → Pagada</b>. El historial es inmutable (audit trail).</div>
+
+      <!-- Filtro de estado -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="btn-secondary btn" style="font-size:12px;padding:5px 12px" onclick="gobFiltrar('')" id="gobFiltTodos">Todos</button>
+        <button class="btn-secondary btn" style="font-size:12px;padding:5px 12px;border-color:#6b7280;color:#6b7280" onclick="gobFiltrar('borrador')" id="gobFiltBorrador">⚪ Borrador</button>
+        <button class="btn-secondary btn" style="font-size:12px;padding:5px 12px;border-color:#3b82f6;color:#3b82f6" onclick="gobFiltrar('en_revision')" id="gobFiltRevision">🔵 En revisión</button>
+        <button class="btn-secondary btn" style="font-size:12px;padding:5px 12px;border-color:#8b5cf6;color:#8b5cf6" onclick="gobFiltrar('firmada')" id="gobFiltFirmada">🟣 Firmada</button>
+        <button class="btn-secondary btn" style="font-size:12px;padding:5px 12px;border-color:#10b981;color:#10b981" onclick="gobFiltrar('autorizada')" id="gobFiltAutorizada">🟢 Autorizada</button>
+        <button class="btn-secondary btn" style="font-size:12px;padding:5px 12px;border-color:#f59e0b;color:#b45309" onclick="gobFiltrar('rechazada')" id="gobFiltRechazada">🔴 Rechazada</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Empresa</th>
+            <th>Categoría</th>
+            <th>Monto</th>
+            <th>Estado workflow</th>
+            <th>Firmado por</th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody id="tblGobernanza"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Panel historial de una obligación -->
+    <div id="gobHistorialPanel" style="display:none" class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <h3 id="gobHistTitulo" style="margin:0;font-size:15px;font-weight:700">Historial de aprobación</h3>
+        <button onclick="document.getElementById('gobHistorialPanel').style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted)">✕</button>
+      </div>
+      <div id="gobHistorialLista" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ VISTA: GRUPO (consolidación grupal) ═══════════ -->
+  <div class="view" id="view-grupo">
+    <div class="card">
+      <h2>🏢 Consolidación grupal — MI Global</h2>
+      <div class="desc">Deuda fiscal agregada por empresa. Efectivo (pendiente) · En plan · Liquidado · Fiduciario de alto riesgo. Actualización en tiempo real desde Supabase.</div>
+
+      <!-- KPIs grupo -->
+      <div id="grupoKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px">
+        <div class="kpi-card" style="padding:14px">
+          <div class="kpi-label" style="font-size:11px">Deuda total grupo</div>
+          <div class="kpi-value" id="gkpiTotal" style="font-size:20px;margin-top:4px">$0</div>
+          <div class="kpi-sub" id="gkpiTotalSub" style="font-size:11px;margin-top:4px">5 empresas</div>
+        </div>
+        <div class="kpi-card" style="padding:14px;border-color:#dc2626">
+          <div class="kpi-label" style="font-size:11px;color:#dc2626">⚠️ Fiduciario pendiente</div>
+          <div class="kpi-value" id="gkpiFiduciario" style="font-size:20px;margin-top:4px;color:#dc2626">$0</div>
+          <div class="kpi-sub" id="gkpiFiduciarioSub" style="font-size:11px;margin-top:4px">Arts. 108-109 CFF</div>
+        </div>
+        <div class="kpi-card" style="padding:14px;border-color:#f59e0b">
+          <div class="kpi-label" style="font-size:11px;color:#b45309">En plan de pago</div>
+          <div class="kpi-value" id="gkpiPlan" style="font-size:20px;margin-top:4px;color:#b45309">$0</div>
+          <div class="kpi-sub" style="font-size:11px;margin-top:4px">Arts. 66, 66-A CFF</div>
+        </div>
+        <div class="kpi-card" style="padding:14px;border-color:#10b981">
+          <div class="kpi-label" style="font-size:11px;color:#059669">Liquidado</div>
+          <div class="kpi-value" id="gkpiPagado" style="font-size:20px;margin-top:4px;color:#059669">$0</div>
+          <div class="kpi-sub" style="font-size:11px;margin-top:4px">Estatus Pagado</div>
+        </div>
+      </div>
+
+      <!-- Tabla por empresa -->
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Empresa</th>
+            <th>Obligaciones</th>
+            <th>Monto histórico</th>
+            <th>Pendiente</th>
+            <th>En plan</th>
+            <th>Liquidado</th>
+            <th>Fiduciario</th>
+            <th>Workflow</th>
+          </tr></thead>
+          <tbody id="tblGrupo"><tr><td colspan="8" style="color:var(--muted)">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--muted)">* Monto histórico sin accesorios. Los recargos e INPC se calculan en la vista CxC Fiscal.</div>
+    </div>
+  </div>
+
 </div>
 </div>
 
@@ -554,7 +648,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.3';
+const APP_VERSION   = '2026.07.17.4';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -607,6 +701,11 @@ async function bootstrapAuth() {
           if (['admin_master','admin','cohost'].includes(currentUserRol)) {
             const btnNob = document.getElementById('btnNuevaObligacion');
             if (btnNob) btnNob.style.display = 'inline-flex';
+          }
+          /* Mostrar tab Gobernanza a admin_master y admin */
+          if (['admin_master','admin'].includes(currentUserRol)) {
+            const tabGob = document.getElementById('tabGobernanza');
+            if (tabGob) tabGob.style.display = 'inline-flex';
           }
         }
       } catch(e) { console.warn('Sin datos de usuario:', e); }
@@ -1819,6 +1918,253 @@ async function enviarADeadpool() {
 }
 
 /* ---------- INIT ---------- */
+/* ═══════════════════════════════════════════════════════════
+   OLA 2 · GOBERNANZA — workflow multi-nivel (Fase Ola2-B)
+   ═══════════════════════════════════════════════════════════ */
+
+const GOB_ESTADOS = {
+  borrador:    { label:'Borrador',    color:'#6b7280', next:'en_revision', accion:'Enviar a revisión' },
+  en_revision: { label:'En revisión', color:'#3b82f6', next:'firmada',     accion:'Firmar' },
+  firmada:     { label:'Firmada',     color:'#8b5cf6', next:'autorizada',  accion:'Autorizar' },
+  autorizada:  { label:'Autorizada',  color:'#10b981', next:'pagada',      accion:'Marcar pagada' },
+  pagada:      { label:'Pagada',      color:'#059669', next:null,          accion:null },
+  rechazada:   { label:'Rechazada',   color:'#dc2626', next:'borrador',    accion:'Reabrir' },
+};
+
+let gobFiltroEstado = '';
+let gobDatos = [];
+
+async function cargarGobernanza(){
+  const { data, error } = await sb.from('fiscal_cxc_impuestos')
+    .select('id,empresa,categoria,monto,estatus,workflow_estado,workflow_firmado_por,workflow_autorizado_por,fiduciario')
+    .order('monto', { ascending: false });
+  if (error){ console.error(error); return; }
+  gobDatos = data || [];
+  renderGobernanza();
+}
+
+function gobFiltrar(estado){
+  gobFiltroEstado = estado;
+  renderGobernanza();
+}
+
+function renderGobernanza(){
+  const filas = gobFiltroEstado
+    ? gobDatos.filter(r => (r.workflow_estado || 'borrador') === gobFiltroEstado)
+    : gobDatos;
+
+  const tbody = document.getElementById('tblGobernanza');
+  if (!tbody) return;
+
+  tbody.innerHTML = filas.map(r => {
+    const estado = r.workflow_estado || 'borrador';
+    const cfg    = GOB_ESTADOS[estado] || GOB_ESTADOS.borrador;
+    const badge  = `<span style="background:${cfg.color}18;color:${cfg.color};border:1px solid ${cfg.color}40;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600">${cfg.label}</span>`;
+    const firmado = r.workflow_firmado_por ? `<span style="font-size:11px;color:var(--muted)">${r.workflow_firmado_por}</span>` : '—';
+
+    let acciones = '';
+    if (cfg.next && ['admin_master','admin'].includes(currentUserRol)) {
+      acciones += `<button onclick="gobAvanzar(${r.id},'${cfg.next}')" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);cursor:pointer;white-space:nowrap">${cfg.accion}</button> `;
+    }
+    if (estado !== 'rechazada' && estado !== 'pagada' && ['admin_master','admin'].includes(currentUserRol)) {
+      acciones += `<button onclick="gobRechazar(${r.id})" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #dc2626;background:var(--surface);color:#dc2626;cursor:pointer">Rechazar</button> `;
+    }
+    acciones += `<button onclick="gobVerHistorial(${r.id},'${r.empresa} · ${r.categoria}')" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer">📋</button>`;
+
+    return `<tr>
+      <td>${r.empresa}</td>
+      <td>${r.categoria}${r.fiduciario ? ' <span style="color:#dc2626;font-size:10px">⚠️FID</span>' : ''}</td>
+      <td><b>${fmtMoney(r.monto)}</b></td>
+      <td>${badge}</td>
+      <td>${firmado}</td>
+      <td style="white-space:nowrap">${acciones}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="6" style="color:var(--muted)">Sin resultados para este filtro.</td></tr>`;
+}
+
+async function gobAvanzar(cxcId, nuevoEstado){
+  const comentario = nuevoEstado === 'pagada'
+    ? prompt('Referencia de pago (opcional):') || ''
+    : '';
+
+  const hoy = new Date().toISOString();
+  const updatePayload = { workflow_estado: nuevoEstado };
+  if (nuevoEstado === 'firmada')    { updatePayload.workflow_firmado_por = currentUser?.nombre || currentUser?.username || '—'; updatePayload.workflow_fecha_firma = hoy; }
+  if (nuevoEstado === 'autorizada') { updatePayload.workflow_autorizado_por = currentUser?.nombre || currentUser?.username || '—'; updatePayload.workflow_fecha_autorizacion = hoy; }
+
+  const { error } = await sb.from('fiscal_cxc_impuestos').update(updatePayload).eq('id', cxcId);
+  if (error){ alert('Error: ' + error.message); return; }
+
+  /* Escribir en fiscal_workflow (audit) */
+  const prev = gobDatos.find(r => r.id === cxcId);
+  await sb.from('fiscal_workflow').insert({
+    cxc_id: cxcId,
+    estado: nuevoEstado,
+    estado_anterior: prev?.workflow_estado || 'borrador',
+    comentario: comentario || null,
+    usuario_id: currentUserId || null,
+    usuario_nombre: currentUser?.nombre || currentUser?.username || null,
+    usuario_rol: currentUserRol || null,
+    monto_calculado: prev?.monto || null,
+    fundamento: 'Avance de workflow por usuario autorizado'
+  });
+
+  auditLog({ accion:'WORKFLOW', tabla:'fiscal_cxc_impuestos', registro_id: cxcId,
+    empresa: prev?.empresa, categoria: prev?.categoria,
+    input_json: { estado_anterior: prev?.workflow_estado || 'borrador' },
+    output_json: { estado_nuevo: nuevoEstado },
+    fundamento: 'Gobernanza — avance de estado'
+  });
+
+  gobDatos = gobDatos.map(r => r.id === cxcId ? { ...r, ...updatePayload } : r);
+  renderGobernanza();
+  mostrarToast(`✅ Obligación marcada como: ${GOB_ESTADOS[nuevoEstado]?.label || nuevoEstado}`);
+}
+
+async function gobRechazar(cxcId){
+  const motivo = prompt('Motivo del rechazo (obligatorio):');
+  if (!motivo) return;
+
+  const prev = gobDatos.find(r => r.id === cxcId);
+  await sb.from('fiscal_cxc_impuestos').update({ workflow_estado:'rechazada' }).eq('id', cxcId);
+  await sb.from('fiscal_workflow').insert({
+    cxc_id: cxcId, estado:'rechazada',
+    estado_anterior: prev?.workflow_estado || 'borrador',
+    comentario: motivo,
+    usuario_id: currentUserId || null,
+    usuario_nombre: currentUser?.nombre || currentUser?.username || null,
+    usuario_rol: currentUserRol || null,
+    fundamento: 'Rechazo: ' + motivo
+  });
+
+  gobDatos = gobDatos.map(r => r.id === cxcId ? { ...r, workflow_estado:'rechazada' } : r);
+  renderGobernanza();
+  mostrarToast('🔴 Obligación rechazada');
+}
+
+async function gobVerHistorial(cxcId, titulo){
+  const { data, error } = await sb.from('fiscal_workflow')
+    .select('*').eq('cxc_id', cxcId).order('creado_en', { ascending: true });
+  if (error){ alert('Error: ' + error.message); return; }
+
+  document.getElementById('gobHistTitulo').textContent = `📋 ${titulo}`;
+  const lista = document.getElementById('gobHistorialLista');
+  lista.innerHTML = (data||[]).map(h => {
+    const cfgAnterior = GOB_ESTADOS[h.estado_anterior] || { label: h.estado_anterior || '—', color:'#6b7280' };
+    const cfgNuevo   = GOB_ESTADOS[h.estado] || { label: h.estado, color:'#6b7280' };
+    const fecha = new Date(h.creado_en).toLocaleString('es-MX', { dateStyle:'short', timeStyle:'short' });
+    return `<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
+      <div style="font-size:18px;flex-shrink:0">📌</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600">
+          <span style="color:${cfgAnterior.color}">${cfgAnterior.label}</span>
+          → <span style="color:${cfgNuevo.color}">${cfgNuevo.label}</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:3px">
+          ${h.usuario_nombre || '—'} · ${h.usuario_rol || ''} · ${fecha}
+          ${h.comentario ? `<br><i>"${h.comentario}"</i>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('') || '<div style="color:var(--muted);font-size:13px">Sin historial registrado aún.</div>';
+
+  document.getElementById('gobHistorialPanel').style.display = 'block';
+  document.getElementById('gobHistorialPanel').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   OLA 2 · CONSOLIDACIÓN GRUPAL (Fase Ola2-C)
+   ═══════════════════════════════════════════════════════════ */
+
+async function cargarGrupo(){
+  try {
+    /* Intentar usar la vista fiscal_consolidado_grupo */
+    const { data, error } = await sb.from('fiscal_consolidado_grupo').select('*');
+
+    if (error || !data || !data.length) {
+      /* Fallback: calcular desde fiscal_cxc_impuestos directamente */
+      const { data: raw } = await sb.from('fiscal_cxc_impuestos').select('*');
+      if (!raw) return;
+      renderGrupoDesdeRaw(raw);
+      return;
+    }
+    renderGrupo(data);
+  } catch(e) {
+    console.warn('[grupo] Fallback a cálculo local:', e.message);
+    const { data: raw } = await sb.from('fiscal_cxc_impuestos').select('*');
+    if (raw) renderGrupoDesdeRaw(raw);
+  }
+}
+
+function renderGrupo(data){
+  /* KPIs globales */
+  const totalHist  = data.reduce((s,r) => s + Number(r.monto_historico||0), 0);
+  const totalFid   = data.reduce((s,r) => s + Number(r.monto_fiduciario_pendiente||0), 0);
+  const totalPlan  = data.reduce((s,r) => s + Number(r.monto_en_plan||0), 0);
+  const totalPagado= data.reduce((s,r) => s + Number(r.monto_pagado||0), 0);
+
+  document.getElementById('gkpiTotal').textContent       = fmtMoney(totalHist);
+  document.getElementById('gkpiTotalSub').textContent    = `${data.length} empresas · ${data.reduce((s,r)=>s+Number(r.total_obligaciones||0),0)} obligaciones`;
+  document.getElementById('gkpiFiduciario').textContent  = fmtMoney(totalFid);
+  document.getElementById('gkpiFiduciarioSub').textContent = `${data.reduce((s,r)=>s+Number(r.items_fiduciarios||0),0)} conceptos · Arts. 108-109 CFF`;
+  document.getElementById('gkpiPlan').textContent        = fmtMoney(totalPlan);
+  document.getElementById('gkpiPagado').textContent      = fmtMoney(totalPagado);
+
+  const tbody = document.getElementById('tblGrupo');
+  tbody.innerHTML = data.map(r => {
+    const wfResumen = `✅${r.items_autorizados||0} 🟣${r.items_firmados||0} ⚪${r.items_borrador||0}`;
+    const fidBadge = Number(r.monto_fiduciario_pendiente) > 0
+      ? `<span style="color:#dc2626;font-weight:700">${fmtMoney(r.monto_fiduciario_pendiente)}</span>`
+      : `<span style="color:var(--muted)">$0</span>`;
+    return `<tr>
+      <td><b>${r.empresa}</b></td>
+      <td style="text-align:center">${r.total_obligaciones}</td>
+      <td><b>${fmtMoney(r.monto_historico)}</b></td>
+      <td style="color:#dc2626">${fmtMoney(r.monto_pendiente)}</td>
+      <td style="color:#b45309">${fmtMoney(r.monto_en_plan)}</td>
+      <td style="color:#059669">${fmtMoney(r.monto_pagado)}</td>
+      <td>${fidBadge}</td>
+      <td style="font-size:11px">${wfResumen}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="8" style="color:var(--muted)">Sin datos.</td></tr>';
+}
+
+function renderGrupoDesdeRaw(raw){
+  /* Agrupa localmente cuando la vista no existe todavía */
+  const grupos = {};
+  raw.forEach(r => {
+    const emp = r.empresa || 'Sin empresa';
+    if (!grupos[emp]) grupos[emp] = { empresa:emp, total_obligaciones:0, monto_historico:0,
+      monto_pendiente:0, monto_en_plan:0, monto_pagado:0,
+      monto_fiduciario_pendiente:0, items_fiduciarios:0,
+      items_autorizados:0, items_firmados:0, items_borrador:0 };
+    const g = grupos[emp];
+    g.total_obligaciones++;
+    g.monto_historico += Number(r.monto||0);
+    if (r.estatus === 'Pendiente')       g.monto_pendiente += Number(r.monto||0);
+    if (r.estatus === 'En plan de pago') g.monto_en_plan   += Number(r.monto||0);
+    if (r.estatus === 'Pagado')          g.monto_pagado    += Number(r.monto||0);
+    if (r.fiduciario && r.estatus !== 'Pagado') {
+      g.monto_fiduciario_pendiente += Number(r.monto||0);
+      g.items_fiduciarios++;
+    }
+    const wf = r.workflow_estado || 'borrador';
+    if (wf === 'autorizada') g.items_autorizados++;
+    else if (wf === 'firmada') g.items_firmados++;
+    else g.items_borrador++;
+  });
+  renderGrupo(Object.values(grupos).sort((a,b) => b.monto_historico - a.monto_historico));
+}
+
+/* Helper toast reutilizable */
+function mostrarToast(msg, color='#002855'){
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${color};color:#fff;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25)`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
 bootstrapAuth();
 </script>
 <!-- ===================== MODAL ACCESORIOS FISCALES ===================== -->
