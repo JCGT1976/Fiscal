@@ -143,6 +143,76 @@ tr:last-child td{border-bottom:none}
 .cxc-controls .grp.grow{flex:1;min-width:220px}
 .cxc-controls .chips{display:flex;gap:6px;flex-wrap:wrap}
 .cxc-controls select{width:auto;min-width:200px}
+/* ═════ SEPARADORES DE AÑO ═════ */
+.rec-year-header {
+  margin: 20px 0 12px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #002855, #0057B8);
+  color: #fff;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 3px 10px rgba(0,40,85,.25);
+  page-break-after: avoid;
+  break-after: avoid;
+}
+.rec-year-header:first-child { margin-top: 0; }
+.rec-year-current {
+  background: linear-gradient(135deg, #059669, #10b981);
+  box-shadow: 0 3px 10px rgba(5,150,105,.3);
+}
+.rec-year-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rec-year-sub {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: .85;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  background: rgba(255,255,255,.15);
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+.rec-year-live {
+  font-size: 10px;
+  font-weight: 800;
+  background: #fff;
+  color: #059669;
+  padding: 3px 10px;
+  border-radius: 12px;
+  letter-spacing: .5px;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
+}
+.rec-year-metrics {
+  display: flex;
+  gap: 20px;
+  font-size: 12.5px;
+  flex-wrap: wrap;
+}
+.rec-year-metrics > div {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.rec-year-mlbl {
+  opacity: .85;
+  font-weight: 600;
+}
+
 /* ═════ TIMELINE EJECUTIVO — Recuperaciones IVA ═════ */
 .rec-timeline-body { display:flex; flex-direction:column; gap:14px; }
 
@@ -1140,7 +1210,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.12';
+const APP_VERSION   = '2026.07.17.13';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -3561,8 +3631,9 @@ function renderRecTimeline(){
     return;
   }
 
-  // Render de tarjetas
-  cont.innerHTML = semanasView.map(sem => {
+  // Render de tarjetas agrupadas por año
+  let currentYear = null;
+  const semanasHtml = semanasView.map(sem => {
     const totPresSem = sem.eventos.reduce((s,e)=>s+e.monto_presentado, 0);
     const totDevSem  = sem.eventos.reduce((s,e)=>s+e.monto_devuelto, 0);
     const nDep       = sem.eventos.filter(e => e.tipo === 'deposito').length;
@@ -3573,6 +3644,38 @@ function renderRecTimeline(){
     const tasa       = acc.accPres > 0 ? (acc.accDev / acc.accPres * 100) : 0;
     const delta      = deltaMap.get(sem.key) || 0;
     const esMejor    = sem.key === mejorSem && mejorMonto > 0;
+
+    // Separador de año (cuando cambia el año en el recorrido descendente)
+    let yearSeparator = '';
+    if (sem.year !== currentYear){
+      // Calcular métricas del año completo
+      const semanasDelAnio = semanas.filter(s => s.year === sem.year);
+      let anioPres = 0, anioDev = 0, anioDep = 0, anioPresCount = 0;
+      semanasDelAnio.forEach(s => {
+        s.eventos.forEach(ev => {
+          anioPres += ev.monto_presentado;
+          anioDev  += ev.monto_devuelto;
+          if (ev.tipo === 'deposito') anioDep++;
+          if (ev.tipo === 'presentacion') anioPresCount++;
+        });
+      });
+      const anioTasa = anioPres > 0 ? (anioDev/anioPres*100) : 0;
+      const esAnioActual = sem.year === new Date().getFullYear();
+      yearSeparator = `
+        <div class="rec-year-header ${esAnioActual?'rec-year-current':''}">
+          <div class="rec-year-title">
+            📅 ${sem.year} ${esAnioActual?'<span class="rec-year-live">EN CURSO</span>':''}
+            <span class="rec-year-sub">${semanasDelAnio.length} semana${semanasDelAnio.length>1?'s':''} con actividad</span>
+          </div>
+          <div class="rec-year-metrics">
+            <div><span class="rec-year-mlbl">📋 Presentado:</span> <b>${fmtMoney(anioPres)}</b> <span style="color:#94a3b8">(${anioPresCount})</span></div>
+            <div><span class="rec-year-mlbl">✅ Devuelto:</span> <b style="color:#059669">${fmtMoney(anioDev)}</b> <span style="color:#94a3b8">(${anioDep} dep.)</span></div>
+            <div><span class="rec-year-mlbl">📈 Tasa año:</span> <b style="color:${anioTasa>=50?'#059669':anioTasa>=20?'#f59e0b':anioTasa>0?'#f97316':'#94a3b8'}">${anioTasa.toFixed(1)}%</b></div>
+          </div>
+        </div>
+      `;
+      currentYear = sem.year;
+    }
 
     // Semáforo semanal
     let sem_color, sem_letra, sem_badge, sem_badge_txt;
@@ -3620,7 +3723,7 @@ function renderRecTimeline(){
       </div>
     `).join('');
 
-    return `
+    const cardHtml = `
       <div class="rec-week-card wk-${sem_color} ${esMejor?'wk-best':''}">
         <div class="rec-wk-head">
           <div class="rec-wk-title">
@@ -3666,8 +3769,12 @@ function renderRecTimeline(){
         <div class="rec-wk-events">${eventosHtml}</div>
       </div>
     `;
-  }).join('') +
-  (semanas.length > semanasView.length ? `<div style="padding:10px;color:var(--muted);font-size:12px;font-style:italic;text-align:center">… ${semanas.length - semanasView.length} semana(s) adicional(es) no mostradas · ajusta el filtro para ver más</div>` : '');
+
+    return yearSeparator + cardHtml;
+  }).join('');
+
+  cont.innerHTML = semanasHtml +
+    (semanas.length > semanasView.length ? `<div style="padding:10px;color:var(--muted);font-size:12px;font-style:italic;text-align:center">… ${semanas.length - semanasView.length} semana(s) adicional(es) no mostradas · ajusta el filtro para ver más</div>` : '');
 }
 
 /* ---------- IMPRESIÓN DEL TIMELINE ---------- */
