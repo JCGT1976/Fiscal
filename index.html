@@ -631,7 +631,7 @@ tr:last-child td{border-bottom:none}
     <!-- TIMELINE DE EVENTOS (log semanal) -->
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-        <h2 style="margin:0;font-size:15px">📅 Timeline — actividad semana a semana</h2>
+        <h2 style="margin:0;font-size:15px">📅 Timeline semanal — actividad histórica</h2>
         <div style="font-size:11.5px;color:var(--muted);font-weight:600" id="recLogResumen">—</div>
       </div>
       <div id="recTimeline" style="display:flex;flex-direction:column;gap:0;position:relative;padding-left:20px;border-left:2px solid var(--border)">
@@ -914,7 +914,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.9';
+const APP_VERSION   = '2026.07.17.10';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -3126,42 +3126,215 @@ function renderRecPeriodos(){
   }).join('');
 }
 
-function renderRecTimeline(){
-  const cont = document.getElementById('recTimeline');
-  document.getElementById('recLogResumen').textContent = recEventos.length+' evento(s) registrados';
-  if (recEventos.length === 0){
-    cont.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">Aún no hay eventos en la bitácora. Usa "+ Registrar gestión" para agregar el primero.</div>';
-    return;
-  }
-  cont.innerHTML = recEventos.slice(0,20).map(ev=>{
-    const meta = REC_ESTATUS_META[ev.estatus] || REC_ESTATUS_META.pendiente;
+/* ─────────────────────────────────────────────────────────────
+   TIMELINE SEMANAL — 100% derivado de los datos de recPeriodos
+   Genera eventos automáticamente a partir de f_presentacion,
+   f_deposito_prog y f_deposito_real. Agrupa por semana ISO 8601
+   y calcula acumulados históricos (presentado, devuelto, tasa).
+   Combina con gestiones manuales de fiscal_iva_log si existen.
+   ───────────────────────────────────────────────────────────── */
+
+// ISO week number (ISO 8601) — devuelve {year, week}
+function _recIsoWeek(dateStr){
+  const d = new Date(dateStr + 'T00:00:00Z');
+  if (isNaN(d)) return null;
+  const target = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const dayNr = (target.getUTCDay() + 6) % 7;
+  target.setUTCDate(target.getUTCDate() - dayNr + 3);
+  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
+  const dayDiff = (target - firstThursday) / 86400000;
+  const week = 1 + Math.round((dayDiff - ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+  return { year: target.getUTCFullYear(), week };
+}
+function _recWeekLabel(dateStr){
+  const iw = _recIsoWeek(dateStr);
+  if (!iw) return '—';
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const d = new Date(dateStr + 'T00:00:00Z');
+  return `Sem ${String(iw.week).padStart(2,'0')} — ${meses[d.getUTCMonth()]} ${iw.year}`;
+}
+
+function _recDerivarEventos(){
+  const eventos = [];
+  const hoyISO = new Date().toISOString().slice(0,10);
+
+  recPeriodos.forEach(p => {
+    // 1. Presentación
+    if (p.f_presentacion){
+      eventos.push({
+        fecha: p.f_presentacion,
+        tipo: 'presentacion',
+        icon: '📋',
+        titulo: 'Presentación solicitud',
+        periodo: p.periodo,
+        monto_presentado: Number(p.monto_solicitado||0),
+        monto_devuelto: 0,
+        color: '#0284c7',
+        detalle: `Solicitud de devolución IVA ${p.periodo} presentada al SAT.`,
+        auto: true
+      });
+    }
+    // 2. Depósito recibido
+    if (p.f_deposito_real){
+      eventos.push({
+        fecha: p.f_deposito_real,
+        tipo: 'deposito',
+        icon: '✅',
+        titulo: 'Depósito recibido',
+        periodo: p.periodo,
+        monto_presentado: 0,
+        monto_devuelto: Number(p.monto_devuelto||0),
+        color: 'var(--green)',
+        detalle: `IVA ${p.periodo} devuelto. ${p.dias_sat ? p.dias_sat+' días de proceso.' : ''}`,
+        auto: true
+      });
+    }
+    // 3. Depósito programado (aprobado sin depositar aún, o vencido)
+    if (p.f_deposito_prog && !p.f_deposito_real){
+      const vencido = p.f_deposito_prog < hoyISO;
+      eventos.push({
+        fecha: p.f_deposito_prog,
+        tipo: vencido ? 'dep_vencido' : 'aprobado',
+        icon: vencido ? '🔴' : '🔵',
+        titulo: vencido ? 'Depósito vencido' : 'Depósito programado por SAT',
+        periodo: p.periodo,
+        monto_presentado: 0,
+        monto_devuelto: 0,
+        color: vencido ? 'var(--red)' : '#0284c7',
+        detalle: vencido
+          ? `SAT programó depósito para ${p.f_deposito_prog} pero no ha ingresado. Monto aprobado: ${fmtMoney(p.monto_aprobado)}. Reclamar o presentar queja Prodecon.`
+          : `SAT programó depósito de ${fmtMoney(p.monto_aprobado)} para el ${p.f_deposito_prog}.`,
+        auto: true
+      });
+    }
+  });
+
+  // Combinar con gestiones manuales
+  recEventos.forEach(ev => {
+    const fecha = ev.f_compromiso || (ev.created_at ? String(ev.created_at).slice(0,10) : null);
+    if (!fecha) return;
     const catIcon = ev.categoria==='Depósito Recibido' ? '💰' :
                     ev.categoria==='Presentación Solicitud' ? '📋' :
                     ev.categoria==='Atender Requerimiento SAT' ? '⚠️' :
                     ev.categoria==='Seguimiento SAT' ? '🔍' :
                     ev.categoria==='Queja Prodecon' ? '⚖️' : '📌';
-    return `<div style="position:relative;padding:10px 0 10px 22px;border-bottom:1px solid var(--border)">
-      <div style="position:absolute;left:-27px;top:14px;width:12px;height:12px;border-radius:50%;background:${meta.color};border:2px solid var(--surface)"></div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:220px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">
-            <span style="font-size:12.5px;font-weight:700;color:var(--text)">${ev.destacado?'⭐ ':''}${catIcon} ${ev.categoria}</span>
-            <span style="font-size:10.5px;color:var(--muted);font-weight:600">${ev.semana}</span>
-            ${ev.periodos_iva ? `<span style="background:var(--surface2);color:var(--text);padding:1px 8px;border-radius:8px;font-size:10.5px;font-weight:600">${ev.periodos_iva}</span>` : ''}
+    eventos.push({
+      fecha,
+      tipo: 'manual',
+      icon: catIcon,
+      titulo: (ev.destacado?'⭐ ':'') + ev.categoria,
+      periodo: ev.periodos_iva || '',
+      monto_presentado: 0,
+      monto_devuelto: 0,
+      color: (REC_ESTATUS_META[ev.estatus] || REC_ESTATUS_META.pendiente).color,
+      detalle: ev.actividad + (ev.notas ? ` — ${ev.notas}` : '') + (ev.siguiente_accion && ev.siguiente_accion!=='-' ? ` → ${ev.siguiente_accion}` : ''),
+      monto_manual: Number(ev.monto||0),
+      responsable: ev.responsable,
+      estatus: ev.estatus,
+      auto: false
+    });
+  });
+
+  // Ordenar cronológicamente (más reciente primero)
+  eventos.sort((a,b)=> b.fecha.localeCompare(a.fecha));
+  return eventos;
+}
+
+function _recAgruparPorSemana(eventos){
+  // Agrupa preservando el orden (más reciente primero)
+  const map = new Map();
+  eventos.forEach(ev => {
+    const iw = _recIsoWeek(ev.fecha);
+    if (!iw) return;
+    const key = `${iw.year}-W${String(iw.week).padStart(2,'0')}`;
+    if (!map.has(key)) map.set(key, { key, year: iw.year, week: iw.week, label: _recWeekLabel(ev.fecha), eventos: [] });
+    map.get(key).eventos.push(ev);
+  });
+  return [...map.values()];
+}
+
+function renderRecTimeline(){
+  const cont = document.getElementById('recTimeline');
+  const eventos = _recDerivarEventos();
+
+  document.getElementById('recLogResumen').textContent =
+    `${eventos.length} evento(s) · ${eventos.filter(e=>e.auto).length} auto + ${eventos.filter(e=>!e.auto).length} manual(es)`;
+
+  if (eventos.length === 0){
+    cont.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">Sin eventos aún. Carga el Excel o registra fechas de presentación/depósito en los períodos.</div>';
+    return;
+  }
+
+  // Calcular acumulados cronológicos (más antiguo → más reciente)
+  const eventosCron = [...eventos].sort((a,b)=> a.fecha.localeCompare(b.fecha));
+  let accPres = 0, accDev = 0;
+  const accByFecha = new Map();
+  eventosCron.forEach(ev => {
+    accPres += ev.monto_presentado;
+    accDev  += ev.monto_devuelto;
+    accByFecha.set(ev, { accPres, accDev });
+  });
+
+  const semanas = _recAgruparPorSemana(eventos);
+  // Mostrar máx 12 semanas más recientes
+  const semanasView = semanas.slice(0, 12);
+
+  cont.innerHTML = semanasView.map(sem => {
+    // Totales de esta semana
+    const totPresSem = sem.eventos.reduce((s,e)=>s+e.monto_presentado, 0);
+    const totDevSem  = sem.eventos.reduce((s,e)=>s+e.monto_devuelto, 0);
+    // Acumulado al último evento cronológico de la semana
+    const ultimoEv = sem.eventos.slice().sort((a,b)=> b.fecha.localeCompare(a.fecha))[0];
+    const acc = accByFecha.get(ultimoEv) || { accPres: 0, accDev: 0 };
+    const tasa = acc.accPres > 0 ? (acc.accDev / acc.accPres * 100) : 0;
+
+    const eventosHtml = sem.eventos.map(ev => `
+      <div style="position:relative;padding:8px 0 8px 22px;border-bottom:1px dashed var(--border)">
+        <div style="position:absolute;left:-27px;top:12px;width:12px;height:12px;border-radius:50%;background:${ev.color};border:2px solid var(--surface);box-shadow:0 0 0 1px var(--border)"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">
+              <span style="font-size:12.5px;font-weight:700;color:var(--text)">${ev.icon} ${ev.titulo}</span>
+              ${ev.periodo ? `<span style="background:var(--surface2);color:var(--text);padding:1px 8px;border-radius:8px;font-size:10.5px;font-weight:600">${ev.periodo}</span>` : ''}
+              ${ev.auto ? '<span style="background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:6px;font-size:9.5px;font-weight:700">AUTO</span>' : '<span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:6px;font-size:9.5px;font-weight:700">MANUAL</span>'}
+              <span style="font-size:10.5px;color:var(--muted)">${ev.fecha}</span>
+            </div>
+            <div style="font-size:12px;color:var(--muted)">${ev.detalle}</div>
           </div>
-          <div style="font-size:12.5px;color:var(--text);margin-bottom:3px">${ev.actividad}</div>
-          ${ev.siguiente_accion && ev.siguiente_accion !== '-' ? `<div style="font-size:11.5px;color:var(--muted);margin-top:3px">→ ${ev.siguiente_accion}</div>` : ''}
-          ${ev.notas ? `<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:3px">${ev.notas}</div>` : ''}
-        </div>
-        <div style="text-align:right;min-width:110px">
-          ${Number(ev.monto)>0 ? `<div style="font-size:13px;font-weight:700;color:var(--text)">${fmtMoney(ev.monto)}</div>` : ''}
-          <div style="font-size:10.5px;color:${meta.color};font-weight:700;margin-top:2px">${meta.icon} ${ev.estatus}</div>
-          ${ev.f_compromiso ? `<div style="font-size:10.5px;color:var(--muted);margin-top:2px">${ev.f_compromiso}</div>` : ''}
-          <div style="font-size:10px;color:var(--muted);margin-top:2px">${ev.responsable||''}</div>
+          <div style="text-align:right;min-width:110px">
+            ${ev.monto_presentado>0 ? `<div style="font-size:12px;color:#0284c7;font-weight:700">📋 ${fmtMoney(ev.monto_presentado)}</div>` : ''}
+            ${ev.monto_devuelto>0 ? `<div style="font-size:13px;color:var(--green);font-weight:800">✅ ${fmtMoney(ev.monto_devuelto)}</div>` : ''}
+            ${(ev.monto_manual||0)>0 ? `<div style="font-size:12px;color:var(--text);font-weight:700">${fmtMoney(ev.monto_manual)}</div>` : ''}
+            ${ev.responsable ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">${ev.responsable}</div>` : ''}
+          </div>
         </div>
       </div>
-    </div>`;
-  }).join('');
+    `).join('');
+
+    // Colores de tasa (semáforo)
+    const tasaColor = tasa >= 50 ? 'var(--green)' : tasa >= 20 ? 'var(--yellow)' : tasa > 0 ? '#f97316' : 'var(--muted)';
+
+    return `
+      <div style="margin-bottom:14px">
+        <!-- Cabecera de semana con métricas -->
+        <div style="position:relative;padding:10px 14px 10px 22px;background:linear-gradient(90deg,var(--surface2),transparent);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;margin-left:-22px;margin-bottom:2px">
+          <div style="position:absolute;left:-6px;top:14px;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);box-shadow:0 0 0 2px var(--accent)"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <div style="font-size:13px;font-weight:800;color:var(--text)">📅 ${sem.label}</div>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px">
+              ${totPresSem>0 ? `<span style="color:#0284c7"><b>📋 Presentado:</b> ${fmtMoney(totPresSem)}</span>` : ''}
+              ${totDevSem>0 ? `<span style="color:var(--green)"><b>✅ Devuelto:</b> ${fmtMoney(totDevSem)}</span>` : ''}
+              <span style="color:var(--muted)"><b>Σ Acum Pres:</b> ${fmtMoney(acc.accPres)}</span>
+              <span style="color:var(--muted)"><b>Σ Acum Dev:</b> ${fmtMoney(acc.accDev)}</span>
+              <span style="color:${tasaColor};font-weight:800">📈 ${tasa.toFixed(1)}%</span>
+            </div>
+          </div>
+        </div>
+        <!-- Eventos de la semana -->
+        ${eventosHtml}
+      </div>
+    `;
+  }).join('') + (semanas.length > 12 ? `<div style="padding:8px;color:var(--muted);font-size:12px;font-style:italic">… ${semanas.length-12} semana(s) anteriores no mostradas</div>` : '');
 }
 
 function renderRecProyeccion(){
