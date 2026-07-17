@@ -1140,7 +1140,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.11';
+const APP_VERSION   = '2026.07.17.12';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -3584,7 +3584,7 @@ function renderRecTimeline(){
     // Frase resumen automática
     let frase;
     if (nVenc > 0) {
-      frase = `⚠️ Esta semana venció ${nVenc} depósito${nVenc>1?'s':''} sin cobrar. Requiere acción inmediata (Prodecon o seguimiento SAT).`;
+      frase = `⚠️ En esta semana venció ${nVenc} depósito${nVenc>1?'s':''} sin cobrar. Requiere acción inmediata (Prodecon o seguimiento SAT).`;
     } else if (totDevSem > 0 && totPresSem > 0) {
       frase = `Se recuperaron <span class="rec-wk-money">${fmtMoney(totDevSem)}</span> en ${nDep} depósito${nDep>1?'s':''} y se presentaron ${nPres} nueva${nPres>1?'s':''} solicitud${nPres>1?'es':''} por <span class="rec-wk-money-blue">${fmtMoney(totPresSem)}</span>.`;
     } else if (totDevSem > 0) {
@@ -3592,14 +3592,14 @@ function renderRecTimeline(){
     } else if (totPresSem > 0) {
       frase = `Se presentaron ${nPres} solicitud${nPres>1?'es':''} de devolución al SAT por <span class="rec-wk-money-blue">${fmtMoney(totPresSem)}</span>. Esperando respuesta.`;
     } else {
-      frase = `Semana sin actividad. En espera de respuesta o programación de trámites.`;
+      frase = `Semana sin actividad registrada. En espera de respuesta o programación de trámites.`;
     }
 
-    // Delta vs semana anterior
+    // Delta vs semana previa con actividad (cronológica)
     let deltaHtml;
-    if (delta > 0) deltaHtml = `<div class="rec-wk-metric-delta up">▲ +${fmtMoney(delta)} vs semana anterior</div>`;
-    else if (delta < 0) deltaHtml = `<div class="rec-wk-metric-delta down">▼ ${fmtMoney(delta)} vs semana anterior</div>`;
-    else deltaHtml = `<div class="rec-wk-metric-delta eq">— sin cambio vs semana anterior</div>`;
+    if (delta > 0) deltaHtml = `<div class="rec-wk-metric-delta up">▲ +${fmtMoney(delta)} vs semana previa con actividad</div>`;
+    else if (delta < 0) deltaHtml = `<div class="rec-wk-metric-delta down">▼ ${fmtMoney(delta)} vs semana previa con actividad</div>`;
+    else deltaHtml = `<div class="rec-wk-metric-delta eq">— sin cambio vs semana previa</div>`;
 
     // Lista de eventos de la semana
     const eventosHtml = sem.eventos.slice().sort((a,b)=> b.fecha.localeCompare(a.fecha)).map(ev => `
@@ -3640,12 +3640,12 @@ function renderRecTimeline(){
 
         <div class="rec-wk-metrics">
           <div class="rec-wk-metric">
-            <div class="rec-wk-metric-lbl">📋 Presentado esta semana</div>
+            <div class="rec-wk-metric-lbl">📋 Presentado en la semana</div>
             <div class="rec-wk-metric-val" style="color:${totPresSem>0?'#0284c7':'#94a3b8'}">${fmtMoney(totPresSem)}</div>
             <div class="rec-wk-metric-delta eq">${nPres} solicitud${nPres!==1?'es':''}</div>
           </div>
           <div class="rec-wk-metric">
-            <div class="rec-wk-metric-lbl">✅ Devuelto esta semana</div>
+            <div class="rec-wk-metric-lbl">✅ Devuelto en la semana</div>
             <div class="rec-wk-metric-val" style="color:${totDevSem>0?'#10b981':'#94a3b8'}">${fmtMoney(totDevSem)}</div>
             ${deltaHtml}
           </div>
