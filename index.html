@@ -186,6 +186,9 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 
+  <!-- ═══════════ BANNERS LEGALES (fiscal_legal_updates · alerta_activa=true) ═══════════ -->
+  <div id="legalBannersZone" style="margin-bottom:14px;display:flex;flex-direction:column;gap:8px"></div>
+
   <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
     <div class="kpi-card">
       <div class="kpi-label" data-i18n="kpi1_label">Próximo vencimiento SAT</div>
@@ -551,7 +554,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.2';
+const APP_VERSION   = '2026.07.17.3';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -797,8 +800,108 @@ async function cargarTodo(){
   await Promise.all([
     cargarCxc(),
     cargarImpuestos(),
+    cargarBibliotecaLegal(),
   ]);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   BIBLIOTECA LEGAL VIVA — fiscal_legal_updates (Fase D · Ola 1)
+
+   Lee las tasas vigentes de Supabase y:
+   1. Actualiza INPC_FACTOR y tasas de recargos con valores reales
+      cuando la tabla tiene registros vigentes.
+   2. Muestra banners de alerta en la zona #legalBannersZone
+      cuando alerta_activa = true (p.ej. estímulo LIF 2026).
+   3. Guarda las tasas en window.__tasasVigentes para que
+      calcDeudaActualizada las use sin hardcoding.
+   Si la tabla no responde (error de permisos o no existe),
+   falla silenciosamente usando los valores hardcoded como
+   fallback — la app nunca se rompe.
+   ═══════════════════════════════════════════════════════════ */
+window.__tasasVigentes = null;
+
+async function cargarBibliotecaLegal(){
+  try {
+    const hoy = new Date().toISOString().slice(0,10);
+    const { data, error } = await sb
+      .from('fiscal_legal_updates')
+      .select('*')
+      .or(`vigencia_hasta.is.null,vigencia_hasta.gte.${hoy}`)
+      .gte('vigencia_desde', '2020-01-01')
+      .order('vigencia_desde', { ascending: false });
+
+    if (error || !data || !data.length) return;
+
+    /* ── 1. Extraer tasas vigentes y sobrescribir constantes en memoria ── */
+    const tasas = {};
+    data.forEach(r => { tasas[r.concepto] = r.valor; });
+    window.__tasasVigentes = tasas;
+
+    /* Parsear tasa mora federal (formato "2.07%") */
+    const moraFedStr = tasas['recargo_mora_federal'];
+    if (moraFedStr) {
+      const val = parseFloat(moraFedStr) / 100;
+      if (val > 0) window.__tasaMoraFederal = val;
+    }
+    const moraBCStr = tasas['recargo_mora_bc'];
+    if (moraBCStr) {
+      const val = parseFloat(moraBCStr) / 100;
+      if (val > 0) window.__tasaMoraBC = val;
+    }
+
+    /* ── 2. Renderizar banners para alertas activas ── */
+    const zona = document.getElementById('legalBannersZone');
+    if (!zona) return;
+    zona.innerHTML = '';
+
+    const alertas = data.filter(r => r.alerta_activa);
+    alertas.forEach(r => {
+      const div = document.createElement('div');
+      div.style.cssText = [
+        'display:flex;align-items:flex-start;gap:12px',
+        'background:linear-gradient(135deg,#fffbeb,#fef9e0)',
+        'border:1.5px solid #fbbf24;border-left:4px solid #d97706',
+        'border-radius:10px;padding:12px 16px;font-size:13px',
+        'animation:fadeInDown .35s ease'
+      ].join(';');
+
+      const icono = r.concepto.includes('estimulo') || r.concepto.includes('lif') ? '🎁' :
+                    r.concepto.includes('riesgo') || r.concepto.includes('penal') ? '⚠️' : '📋';
+
+      div.innerHTML = `
+        <span style="font-size:20px;flex-shrink:0;margin-top:1px">${icono}</span>
+        <div style="flex:1">
+          <div style="font-weight:700;color:#92400e;margin-bottom:3px">${r.descripcion}</div>
+          <div style="color:#78350f;font-size:12px;line-height:1.5">
+            <b>Valor:</b> ${r.valor} &nbsp;·&nbsp;
+            <b>Fundamento:</b> ${r.fundamento}
+            ${r.vigencia_hasta ? ` &nbsp;·&nbsp; <b>Vigente hasta:</b> ${r.vigencia_hasta}` : ''}
+          </div>
+        </div>
+        <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;cursor:pointer;color:#92400e;font-size:16px;line-height:1;flex-shrink:0;opacity:.7">✕</button>`;
+      zona.appendChild(div);
+    });
+
+    /* Badge en el header si hay tasas actualizadas */
+    if (data.length > 0) {
+      setSyncOk();
+      const syncEl = document.getElementById('syncTxt');
+      if (syncEl) syncEl.textContent = `Conectado · ${data.length} tasas vigentes`;
+    }
+
+  } catch(e) {
+    console.warn('[biblioteca_legal] Usando tasas hardcoded:', e.message);
+  }
+}
+
+/* ── Animación fadeInDown para los banners ── */
+(function(){
+  if (document.getElementById('legalBannerStyle')) return;
+  const s = document.createElement('style');
+  s.id = 'legalBannerStyle';
+  s.textContent = `@keyframes fadeInDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`;
+  document.head.appendChild(s);
+})();
 
 /* ================= CxC FISCAL (semáforo de riesgo) =================
    Cartera de impuestos por empresa/categoría extraída de la cédula
@@ -920,7 +1023,9 @@ function calcDeudaActualizada(datos) {
       (hoy.getFullYear() - origen.getFullYear()) * 12 + (hoy.getMonth() - origen.getMonth()),
       60
     );
-    const tasa      = (r.categoria||'').includes('ISN') ? 0.0225 : 0.0207;
+    const tasa      = (r.categoria||'').includes('ISN')
+      ? (window.__tasaMoraBC      || 0.0225)
+      : (window.__tasaMoraFederal || 0.0207);
     const montoAct  = monto * factor;
     const recargos  = montoAct * tasa * Math.max(meses, 0);
     totalDeuda     += montoAct + recargos;
