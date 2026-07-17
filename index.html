@@ -255,8 +255,154 @@ tr:last-child td{border-bottom:none}
               data-i18n="btn_cargar_excel">
         📤 Cargar Excel
       </button>
+      <button id="btnNuevaObligacion" onclick="abrirModalNuevaObligacion()"
+              style="display:none;background:var(--surface);color:var(--accent);border:1.5px solid var(--accent);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer">
+        ➕ Nueva obligación
+      </button>
       <input type="file" id="inputExcelCxc" accept=".xlsx,.xls" style="display:none"
              onchange="if(this.files[0]){procesarExcelCxc(this.files[0]);this.value='';}">
+    </div>
+
+    <!-- ═══════════ MODAL: Nueva obligación CxC ═══════════ -->
+    <div id="modalNuevaObligacion" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center">
+      <div style="background:var(--bg);border-radius:16px;padding:28px 28px 24px;width:min(580px,94vw);max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <h3 style="margin:0;font-size:16px;font-weight:700">➕ Nueva obligación fiscal</h3>
+          <button onclick="cerrarModalNuevaObligacion()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1">✕</button>
+        </div>
+
+        <!-- Fila 1: Empresa + Categoría -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">EMPRESA *</label>
+            <select id="nob_empresa" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
+              <option value="">Selecciona…</option>
+              <option>Internacional</option>
+              <option>Comercial</option>
+              <option>Autobot</option>
+              <option>Ariitranst</option>
+              <option>Boughts</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">CATEGORÍA *</label>
+            <select id="nob_categoria" onchange="nobCategoriaCambia(this.value)" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
+              <option value="">Selecciona…</option>
+              <option>ISR Propio</option>
+              <option>ISR Retenido a Empleados</option>
+              <option>ISR Retenido a Terceros</option>
+              <option>IVA</option>
+              <option>IVA Retenido a Terceros</option>
+              <option>IMSS / Seguridad Social</option>
+              <option>INFONAVIT / RCV</option>
+              <option>ISN Estatal</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fiduciario badge (se muestra automático) -->
+        <div id="nob_fiduciario_badge" style="display:none;background:#fef3cd;border:1px solid #fbbf24;border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:12.5px;color:#92400e">
+          ⚠️ <b>Concepto fiduciario</b> — Retención no enterada. Riesgo penal arts. 108-109 CFF. Prioridad máxima.
+        </div>
+
+        <!-- Fila 2: Monto + Origen -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">MONTO HISTÓRICO (MXN) *</label>
+            <input id="nob_monto" type="number" min="0" step="0.01" placeholder="0.00"
+                   style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">ORIGEN</label>
+            <select id="nob_origen" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
+              <option value="SAT">SAT</option>
+              <option value="IMSS">IMSS</option>
+              <option value="INFONAVIT">INFONAVIT</option>
+              <option value="Estatal">Estatal (BC)</option>
+              <option value="Manual">Manual</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fila 3: Año inicio + Año fin -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">AÑO INICIO *</label>
+            <input id="nob_anio_inicio" type="number" min="2020" max="2030" placeholder="2023"
+                   style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">AÑO FIN</label>
+            <input id="nob_anio_fin" type="number" min="2020" max="2030" placeholder="2026"
+                   style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;box-sizing:border-box">
+          </div>
+        </div>
+
+        <!-- Fila 4: Mes exigible + Año exigible -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">
+              MES EXIGIBLE
+              <span style="font-weight:400;color:var(--muted)"> — para cálculo preciso de recargos</span>
+            </label>
+            <select id="nob_mes_exigibilidad" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
+              <option value="">No especificado (estimado)</option>
+              <option value="1">Enero</option><option value="2">Febrero</option>
+              <option value="3">Marzo</option><option value="4">Abril</option>
+              <option value="5">Mayo</option><option value="6">Junio</option>
+              <option value="7">Julio</option><option value="8">Agosto</option>
+              <option value="9">Septiembre</option><option value="10">Octubre</option>
+              <option value="11">Noviembre</option><option value="12">Diciembre</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">AÑO EXIGIBLE</label>
+            <input id="nob_anio_exigibilidad" type="number" min="2020" max="2030" placeholder="2023"
+                   style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;box-sizing:border-box">
+          </div>
+        </div>
+
+        <!-- Fila 5: Estatus + Notas -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">ESTATUS</label>
+            <select id="nob_estatus" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
+              <option value="Pendiente">Pendiente</option>
+              <option value="En plan de pago">En plan de pago</option>
+              <option value="Pagado">Pagado</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">NOTAS</label>
+            <input id="nob_notas" type="text" placeholder="Ej. convenio IMSS jul-2026"
+                   style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;box-sizing:border-box">
+          </div>
+        </div>
+
+        <!-- Preview recargos estimados -->
+        <div id="nob_preview" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px">
+          <div style="font-weight:600;margin-bottom:8px;font-size:12px;color:var(--muted);letter-spacing:.05em">ESTIMADO DE ACCESORIOS AL DÍA DE HOY</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+            <div><div style="font-size:11px;color:var(--muted)">Monto histórico</div><div id="nob_prev_hist" style="font-weight:700;font-size:15px">—</div></div>
+            <div><div style="font-size:11px;color:var(--muted)">Actualización INPC</div><div id="nob_prev_act" style="font-weight:700;font-size:15px;color:#185fa5">—</div></div>
+            <div><div style="font-size:11px;color:var(--muted)">Recargos + total</div><div id="nob_prev_total" style="font-weight:700;font-size:15px;color:#dc2626">—</div></div>
+          </div>
+          <div id="nob_prev_nota" style="margin-top:8px;font-size:11px;color:var(--muted)"></div>
+        </div>
+
+        <!-- Botones -->
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button onclick="cerrarModalNuevaObligacion()" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-weight:500;cursor:pointer">
+            Cancelar
+          </button>
+          <button onclick="calcularPreviewNob()" style="padding:10px 20px;border-radius:8px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer">
+            🧮 Calcular
+          </button>
+          <button onclick="guardarNuevaObligacion()" style="padding:10px 22px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:13px;font-weight:700;cursor:pointer">
+            💾 Guardar
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -405,7 +551,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.1';
+const APP_VERSION   = '2026.07.17.2';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -453,6 +599,11 @@ async function bootstrapAuth() {
           if (currentUserRol === 'admin_master' || currentUserRol === 'cohost') {
             const btn = document.getElementById('btnCargarExcel');
             if (btn) btn.style.display = 'inline-flex';
+          }
+          /* Mostrar botón Nueva obligación a admin_master, admin y cohost */
+          if (['admin_master','admin','cohost'].includes(currentUserRol)) {
+            const btnNob = document.getElementById('btnNuevaObligacion');
+            if (btnNob) btnNob.style.display = 'inline-flex';
           }
         }
       } catch(e) { console.warn('Sin datos de usuario:', e); }
@@ -819,6 +970,137 @@ let cxcFiltroSemaforo = '';
 function cxcFiltrarStatus(code){
   cxcFiltroSemaforo = (cxcFiltroSemaforo === code) ? '' : code;
   renderCxc();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL — Nueva obligación CxC (Fase C · Ola 1)
+   Permite registrar manualmente una obligación con todos los
+   campos del schema ampliado: empresa, categoria, monto,
+   origen, anio_inicio, anio_fin, mes_exigibilidad,
+   anio_exigibilidad, estatus, notas, fiduciario.
+   Incluye preview de accesorios estimados antes de guardar.
+   ═══════════════════════════════════════════════════════════ */
+
+const NOB_FIDUCIARIOS = new Set([
+  'ISR Retenido a Empleados','ISR Retenido a Terceros','IVA Retenido a Terceros',
+  'IMSS / Seguridad Social'
+]);
+const NOB_ORIGEN_DEFAULT = {
+  'ISR Propio':'SAT','ISR Retenido a Empleados':'SAT','ISR Retenido a Terceros':'SAT',
+  'IVA':'SAT','IVA Retenido a Terceros':'SAT',
+  'IMSS / Seguridad Social':'IMSS','INFONAVIT / RCV':'INFONAVIT','ISN Estatal':'Estatal'
+};
+
+function abrirModalNuevaObligacion(){
+  const m = document.getElementById('modalNuevaObligacion');
+  m.style.display = 'flex';
+  /* Pre-rellenar año exigible con año actual */
+  const hoy = new Date();
+  document.getElementById('nob_anio_inicio').value     = hoy.getFullYear();
+  document.getElementById('nob_anio_fin').value        = hoy.getFullYear();
+  document.getElementById('nob_anio_exigibilidad').value = hoy.getFullYear();
+  document.getElementById('nob_preview').style.display = 'none';
+}
+
+function cerrarModalNuevaObligacion(){
+  document.getElementById('modalNuevaObligacion').style.display = 'none';
+  ['nob_empresa','nob_categoria','nob_monto','nob_notas'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  document.getElementById('nob_mes_exigibilidad').value = '';
+  document.getElementById('nob_estatus').value = 'Pendiente';
+  document.getElementById('nob_fiduciario_badge').style.display = 'none';
+  document.getElementById('nob_preview').style.display = 'none';
+}
+
+function nobCategoriaCambia(cat){
+  const badge = document.getElementById('nob_fiduciario_badge');
+  badge.style.display = NOB_FIDUCIARIOS.has(cat) ? 'block' : 'none';
+  /* Auto-seleccionar origen según categoría */
+  const origenEl = document.getElementById('nob_origen');
+  if(origenEl && NOB_ORIGEN_DEFAULT[cat]) origenEl.value = NOB_ORIGEN_DEFAULT[cat];
+}
+
+function calcularPreviewNob(){
+  const monto   = parseFloat(document.getElementById('nob_monto').value) || 0;
+  const cat     = document.getElementById('nob_categoria').value;
+  const mesRaw  = document.getElementById('nob_mes_exigibilidad').value;
+  const anioRaw = document.getElementById('nob_anio_exigibilidad').value;
+  if(!monto || !cat){ alert('Ingresa al menos Categoría y Monto para calcular.'); return; }
+
+  const hoy     = new Date();
+  const mes     = mesRaw  ? parseInt(mesRaw)  - 1 : 0;  // 0-indexed
+  const anio    = anioRaw ? parseInt(anioRaw)     : (parseInt(document.getElementById('nob_anio_inicio').value) || 2023);
+  const esEstimado = !mesRaw || !anioRaw;
+  const factor  = INPC_FACTOR[anio] || 1.138;
+  const origen  = new Date(anio, mes, 1);
+  const meses   = Math.min(
+    (hoy.getFullYear()-origen.getFullYear())*12 + (hoy.getMonth()-origen.getMonth()), 60
+  );
+  const tasa    = cat.includes('ISN') ? 0.0225 : 0.0207;
+  const montoAct= monto * factor;
+  const recargos= montoAct * tasa * Math.max(meses, 0);
+  const total   = montoAct + recargos;
+
+  document.getElementById('nob_prev_hist').textContent  = fmtMoney(monto);
+  document.getElementById('nob_prev_act').textContent   = fmtMoney(montoAct - monto) + ' (×' + factor.toFixed(3) + ')';
+  document.getElementById('nob_prev_total').textContent = fmtMoney(recargos) + ' · Total: ' + fmtMoney(total);
+  document.getElementById('nob_prev_nota').textContent  =
+    (esEstimado ? '⚠️ Estimado (sin mes/año exigible exacto) · ' : '') +
+    `${meses} meses de mora · ${(tasa*100).toFixed(2)}%/mes · Arts. 17-A y 21 CFF`;
+  document.getElementById('nob_preview').style.display = 'block';
+}
+
+async function guardarNuevaObligacion(){
+  const empresa  = document.getElementById('nob_empresa').value;
+  const cat      = document.getElementById('nob_categoria').value;
+  const monto    = parseFloat(document.getElementById('nob_monto').value);
+  const anioIni  = parseInt(document.getElementById('nob_anio_inicio').value);
+
+  if(!empresa || !cat || !monto || !anioIni){
+    alert('Completa los campos obligatorios: Empresa, Categoría, Monto y Año inicio.');
+    return;
+  }
+
+  const anioFin  = parseInt(document.getElementById('nob_anio_fin').value) || anioIni;
+  const mesEx    = document.getElementById('nob_mes_exigibilidad').value;
+  const anioEx   = document.getElementById('nob_anio_exigibilidad').value;
+  const origen   = document.getElementById('nob_origen').value;
+  const estatus  = document.getElementById('nob_estatus').value;
+  const notas    = document.getElementById('nob_notas').value.trim();
+  const fiduciario = NOB_FIDUCIARIOS.has(cat);
+
+  const payload = {
+    empresa, categoria: cat, monto, fiduciario,
+    anio_inicio: anioIni, anio_fin: anioFin,
+    mes_exigibilidad:  mesEx  ? parseInt(mesEx)  : null,
+    anio_exigibilidad: anioEx ? parseInt(anioEx) : null,
+    origen: origen || 'Manual',
+    estatus, notas: notas || null,
+    updated_at: new Date().toISOString()
+  };
+
+  const { error } = await sb.from('fiscal_cxc_impuestos').insert(payload);
+  if(error){ alert('Error al guardar: ' + error.message); return; }
+
+  auditLog({
+    accion: 'NUEVA_OBLIGACION',
+    tabla: 'fiscal_cxc_impuestos',
+    empresa, categoria: cat,
+    input_json: payload,
+    output_json: { resultado: 'INSERT OK' },
+    fundamento: 'Registro manual de obligación fiscal'
+  });
+
+  cerrarModalNuevaObligacion();
+  await cargarCxc();
+  /* Toast de confirmación */
+  const toast = document.createElement('div');
+  toast.textContent = '✅ Obligación registrada correctamente';
+  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#002855;color:#fff;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25)';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
 }
 
 async function cxcCambiarEstatus(id, nuevoEstatus){
