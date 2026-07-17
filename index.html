@@ -210,6 +210,7 @@ tr:last-child td{border-bottom:none}
   <div class="nav-tabs">
     <button class="nav-tab active" data-view="cxc" data-i18n="tab_cxc" onclick="showView('cxc')">🚦 CxC Fiscal</button>
     <button class="nav-tab" data-view="impuestos" data-i18n="tab_imp" onclick="showView('impuestos')">🧮 Cálculo de Impuestos</button>
+    <button class="nav-tab" data-view="recuperaciones" data-i18n="tab_rec" onclick="showView('recuperaciones');cargarRecuperaciones()">💸 Recuperaciones IVA</button>
     <button class="nav-tab" data-view="gobernanza" id="tabGobernanza" style="display:none" onclick="showView('gobernanza');cargarGobernanza()">🔐 Gobernanza</button>
     <button class="nav-tab" data-view="grupo" id="tabGrupo" onclick="showView('grupo');cargarGrupo()">🏢 Grupo</button>
     <button class="nav-tab" data-view="inteligencia" id="tabInteligencia" style="display:none" onclick="showView('inteligencia');cargarInteligencia()">🧠 Inteligencia</button>
@@ -494,8 +495,157 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 
-  <!-- ═══════════ VISTA: GOBERNANZA (Ola 2) ═══════════ -->
-  <div class="view" id="view-gobernanza">
+  <!-- ═══════════ VISTA: RECUPERACIONES IVA (sub-módulo) ═══════════ -->
+  <div class="view" id="view-recuperaciones">
+
+    <!-- Header: contexto + selector de empresa -->
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+        <div>
+          <h2 style="margin:0">💸 Recuperaciones IVA — Devoluciones SAT</h2>
+          <div class="desc" style="margin-top:6px">Seguimiento mensual de solicitudes de devolución de IVA a favor. Base: art. 22 CFF. Alertas por depósitos vencidos, requerimientos SAT y riesgo de prescripción.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <select id="recEmpresa" onchange="cargarRecuperaciones()" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:600">
+            <option value="Internacional" selected>🏭 Internacional</option>
+            <option value="Ariitranst">🚛 Ariitranst</option>
+            <option value="Autobot">🏭 Autobot</option>
+            <option value="Boughts">🛒 Boughts</option>
+            <option value="Comercial">🛒 Comercial</option>
+          </select>
+          <button onclick="abrirModalNuevoEvento()" style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer">+ Registrar gestión</button>
+          <button onclick="abrirModalNuevoPeriodo()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">+ Nuevo período</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs superiores (6 tarjetas estilo Stripe/Linear) -->
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px">
+      <div class="kpi-card" style="border-left:3px solid #002855">
+        <div class="kpi-label">💰 A Favor Total</div>
+        <div class="kpi-value" id="recKpiFavor" style="font-size:20px;margin-top:4px;color:#002855">$0</div>
+        <div class="kpi-sub" id="recKpiFavorSub" style="margin-top:6px">— períodos acumulados</div>
+      </div>
+      <div class="kpi-card" style="border-left:3px solid var(--green)">
+        <div class="kpi-label">✅ Devuelto</div>
+        <div class="kpi-value" id="recKpiDevuelto" style="font-size:20px;margin-top:4px;color:var(--green)">$0</div>
+        <div class="kpi-sub" id="recKpiDevueltoSub" style="margin-top:6px">Recibido en cuenta bancaria</div>
+      </div>
+      <div class="kpi-card" style="border-left:3px solid #0284c7">
+        <div class="kpi-label">🔵 Aprobado — Dep. Pdte</div>
+        <div class="kpi-value" id="recKpiAprobado" style="font-size:20px;margin-top:4px;color:#0284c7">$0</div>
+        <div class="kpi-sub" id="recKpiAprobadoSub" style="margin-top:6px">Aprobado sin depositar</div>
+      </div>
+      <div class="kpi-card" style="border-left:3px solid var(--yellow)">
+        <div class="kpi-label">🟡 En Proceso SAT</div>
+        <div class="kpi-value" id="recKpiProceso" style="font-size:20px;margin-top:4px;color:var(--yellow)">$0</div>
+        <div class="kpi-sub" id="recKpiProcesoSub" style="margin-top:6px">Solicitudes en revisión</div>
+      </div>
+      <div class="kpi-card" style="border-left:3px solid var(--muted)">
+        <div class="kpi-label">📋 No Solicitado</div>
+        <div class="kpi-value" id="recKpiNoSol" style="font-size:20px;margin-top:4px;color:var(--muted)">$0</div>
+        <div class="kpi-sub" id="recKpiNoSolSub" style="margin-top:6px">Sin trámite presentado</div>
+      </div>
+      <div class="kpi-card" style="border-left:3px solid var(--accent)">
+        <div class="kpi-label">📈 Tasa Recuperación</div>
+        <div class="kpi-value" id="recKpiTasa" style="font-size:20px;margin-top:4px;color:var(--accent)">0%</div>
+        <div class="kpi-sub" id="recKpiTasaSub" style="margin-top:6px">Devuelto / A Favor total</div>
+      </div>
+    </div>
+
+    <!-- ALERTAS ACTIVAS -->
+    <div class="card" style="margin-bottom:16px;border-left:4px solid var(--red)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0;font-size:15px">🚨 Alertas activas</h2>
+        <div style="font-size:11.5px;color:var(--muted);font-weight:600" id="recAlertasResumen">—</div>
+      </div>
+      <div id="recAlertasLista" style="display:flex;flex-direction:column;gap:8px">
+        <div style="color:var(--muted);font-size:13px">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- MÉTRICAS DE EFICIENCIA SAT -->
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0;font-size:15px">⚡ Eficiencia SAT — días de proceso</h2>
+        <div id="recEfPromedio" style="font-size:12px;color:var(--muted);font-weight:600">—</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:12px">
+        <div style="background:#d1fae5;border:1px solid #10b981;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#065f46" id="recEfRapido">—</div>
+          <div style="font-size:11px;color:#065f46;font-weight:600">🟢 Rápido (&lt;40d)</div>
+        </div>
+        <div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#713f12" id="recEfNormal">—</div>
+          <div style="font-size:11px;color:#713f12;font-weight:600">🟡 Normal (40-60d)</div>
+        </div>
+        <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#991b1b" id="recEfLento">—</div>
+          <div style="font-size:11px;color:#991b1b;font-weight:600">🔴 Lento (&gt;60d)</div>
+        </div>
+      </div>
+      <div id="recEfTabla" style="font-size:12px;color:var(--muted)"></div>
+    </div>
+
+    <!-- GRID DE PERÍODOS -->
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0;font-size:15px">📋 Períodos IVA</h2>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px" onclick="recFiltrar('')" id="recFiltTodos">Todos</button>
+          <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:var(--red);color:var(--red)" onclick="recFiltrar('dep_vencido')">🔴 Dep.Vencido</button>
+          <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:#f97316;color:#f97316" onclick="recFiltrar('requerimiento')">🟠 Requerimiento</button>
+          <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:#0284c7;color:#0284c7" onclick="recFiltrar('aprobado_pdte')">🔵 Aprobado</button>
+          <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:var(--yellow);color:var(--yellow)" onclick="recFiltrar('en_proceso')">🟡 En Proceso</button>
+          <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:var(--muted);color:var(--muted)" onclick="recFiltrar('no_solicitado')">⬜ No Sol.</button>
+          <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:var(--green);color:var(--green)" onclick="recFiltrar('devuelto')">✅ Devuelto</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+          <thead>
+            <tr style="background:var(--surface2);text-align:left">
+              <th style="padding:9px 10px;border-bottom:2px solid var(--border)">Período</th>
+              <th style="padding:9px 10px;border-bottom:2px solid var(--border);text-align:right">A Favor</th>
+              <th style="padding:9px 10px;border-bottom:2px solid var(--border);text-align:right">Solicitado</th>
+              <th style="padding:9px 10px;border-bottom:2px solid var(--border);text-align:right">Aprobado</th>
+              <th style="padding:9px 10px;border-bottom:2px solid var(--border);text-align:right">Devuelto</th>
+              <th style="padding:9px 10px;border-bottom:2px solid var(--border);text-align:right">Brecha</th>
+              <th style="padding:9px 10px;border-bottom:2px solid var(--border);text-align:center">Estado</th>
+              <th style="padding:9px 10px;border-bottom:2px solid var(--border);text-align:center">Días SAT</th>
+              <th style="padding:9px 10px;border-bottom:2px solid var(--border)">Observaciones</th>
+              <th style="padding:9px 10px;border-bottom:2px solid var(--border);text-align:center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="recTablaPeriodos"><tr><td colspan="10" style="padding:16px;color:var(--muted)">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TIMELINE DE EVENTOS (log semanal) -->
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0;font-size:15px">📅 Timeline — actividad semana a semana</h2>
+        <div style="font-size:11.5px;color:var(--muted);font-weight:600" id="recLogResumen">—</div>
+      </div>
+      <div id="recTimeline" style="display:flex;flex-direction:column;gap:0;position:relative;padding-left:20px;border-left:2px solid var(--border)">
+        <div style="color:var(--muted);font-size:13px;padding:8px 0">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- PROYECCIÓN H2 -->
+    <div class="card">
+      <h2 style="font-size:15px;margin-bottom:6px">🔮 Proyección de recuperación</h2>
+      <div class="desc" style="margin-bottom:14px">Basado en la cartera actual + tiempos SAT históricos. Probabilidad ALTA = aprobado sin depositar. MEDIA = en proceso normal. BAJA = requerimiento pendiente.</div>
+      <div id="recProyeccion" style="display:grid;gap:10px">
+        <div style="color:var(--muted);font-size:13px">Cargando…</div>
+      </div>
+      <div id="recProyeccionTotal" style="margin-top:14px;padding:14px;background:var(--surface2);border-radius:10px;font-size:13px;font-weight:700;text-align:center"></div>
+    </div>
+
+  </div>
+
+
     <div class="card">
       <h2>🔐 Gobernanza — flujo de aprobación fiscal</h2>
       <div class="desc">Cada obligación pasa por un flujo de 5 estados: <b>Borrador → En revisión → Firmada → Autorizada → Pagada</b>. El historial es inmutable (audit trail).</div>
@@ -758,7 +908,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.7';
+const APP_VERSION   = '2026.07.17.8';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -2748,6 +2898,461 @@ function ejecutarPredictor(){
     output_json:{ incremento_6m: totalIncremento }, fundamento:'Ola 3-C predicción' });
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ═══════════ SUB-MÓDULO: RECUPERACIONES IVA (v2026.07.17.8) ═════
+   Seguimiento de devoluciones de IVA para Internacional (extensible).
+   Tablas: fiscal_iva_devoluciones, fiscal_iva_log
+   Base legal: art. 22 CFF (devoluciones), art. 22-A CFF (intereses SAT)
+   ═══════════════════════════════════════════════════════════════ */
+
+let recPeriodos = [];
+let recEventos  = [];
+let recFiltroEstado = '';
+
+const REC_ESTADO_META = {
+  no_solicitado:  { icon:'⬜', label:'No Solicitado',      color:'var(--muted)',  prio:4 },
+  en_proceso:     { icon:'🟡', label:'En Proceso SAT',     color:'var(--yellow)', prio:3 },
+  requerimiento:  { icon:'🟠', label:'Requerimiento SAT',  color:'#f97316',       prio:2 },
+  aprobado_pdte:  { icon:'🔵', label:'Aprobado — Dep.Pdte',color:'#0284c7',       prio:2 },
+  dep_vencido:    { icon:'🔴', label:'Depósito Vencido',   color:'var(--red)',    prio:1 },
+  devuelto:       { icon:'✅', label:'Devuelto',           color:'var(--green)',  prio:5 }
+};
+
+const REC_ESTATUS_META = {
+  pendiente:  { icon:'⏳', color:'var(--yellow)' },
+  completado: { icon:'✅', color:'var(--green)'  },
+  bloqueado:  { icon:'🔴', color:'var(--red)'    },
+  cancelado:  { icon:'⚪', color:'var(--muted)'  }
+};
+
+async function cargarRecuperaciones(){
+  const empresa = document.getElementById('recEmpresa').value || 'Internacional';
+  try {
+    // Períodos
+    const { data: periodos, error: err1 } = await sb
+      .from('fiscal_iva_devoluciones')
+      .select('*')
+      .eq('empresa', empresa)
+      .order('anio', { ascending: true })
+      .order('mes',  { ascending: true });
+    if (err1) throw err1;
+    recPeriodos = periodos || [];
+
+    // Log
+    const { data: eventos, error: err2 } = await sb
+      .from('fiscal_iva_log')
+      .select('*')
+      .eq('empresa', empresa)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (err2) throw err2;
+    recEventos = eventos || [];
+
+    renderRecKpis();
+    renderRecAlertas();
+    renderRecEficiencia();
+    renderRecPeriodos();
+    renderRecTimeline();
+    renderRecProyeccion();
+    setSyncOk();
+  } catch (e) {
+    console.error('cargarRecuperaciones', e);
+    setSyncError(e.message || String(e));
+    mostrarToast('Error al cargar Recuperaciones: '+(e.message||e), '#e11d48');
+  }
+}
+
+function renderRecKpis(){
+  const totFavor    = recPeriodos.reduce((s,p)=>s+Number(p.monto_favor||0),0);
+  const totDevuelto = recPeriodos.reduce((s,p)=>s+Number(p.monto_devuelto||0),0);
+  const aprobados   = recPeriodos.filter(p=>['aprobado_pdte','dep_vencido'].includes(p.estado));
+  const totAprobado = aprobados.reduce((s,p)=>s+Math.max(0,Number(p.monto_aprobado||0)-Number(p.monto_devuelto||0)),0);
+  const enProc      = recPeriodos.filter(p=>['en_proceso','requerimiento'].includes(p.estado));
+  const totProc     = enProc.reduce((s,p)=>s+Math.max(0,Number(p.monto_solicitado||0)-Number(p.monto_devuelto||0)),0);
+  const noSol       = recPeriodos.filter(p=>p.estado==='no_solicitado');
+  const totNoSol    = noSol.reduce((s,p)=>s+Number(p.monto_favor||0),0);
+  const tasa        = totFavor>0 ? (totDevuelto/totFavor*100) : 0;
+
+  document.getElementById('recKpiFavor').textContent    = fmtMoney(totFavor);
+  document.getElementById('recKpiFavorSub').textContent = recPeriodos.length+' períodos acumulados';
+  document.getElementById('recKpiDevuelto').textContent = fmtMoney(totDevuelto);
+  document.getElementById('recKpiDevueltoSub').textContent = recPeriodos.filter(p=>p.estado==='devuelto').length+' períodos devueltos';
+  document.getElementById('recKpiAprobado').textContent = fmtMoney(totAprobado);
+  document.getElementById('recKpiAprobadoSub').textContent = aprobados.length+' aprobado(s) · '+aprobados.filter(p=>p.estado==='dep_vencido').length+' vencido(s)';
+  document.getElementById('recKpiProceso').textContent  = fmtMoney(totProc);
+  document.getElementById('recKpiProcesoSub').textContent = enProc.length+' períodos · '+enProc.filter(p=>p.estado==='requerimiento').length+' c/requerimiento';
+  document.getElementById('recKpiNoSol').textContent    = fmtMoney(totNoSol);
+  document.getElementById('recKpiNoSolSub').textContent = noSol.length+' períodos sin trámite';
+  document.getElementById('recKpiTasa').textContent     = tasa.toFixed(1)+'%';
+  document.getElementById('recKpiTasaSub').textContent  = fmtMoney(totDevuelto)+' / '+fmtMoney(totFavor);
+}
+
+function renderRecAlertas(){
+  const cont = document.getElementById('recAlertasLista');
+  const alertas = [];
+
+  // 🔴 CRÍTICO: depósitos vencidos
+  recPeriodos.filter(p=>p.estado==='dep_vencido').forEach(p=>{
+    alertas.push({
+      prio: 1, icon:'🔴', label:'CRÍTICO', color:'var(--red)', bg:'#fee2e2', border:'#fca5a5',
+      periodo: p.periodo,
+      monto: Math.max(0,Number(p.monto_aprobado||0)-Number(p.monto_devuelto||0)),
+      accion: 'Reclamar depósito vencido al SAT. Considerar queja Prodecon (art. 33-A CFF).',
+      plazo: 'INMEDIATO',
+      responsable: 'Tesorería'
+    });
+  });
+
+  // 🟠 URGENTE: requerimientos SAT
+  recPeriodos.filter(p=>p.estado==='requerimiento').forEach(p=>{
+    alertas.push({
+      prio: 2, icon:'🟠', label:'URGENTE', color:'#f97316', bg:'#ffedd5', border:'#fdba74',
+      periodo: p.periodo,
+      monto: Number(p.monto_solicitado||0),
+      accion: 'Entregar documentación SAT requerida. Riesgo de negativa si no se atiende.',
+      plazo: p.f_deposito_prog ? 'Fecha compromiso próxima' : 'Verificar plazo requerimiento',
+      responsable: 'Fiscal'
+    });
+  });
+
+  // 🟠 URGENTE: no solicitados de años previos (>= 2024 y no del año corriente)
+  const anioActual = new Date().getFullYear();
+  recPeriodos.filter(p=>p.estado==='no_solicitado' && p.anio < anioActual)
+    .sort((a,b)=>Number(b.monto_favor)-Number(a.monto_favor))
+    .slice(0,3)
+    .forEach(p=>{
+      alertas.push({
+        prio: 3, icon:'🟠', label:'URGENTE', color:'#f97316', bg:'#ffedd5', border:'#fdba74',
+        periodo: p.periodo,
+        monto: Number(p.monto_favor||0),
+        accion: 'Presentar solicitud de devolución. Riesgo latente de prescripción (5 años, art. 22 CFF).',
+        plazo: 'Este trimestre',
+        responsable: 'Dir.Fiscal'
+      });
+    });
+
+  alertas.sort((a,b)=>a.prio-b.prio || Number(b.monto)-Number(a.monto));
+
+  const totalAlertas = alertas.length;
+  const totalMonto   = alertas.reduce((s,a)=>s+Number(a.monto),0);
+  document.getElementById('recAlertasResumen').textContent = totalAlertas+' alerta(s) · '+fmtMoney(totalMonto)+' en riesgo';
+
+  if (alertas.length === 0){
+    cont.innerHTML = '<div style="color:var(--green);font-size:13px;font-weight:600;padding:8px 0">✓ Sin alertas activas — todo bajo control</div>';
+    return;
+  }
+
+  cont.innerHTML = alertas.slice(0,10).map(a=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:${a.bg};border:1px solid ${a.border};border-radius:8px;font-size:12.5px">
+      <div style="font-size:16px">${a.icon}</div>
+      <div style="min-width:78px;font-weight:700;color:${a.color};font-size:11px;letter-spacing:.05em">${a.label}</div>
+      <div style="min-width:70px;font-weight:700;color:#111827">${a.periodo}</div>
+      <div style="min-width:100px;font-weight:700;color:#111827;text-align:right">${fmtMoney(a.monto)}</div>
+      <div style="flex:1;color:#374151">${a.accion}</div>
+      <div style="min-width:100px;text-align:right;font-size:11px;color:${a.color};font-weight:600">${a.plazo}</div>
+      <div style="min-width:90px;text-align:right;font-size:11px;color:#6b7280">${a.responsable}</div>
+    </div>
+  `).join('');
+}
+
+function renderRecEficiencia(){
+  const devueltos = recPeriodos.filter(p=>p.estado==='devuelto' && p.dias_sat != null);
+  const rapido = devueltos.filter(p=>p.dias_sat < 40).length;
+  const normal = devueltos.filter(p=>p.dias_sat >= 40 && p.dias_sat <= 60).length;
+  const lento  = devueltos.filter(p=>p.dias_sat > 60).length;
+  const prom = devueltos.length ? Math.round(devueltos.reduce((s,p)=>s+Number(p.dias_sat),0)/devueltos.length) : 0;
+
+  document.getElementById('recEfRapido').textContent = rapido;
+  document.getElementById('recEfNormal').textContent = normal;
+  document.getElementById('recEfLento').textContent  = lento;
+  document.getElementById('recEfPromedio').textContent = devueltos.length ? 'Promedio: '+prom+' días · '+devueltos.length+' períodos devueltos' : 'Sin históricos aún';
+
+  // Tabla compacta con detalle por período devuelto
+  if (devueltos.length === 0){
+    document.getElementById('recEfTabla').innerHTML = '<div style="padding:8px 0;font-size:12px">Aún no hay períodos devueltos para medir tiempos SAT.</div>';
+    return;
+  }
+  document.getElementById('recEfTabla').innerHTML = `
+    <div style="display:grid;grid-template-columns:80px 1fr 100px 100px 90px 120px;gap:6px;padding:6px 8px;background:var(--surface2);border-radius:6px;font-weight:700;font-size:11px;color:var(--muted)">
+      <div>PERÍODO</div><div>MONTO</div><div>F.PRESENT.</div><div>F.DEPÓSITO</div><div style="text-align:right">DÍAS</div><div style="text-align:right">CLASIFIC.</div>
+    </div>
+    ${devueltos.sort((a,b)=>Number(a.dias_sat)-Number(b.dias_sat)).map(p=>{
+      const clase = p.dias_sat<40 ? {c:'#065f46',b:'#d1fae5',t:'🟢 Rápido'} : p.dias_sat<=60 ? {c:'#713f12',b:'#fef9c3',t:'🟡 Normal'} : {c:'#991b1b',b:'#fee2e2',t:'🔴 Lento'};
+      return `<div style="display:grid;grid-template-columns:80px 1fr 100px 100px 90px 120px;gap:6px;padding:6px 8px;border-bottom:1px solid var(--border);font-size:12px;align-items:center">
+        <div style="font-weight:600">${p.periodo}</div>
+        <div>${fmtMoney(p.monto_devuelto)}</div>
+        <div style="color:var(--muted);font-size:11.5px">${p.f_presentacion||'—'}</div>
+        <div style="color:var(--muted);font-size:11.5px">${p.f_deposito_real||'—'}</div>
+        <div style="text-align:right;font-weight:700">${p.dias_sat}</div>
+        <div style="text-align:right"><span style="background:${clase.b};color:${clase.c};padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:700">${clase.t}</span></div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+function recFiltrar(estado){
+  recFiltroEstado = estado;
+  renderRecPeriodos();
+}
+
+function renderRecPeriodos(){
+  const tbody = document.getElementById('recTablaPeriodos');
+  const lista = recFiltroEstado ? recPeriodos.filter(p=>p.estado===recFiltroEstado) : recPeriodos;
+  if (lista.length === 0){
+    tbody.innerHTML = '<tr><td colspan="10" style="padding:16px;color:var(--muted);text-align:center">Sin períodos que coincidan con el filtro.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = lista.map(p=>{
+    const meta = REC_ESTADO_META[p.estado] || REC_ESTADO_META.no_solicitado;
+    const brecha = Number(p.monto_favor||0) - Number(p.monto_devuelto||0);
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:9px 10px;font-weight:600">${p.periodo}</td>
+      <td style="padding:9px 10px;text-align:right">${fmtMoney(p.monto_favor)}</td>
+      <td style="padding:9px 10px;text-align:right;color:${Number(p.monto_solicitado)>0?'var(--text)':'var(--muted)'}">${fmtMoney(p.monto_solicitado)}</td>
+      <td style="padding:9px 10px;text-align:right;color:${Number(p.monto_aprobado)>0?'var(--text)':'var(--muted)'}">${fmtMoney(p.monto_aprobado)}</td>
+      <td style="padding:9px 10px;text-align:right;color:${Number(p.monto_devuelto)>0?'var(--green)':'var(--muted)'};font-weight:${Number(p.monto_devuelto)>0?'700':'400'}">${fmtMoney(p.monto_devuelto)}</td>
+      <td style="padding:9px 10px;text-align:right;color:${brecha>0?'var(--red)':'var(--green)'};font-weight:600">${fmtMoney(brecha)}</td>
+      <td style="padding:9px 10px;text-align:center"><span style="background:${meta.color}22;color:${meta.color};padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap">${meta.icon} ${meta.label}</span></td>
+      <td style="padding:9px 10px;text-align:center;color:var(--muted);font-size:11.5px">${p.dias_sat||'—'}</td>
+      <td style="padding:9px 10px;color:var(--muted);font-size:11.5px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(p.observaciones||'').replace(/"/g,'&quot;')}">${p.observaciones||'—'}</td>
+      <td style="padding:9px 10px;text-align:center"><button onclick="editarPeriodo(${p.id})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--text)">✎ Editar</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderRecTimeline(){
+  const cont = document.getElementById('recTimeline');
+  document.getElementById('recLogResumen').textContent = recEventos.length+' evento(s) registrados';
+  if (recEventos.length === 0){
+    cont.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">Aún no hay eventos en la bitácora. Usa "+ Registrar gestión" para agregar el primero.</div>';
+    return;
+  }
+  cont.innerHTML = recEventos.slice(0,20).map(ev=>{
+    const meta = REC_ESTATUS_META[ev.estatus] || REC_ESTATUS_META.pendiente;
+    const catIcon = ev.categoria==='Depósito Recibido' ? '💰' :
+                    ev.categoria==='Presentación Solicitud' ? '📋' :
+                    ev.categoria==='Atender Requerimiento SAT' ? '⚠️' :
+                    ev.categoria==='Seguimiento SAT' ? '🔍' :
+                    ev.categoria==='Queja Prodecon' ? '⚖️' : '📌';
+    return `<div style="position:relative;padding:10px 0 10px 22px;border-bottom:1px solid var(--border)">
+      <div style="position:absolute;left:-27px;top:14px;width:12px;height:12px;border-radius:50%;background:${meta.color};border:2px solid var(--surface)"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">
+            <span style="font-size:12.5px;font-weight:700;color:var(--text)">${ev.destacado?'⭐ ':''}${catIcon} ${ev.categoria}</span>
+            <span style="font-size:10.5px;color:var(--muted);font-weight:600">${ev.semana}</span>
+            ${ev.periodos_iva ? `<span style="background:var(--surface2);color:var(--text);padding:1px 8px;border-radius:8px;font-size:10.5px;font-weight:600">${ev.periodos_iva}</span>` : ''}
+          </div>
+          <div style="font-size:12.5px;color:var(--text);margin-bottom:3px">${ev.actividad}</div>
+          ${ev.siguiente_accion && ev.siguiente_accion !== '-' ? `<div style="font-size:11.5px;color:var(--muted);margin-top:3px">→ ${ev.siguiente_accion}</div>` : ''}
+          ${ev.notas ? `<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:3px">${ev.notas}</div>` : ''}
+        </div>
+        <div style="text-align:right;min-width:110px">
+          ${Number(ev.monto)>0 ? `<div style="font-size:13px;font-weight:700;color:var(--text)">${fmtMoney(ev.monto)}</div>` : ''}
+          <div style="font-size:10.5px;color:${meta.color};font-weight:700;margin-top:2px">${meta.icon} ${ev.estatus}</div>
+          ${ev.f_compromiso ? `<div style="font-size:10.5px;color:var(--muted);margin-top:2px">${ev.f_compromiso}</div>` : ''}
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">${ev.responsable||''}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderRecProyeccion(){
+  const cont = document.getElementById('recProyeccion');
+  // Prob ALTA = aprobado_pdte (sin vencer)  |  ALTA-CRÍTICA = dep_vencido
+  // Prob MEDIA = en_proceso normal
+  // Prob BAJA  = requerimiento
+  // Prob PLAN  = no_solicitado (requiere presentar primero)
+  const items = recPeriodos
+    .filter(p=>p.estado!=='devuelto')
+    .map(p=>{
+      let prob, probColor, mes;
+      const pend = p.estado==='no_solicitado' ? Number(p.monto_favor||0) : Math.max(0, Number(p.monto_solicitado||p.monto_favor||0) - Number(p.monto_devuelto||0));
+      if (p.estado==='dep_vencido')       { prob='ALTA 🟢'; probColor='var(--green)'; mes='Este mes (reclamar)'; }
+      else if (p.estado==='aprobado_pdte'){ prob='ALTA 🟢'; probColor='var(--green)'; mes='Próximos 30 días'; }
+      else if (p.estado==='en_proceso')   { prob='MEDIA 🟡'; probColor='var(--yellow)'; mes='40-60 días desde presentación'; }
+      else if (p.estado==='requerimiento'){ prob='BAJA 🔴'; probColor='var(--red)'; mes='Depende de resolver requerimiento'; }
+      else                                { prob='PLAN ⚪'; probColor='var(--muted)'; mes='Requiere presentar solicitud primero'; }
+      return { periodo:p.periodo, monto:pend, prob, probColor, mes, estado:p.estado };
+    })
+    .filter(x=>x.monto>0)
+    .sort((a,b)=>{
+      const order = { dep_vencido:1, aprobado_pdte:2, en_proceso:3, requerimiento:4, no_solicitado:5 };
+      return (order[a.estado]||9)-(order[b.estado]||9);
+    });
+
+  if (items.length === 0){
+    cont.innerHTML = '<div style="color:var(--muted);font-size:13px">Sin períodos pendientes de recuperar.</div>';
+    document.getElementById('recProyeccionTotal').textContent = '';
+    return;
+  }
+  cont.innerHTML = items.slice(0,15).map(it=>`
+    <div style="display:grid;grid-template-columns:80px 1fr 130px 110px;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:8px;align-items:center;font-size:12.5px">
+      <div style="font-weight:700">${it.periodo}</div>
+      <div style="color:var(--muted)">${it.mes}</div>
+      <div style="text-align:right;font-weight:700">${fmtMoney(it.monto)}</div>
+      <div style="text-align:right;color:${it.probColor};font-weight:700;font-size:11.5px">${it.prob}</div>
+    </div>
+  `).join('');
+  const total = items.reduce((s,i)=>s+i.monto,0);
+  const alta  = items.filter(i=>i.prob.startsWith('ALTA')).reduce((s,i)=>s+i.monto,0);
+  document.getElementById('recProyeccionTotal').innerHTML =
+    `📊 Total proyectado a recuperar: <b style="color:var(--accent)">${fmtMoney(total)}</b> · Recuperación con probabilidad ALTA: <b style="color:var(--green)">${fmtMoney(alta)}</b>`;
+}
+
+/* ---------- MODAL: NUEVO EVENTO ---------- */
+function abrirModalNuevoEvento(){
+  const hoy = new Date();
+  const semana = Math.ceil((((hoy - new Date(hoy.getFullYear(),0,1))/86400000) + new Date(hoy.getFullYear(),0,1).getDay()+1)/7);
+  document.getElementById('recEvSemana').value = 'Sem '+String(semana).padStart(2,'0')+'/'+hoy.getFullYear();
+  document.getElementById('recEvPeriodos').value = '';
+  document.getElementById('recEvCategoria').value = 'Presentación Solicitud';
+  document.getElementById('recEvInstitucion').value = 'SAT';
+  document.getElementById('recEvResponsable').value = 'Fiscal';
+  document.getElementById('recEvMonto').value = '';
+  document.getElementById('recEvFecha').value = '';
+  document.getElementById('recEvEstatus').value = 'pendiente';
+  document.getElementById('recEvActividad').value = '';
+  document.getElementById('recEvSiguiente').value = '';
+  document.getElementById('recEvNotas').value = '';
+  document.getElementById('recEvDestacado').checked = false;
+  document.getElementById('recEventoModal').style.display = 'flex';
+}
+function cerrarModalNuevoEvento(){
+  document.getElementById('recEventoModal').style.display = 'none';
+}
+async function guardarNuevoEvento(){
+  const empresa   = document.getElementById('recEmpresa').value || 'Internacional';
+  const actividad = document.getElementById('recEvActividad').value.trim();
+  const semana    = document.getElementById('recEvSemana').value.trim();
+  const categoria = document.getElementById('recEvCategoria').value;
+  if (!actividad || !semana){
+    mostrarToast('Completa al menos Semana y Actividad', '#e11d48');
+    return;
+  }
+  const row = {
+    empresa,
+    semana,
+    periodos_iva: document.getElementById('recEvPeriodos').value.trim() || null,
+    categoria,
+    actividad,
+    institucion: document.getElementById('recEvInstitucion').value,
+    responsable: document.getElementById('recEvResponsable').value,
+    monto: Number(document.getElementById('recEvMonto').value||0),
+    siguiente_accion: document.getElementById('recEvSiguiente').value.trim() || null,
+    f_compromiso: document.getElementById('recEvFecha').value || null,
+    estatus: document.getElementById('recEvEstatus').value,
+    notas: document.getElementById('recEvNotas').value.trim() || null,
+    destacado: document.getElementById('recEvDestacado').checked,
+    created_by: currentUserId
+  };
+  try {
+    const { error } = await sb.from('fiscal_iva_log').insert(row);
+    if (error) throw error;
+    mostrarToast('✓ Gestión registrada', '#059669');
+    cerrarModalNuevoEvento();
+    auditLog({ accion:'IVA_LOG_INSERT', tabla:'fiscal_iva_log', empresa,
+      input_json:row, fundamento:'Bitácora seguimiento IVA' });
+    await cargarRecuperaciones();
+  } catch(e){
+    console.error(e);
+    mostrarToast('Error al guardar: '+(e.message||e), '#e11d48');
+  }
+}
+
+/* ---------- MODAL: NUEVO / EDITAR PERÍODO ---------- */
+function abrirModalNuevoPeriodo(){
+  document.getElementById('recPerEditId').value = '';
+  document.getElementById('recPerModalTitulo').textContent = '+ Nuevo período IVA';
+  document.getElementById('recPerAnio').value = new Date().getFullYear();
+  document.getElementById('recPerMes').value = String(new Date().getMonth()+1);
+  ['recPerFavor','recPerSolicitado','recPerAprobado','recPerDevuelto'].forEach(id=>document.getElementById(id).value='');
+  ['recPerFPres','recPerFProg','recPerFReal'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('recPerEstado').value = 'no_solicitado';
+  document.getElementById('recPerObs').value = '';
+  document.getElementById('recPeriodoModal').style.display = 'flex';
+}
+function cerrarModalNuevoPeriodo(){
+  document.getElementById('recPeriodoModal').style.display = 'none';
+}
+function editarPeriodo(id){
+  const p = recPeriodos.find(x=>x.id===id);
+  if (!p){ mostrarToast('Período no encontrado','#e11d48'); return; }
+  document.getElementById('recPerEditId').value = String(id);
+  document.getElementById('recPerModalTitulo').textContent = '✎ Editar '+p.periodo;
+  document.getElementById('recPerAnio').value = p.anio;
+  document.getElementById('recPerMes').value = String(p.mes);
+  document.getElementById('recPerFavor').value = p.monto_favor;
+  document.getElementById('recPerSolicitado').value = p.monto_solicitado;
+  document.getElementById('recPerAprobado').value = p.monto_aprobado;
+  document.getElementById('recPerDevuelto').value = p.monto_devuelto;
+  document.getElementById('recPerFPres').value = p.f_presentacion || '';
+  document.getElementById('recPerFProg').value = p.f_deposito_prog || '';
+  document.getElementById('recPerFReal').value = p.f_deposito_real || '';
+  document.getElementById('recPerEstado').value = p.estado || 'no_solicitado';
+  document.getElementById('recPerObs').value = p.observaciones || '';
+  document.getElementById('recPeriodoModal').style.display = 'flex';
+}
+async function guardarNuevoPeriodo(){
+  const empresa = document.getElementById('recEmpresa').value || 'Internacional';
+  const anio    = parseInt(document.getElementById('recPerAnio').value);
+  const mes     = parseInt(document.getElementById('recPerMes').value);
+  const meses   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const periodo = meses[mes-1]+'-'+String(anio).slice(-2);
+  const estado  = document.getElementById('recPerEstado').value;
+  const monto_favor = Number(document.getElementById('recPerFavor').value||0);
+  if (!monto_favor){ mostrarToast('Monto a favor requerido', '#e11d48'); return; }
+
+  const monto_devuelto = Number(document.getElementById('recPerDevuelto').value||0);
+  const f_pres = document.getElementById('recPerFPres').value || null;
+  const f_real = document.getElementById('recPerFReal').value || null;
+  let dias_sat = null;
+  if (f_pres && f_real){
+    dias_sat = Math.round((new Date(f_real) - new Date(f_pres))/86400000);
+  }
+
+  const row = {
+    empresa, periodo, anio, mes,
+    monto_favor,
+    monto_solicitado: Number(document.getElementById('recPerSolicitado').value||0),
+    monto_aprobado:   Number(document.getElementById('recPerAprobado').value||0),
+    monto_devuelto,
+    estado,
+    prioridad: REC_ESTADO_META[estado]?.prio || 4,
+    f_presentacion:  f_pres,
+    f_deposito_prog: document.getElementById('recPerFProg').value || null,
+    f_deposito_real: f_real,
+    dias_sat,
+    observaciones: document.getElementById('recPerObs').value.trim() || null,
+    updated_by: currentUserId
+  };
+
+  try {
+    const editId = document.getElementById('recPerEditId').value;
+    if (editId){
+      const { error } = await sb.from('fiscal_iva_devoluciones').update(row).eq('id', parseInt(editId));
+      if (error) throw error;
+      mostrarToast('✓ Período actualizado', '#059669');
+      auditLog({ accion:'IVA_PERIODO_UPDATE', tabla:'fiscal_iva_devoluciones', registro_id: parseInt(editId), empresa,
+        input_json:row, fundamento:'Edición manual período IVA' });
+    } else {
+      const { error } = await sb.from('fiscal_iva_devoluciones').insert(row);
+      if (error) throw error;
+      mostrarToast('✓ Período creado', '#059669');
+      auditLog({ accion:'IVA_PERIODO_INSERT', tabla:'fiscal_iva_devoluciones', empresa,
+        input_json:row, fundamento:'Alta manual período IVA' });
+    }
+    cerrarModalNuevoPeriodo();
+    await cargarRecuperaciones();
+  } catch(e){
+    console.error(e);
+    mostrarToast('Error al guardar: '+(e.message||e), '#e11d48');
+  }
+}
+
+/* ═════ FIN SUB-MÓDULO RECUPERACIONES IVA ═════ */
+
 bootstrapAuth();
 </script>
 <!-- ===================== MODAL ACCESORIOS FISCALES ===================== -->
@@ -2797,6 +3402,167 @@ bootstrapAuth();
       <button id="accBtnEnviar" onclick="enviarADeadpool()" style="display:none;align-items:center;gap:8px;margin-top:12px;width:100%;padding:11px;background:#0c447c;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">
         &#x27A1;&#xFE0F; Agregar al Plan de Pagos de Deadpool
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: Nuevo evento / gestión IVA ═══════════ -->
+<div id="recEventoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9500;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--surface);border-radius:14px;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;padding:24px 26px;position:relative;color:var(--text)">
+    <button onclick="cerrarModalNuevoEvento()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1">&#10005;</button>
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">+ Registrar gestión</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Nueva entrada en la bitácora semanal del seguimiento IVA</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">SEMANA</label>
+        <input type="text" id="recEvSemana" placeholder="Sem 29/2026" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">PERÍODO(S) IVA</label>
+        <input type="text" id="recEvPeriodos" placeholder="Jul-25 o May-25+Jun-25" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">CATEGORÍA</label>
+        <select id="recEvCategoria" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+          <option>Presentación Solicitud</option>
+          <option>Depósito Recibido</option>
+          <option>Atender Requerimiento SAT</option>
+          <option>Seguimiento SAT</option>
+          <option>Revisión Interna</option>
+          <option>Queja Prodecon</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">INSTITUCIÓN</label>
+        <select id="recEvInstitucion" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+          <option>SAT</option><option>Banco</option><option>Interno</option><option>Prodecon</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">RESPONSABLE</label>
+        <select id="recEvResponsable" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+          <option>Fiscal</option><option>Tesorería</option><option>Contabilidad</option>
+          <option>Dir.Fiscal</option><option>Dirección</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">MONTO ($)</label>
+        <input type="number" id="recEvMonto" step="0.01" min="0" placeholder="0.00" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">F. COMPROMISO</label>
+        <input type="date" id="recEvFecha" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">ESTATUS</label>
+        <select id="recEvEstatus" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+          <option value="pendiente">⏳ Pendiente</option>
+          <option value="completado">✅ Completado</option>
+          <option value="bloqueado">🔴 Bloqueado</option>
+          <option value="cancelado">⚪ Cancelado</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">ACTIVIDAD / GESTIÓN</label>
+      <textarea id="recEvActividad" rows="2" placeholder="Ej: Solicitud devolución IVA Jul-25 presentada" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text);font-family:inherit;resize:vertical"></textarea>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">SIGUIENTE ACCIÓN</label>
+      <input type="text" id="recEvSiguiente" placeholder="Ej: Confirmar acuse SAT" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">NOTAS</label>
+      <textarea id="recEvNotas" rows="2" placeholder="Notas adicionales…" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text);font-family:inherit;resize:vertical"></textarea>
+    </div>
+
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="recEvDestacado" style="width:16px;height:16px;cursor:pointer">
+      <label for="recEvDestacado" style="font-size:12.5px;cursor:pointer">⭐ Marcar como evento destacado</label>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="cerrarModalNuevoEvento()" style="padding:9px 18px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer">Cancelar</button>
+      <button onclick="guardarNuevoEvento()" style="padding:9px 22px;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer">💾 Guardar gestión</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: Nuevo período IVA ═══════════ -->
+<div id="recPeriodoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9500;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--surface);border-radius:14px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:24px 26px;position:relative;color:var(--text)">
+    <button onclick="cerrarModalNuevoPeriodo()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1">&#10005;</button>
+    <h3 id="recPerModalTitulo" style="font-size:16px;font-weight:700;margin-bottom:4px">+ Nuevo período IVA</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Alta de un período mensual de IVA a favor</div>
+    <input type="hidden" id="recPerEditId" value="">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">AÑO</label>
+        <input type="number" id="recPerAnio" min="2020" max="2030" value="2026" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">MES</label>
+        <select id="recPerMes" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+          <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+          <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+          <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">MONTO A FAVOR ($)</label>
+        <input type="number" id="recPerFavor" step="0.01" min="0" placeholder="0.00" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">SOLICITADO ($)</label>
+        <input type="number" id="recPerSolicitado" step="0.01" min="0" placeholder="0.00" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">APROBADO ($)</label>
+        <input type="number" id="recPerAprobado" step="0.01" min="0" placeholder="0.00" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">DEVUELTO ($)</label>
+        <input type="number" id="recPerDevuelto" step="0.01" min="0" placeholder="0.00" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">F. PRESENTACIÓN</label>
+        <input type="date" id="recPerFPres" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">F. DEP. PROGRAMADO</label>
+        <input type="date" id="recPerFProg" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">F. DEP. REAL</label>
+        <input type="date" id="recPerFReal" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">ESTADO</label>
+        <select id="recPerEstado" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
+          <option value="no_solicitado">⬜ No Solicitado</option>
+          <option value="en_proceso">🟡 En Proceso SAT</option>
+          <option value="requerimiento">🟠 Requerimiento SAT</option>
+          <option value="aprobado_pdte">🔵 Aprobado — Dep.Pdte</option>
+          <option value="dep_vencido">🔴 Depósito Vencido</option>
+          <option value="devuelto">✅ Devuelto</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">OBSERVACIONES</label>
+      <textarea id="recPerObs" rows="2" placeholder="Notas…" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text);font-family:inherit;resize:vertical"></textarea>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="cerrarModalNuevoPeriodo()" style="padding:9px 18px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer">Cancelar</button>
+      <button onclick="guardarNuevoPeriodo()" style="padding:9px 22px;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer">💾 Guardar período</button>
     </div>
   </div>
 </div>
