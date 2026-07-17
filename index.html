@@ -770,7 +770,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.5';
+const APP_VERSION   = '2026.07.17.6';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -824,8 +824,8 @@ async function bootstrapAuth() {
             const btnNob = document.getElementById('btnNuevaObligacion');
             if (btnNob) btnNob.style.display = 'inline-flex';
           }
-          /* Mostrar tab Gobernanza a admin_master y admin */
-          if (['admin_master','admin'].includes(currentUserRol)) {
+          /* Mostrar tab Gobernanza e Inteligencia a admin_master, admin y cohost */
+          if (['admin_master','admin','cohost'].includes(currentUserRol)) {
             const tabGob = document.getElementById('tabGobernanza');
             if (tabGob) tabGob.style.display = 'inline-flex';
             const tabInt = document.getElementById('tabInteligencia');
@@ -2087,10 +2087,10 @@ function renderGobernanza(){
     const firmado = r.workflow_firmado_por ? `<span style="font-size:11px;color:var(--muted)">${r.workflow_firmado_por}</span>` : '—';
 
     let acciones = '';
-    if (cfg.next && ['admin_master','admin'].includes(currentUserRol)) {
+    if (cfg.next && ['admin_master','admin','cohost'].includes(currentUserRol)) {
       acciones += `<button onclick="gobAvanzar(${r.id},'${cfg.next}')" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);cursor:pointer;white-space:nowrap">${cfg.accion}</button> `;
     }
-    if (estado !== 'rechazada' && estado !== 'pagada' && ['admin_master','admin'].includes(currentUserRol)) {
+    if (estado !== 'rechazada' && estado !== 'pagada' && ['admin_master','admin','cohost'].includes(currentUserRol)) {
       acciones += `<button onclick="gobRechazar(${r.id})" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #dc2626;background:var(--surface);color:#dc2626;cursor:pointer">Rechazar</button> `;
     }
     acciones += `<button onclick="gobVerHistorial(${r.id},'${r.empresa} · ${r.categoria}')" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer">📋</button>`;
