@@ -405,7 +405,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.14.1';
+const APP_VERSION   = '2026.07.17.1';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -692,6 +692,26 @@ const SEED_CXC = [
 ];
 let cxcModoSoloLectura = false; // true si estamos usando SEED_CXC porque la tabla no existe/está vacía
 
+/* ─── AUDIT LOG ─────────────────────────────────────────────────
+   Escribe un registro en fiscal_audit_log (Capa 4 · Gobernanza).
+   Fire-and-forget: no bloquea la UI si falla. */
+async function auditLog({ accion, tabla, registro_id, empresa, categoria, input_json, output_json, fundamento }) {
+  try {
+    await sb.from('fiscal_audit_log').insert({
+      accion, tabla, registro_id, empresa, categoria,
+      input_json:  input_json  || null,
+      output_json: output_json || null,
+      fundamento:  fundamento  || null,
+      version_tasas: 'LIF-2026',
+      app_version:   APP_VERSION,
+      usuario_id:    currentUserId   || null,
+      usuario_nombre: currentUser?.nombre || null
+    });
+  } catch (e) {
+    console.warn('[audit_log] No se pudo escribir:', e.message);
+  }
+}
+
 async function cargarCxc(){
   try {
     const { data, error } = await sb.from('fiscal_cxc_impuestos').select('*').order('monto', { ascending: false });
@@ -712,34 +732,51 @@ async function cargarCxc(){
 }
 
 /* ─── CÁLCULOS DINÁMICOS KPI ─────────────────────────────────────
-   Factores INPC aproximados verificados jul 2026 (INEGI).
-   Factor = INPC_jul2026 / INPC_ene_anioInicio.
-   Actualización: art. 17-A CFF. Recargos: art. 21 CFF.
-   Tasa federal: 2.07%/mes mora. ISN BC estatal: 2.25%/mes.
+   Actualización: art. 17-A CFF (INPC INEGI).
+   Recargos: art. 21 CFF. Tasa federal mora: 2.07%/mes.
+   ISN BC estatal: 2.25%/mes (Ley de Hacienda BC).
    Cap 5 años (60 meses) art. 21 CFF.
-   ⚠️ Verificar factores INPC con INEGI mensualmente y actualizar. */
+
+   Fase B (2026-07-17): usa mes_exigibilidad + anio_exigibilidad
+   reales de Supabase cuando están disponibles.
+   Si el campo es NULL (filas antiguas o seed) usa ene del anio_inicio
+   y muestra "estimado" en lugar de cifra definitiva.
+
+   Factores INPC aproximados (base jul 2026 / INEGI):
+   ⚠️ Actualizar mensualmente desde fiscal_inpc en Supabase. */
 const INPC_FACTOR = { 2023:1.138, 2024:1.086, 2025:1.043, 2026:1.016 };
 
+/* Devuelve { totalDeuda, totalHistorico, totalRecargos, hayEstimados }
+   hayEstimados = true cuando algún registro usó fecha aproximada.   */
 function calcDeudaActualizada(datos) {
   const hoy = new Date();
-  let totalDeuda = 0, totalHistorico = 0, totalRecargos = 0;
+  let totalDeuda = 0, totalHistorico = 0, totalRecargos = 0, hayEstimados = false;
   datos.filter(r => r.estatus !== 'Pagado').forEach(r => {
     const monto  = Number(r.monto) || 0;
-    const anio   = r.anio_inicio || 2023;
-    const factor = INPC_FACTOR[anio] || 1.138;
-    const origen = new Date(anio, 0, 1);
-    const meses  = Math.min(
+
+    /* ── Fecha de exigibilidad real (Fase B) ── */
+    const mesReal  = r.mes_exigibilidad  ? Number(r.mes_exigibilidad)  - 1 : null; // 0-indexed
+    const anioReal = r.anio_exigibilidad ? Number(r.anio_exigibilidad)     : null;
+    const esEstimado = (mesReal === null || anioReal === null);
+    if (esEstimado) hayEstimados = true;
+
+    const anioBase = anioReal ?? (r.anio_inicio || 2023);
+    const mesBase  = mesReal  ?? 0; // enero si no hay dato real
+    const factor   = INPC_FACTOR[anioBase] || 1.138;
+    const origen   = new Date(anioBase, mesBase, 1);
+
+    const meses = Math.min(
       (hoy.getFullYear() - origen.getFullYear()) * 12 + (hoy.getMonth() - origen.getMonth()),
       60
     );
     const tasa      = (r.categoria||'').includes('ISN') ? 0.0225 : 0.0207;
     const montoAct  = monto * factor;
-    const recargos  = montoAct * tasa * meses;
+    const recargos  = montoAct * tasa * Math.max(meses, 0);
     totalDeuda     += montoAct + recargos;
     totalHistorico += monto;
     totalRecargos  += recargos;
   });
-  return { totalDeuda, totalHistorico, totalRecargos };
+  return { totalDeuda, totalHistorico, totalRecargos, hayEstimados };
 }
 
 function calcProximoVencimiento() {
@@ -789,8 +826,19 @@ async function cxcCambiarEstatus(id, nuevoEstatus){
     alert('Estos datos vienen de la cédula de referencia (no de Supabase). Corre fiscal-cxc-impuestos.sql para poder editar el estatus desde aquí.');
     return;
   }
+  const registro = cxcImpuestos.find(r => String(r.id) === String(id));
   const { error } = await sb.from('fiscal_cxc_impuestos').update({ estatus: nuevoEstatus }).eq('id', id);
   if (error) { alert('No se pudo actualizar: ' + error.message); return; }
+  auditLog({
+    accion: 'ESTATUS',
+    tabla: 'fiscal_cxc_impuestos',
+    registro_id: Number(id),
+    empresa: registro?.empresa,
+    categoria: registro?.categoria,
+    input_json: { estatus_anterior: registro?.estatus },
+    output_json: { estatus_nuevo: nuevoEstatus },
+    fundamento: 'CFF — cambio de estatus por usuario'
+  });
   await cargarCxc();
 }
 
@@ -881,12 +929,13 @@ function renderCxc(){
   if (kpiTotalEl) kpiTotalEl.textContent = fmtMoney(total);
 
   /* ── KPI Deuda fiscal con accesorios (art.17-A + art.21 CFF) ── */
-  const { totalDeuda, totalHistorico, totalRecargos } = calcDeudaActualizada(cxcImpuestos);
+  const { totalDeuda, totalHistorico, totalRecargos, hayEstimados } = calcDeudaActualizada(cxcImpuestos);
   const dtEl = document.getElementById('kpiDeudaTotal');
-  if (dtEl) dtEl.textContent = fmtMoney(totalDeuda);
+  if (dtEl) dtEl.textContent = (hayEstimados ? '~' : '') + fmtMoney(totalDeuda);
   const dsEl = document.getElementById('kpiDeudaSub');
-  if (dsEl) dsEl.textContent =
-    `Histórico ${fmtMoney(totalHistorico)} · Recargos ${fmtMoney(totalRecargos)} · arts.17-A, 21 CFF`;
+  if (dsEl) dsEl.textContent = hayEstimados
+    ? `Estimado* · Histórico ${fmtMoney(totalHistorico)} · Recargos ${fmtMoney(totalRecargos)} · arts.17-A, 21 CFF`
+    : `Histórico ${fmtMoney(totalHistorico)} · Recargos ${fmtMoney(totalRecargos)} · arts.17-A, 21 CFF`;
 
   /* ── KPI Próximo vencimiento SAT ── */
   const pv = calcProximoVencimiento();
