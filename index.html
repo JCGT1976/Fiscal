@@ -143,7 +143,163 @@ tr:last-child td{border-bottom:none}
 .cxc-controls .grp.grow{flex:1;min-width:220px}
 .cxc-controls .chips{display:flex;gap:6px;flex-wrap:wrap}
 .cxc-controls select{width:auto;min-width:200px}
-/* ═════ SEPARADORES DE AÑO ═════ */
+/* ═════ TIMELINE COMPACTO — Tabla por año en accordion ═════ */
+.rec-year-details {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: var(--surface);
+}
+.rec-year-summary {
+  padding: 14px 18px;
+  cursor: pointer;
+  list-style: none;
+  background: linear-gradient(135deg, #002855, #0057B8);
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-weight: 700;
+  user-select: none;
+  transition: filter .15s;
+}
+.rec-year-summary:hover { filter: brightness(1.1); }
+.rec-year-summary::-webkit-details-marker { display: none; }
+.rec-year-summary::before {
+  content: '▶';
+  font-size: 11px;
+  margin-right: 8px;
+  transition: transform .2s;
+  display: inline-block;
+}
+details[open] > .rec-year-summary::before { transform: rotate(90deg); }
+.rec-year-current {
+  background: linear-gradient(135deg, #059669, #10b981);
+}
+.rec-year-title-c {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.rec-year-live {
+  font-size: 10px;
+  font-weight: 800;
+  background: #fff;
+  color: #059669;
+  padding: 3px 10px;
+  border-radius: 12px;
+  letter-spacing: .5px;
+  animation: pulse 2s infinite;
+}
+.rec-year-kpis-c {
+  display: inline-flex;
+  gap: 16px;
+  font-size: 12.5px;
+  flex-wrap: wrap;
+  opacity: .95;
+}
+.rec-year-body { padding: 0; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+
+.rec-w-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  background: #fff;
+}
+.rec-w-table thead th {
+  background: #f1f5f9;
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 2px solid #cbd5e1;
+  position: sticky; top: 0;
+}
+.rec-w-thn { text-align: center !important; }
+.rec-w-table tbody tr {
+  transition: background .1s;
+  border-bottom: 1px solid #f1f5f9;
+}
+.rec-w-clickable { cursor: pointer; }
+.rec-w-clickable:hover { background: #f8fafc !important; }
+
+.rec-w-table tbody td {
+  padding: 8px 12px;
+  vertical-align: middle;
+}
+.rec-w-sem {
+  font-weight: 700;
+  color: #334155;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rec-w-range {
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rec-w-num {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rec-w-status {
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.rec-w-expand {
+  text-align: center;
+  color: #cbd5e1;
+}
+.rec-w-caret {
+  display: inline-block;
+  transition: transform .2s;
+  font-size: 16px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+.rec-w-expanded .rec-w-caret { transform: rotate(90deg); color: #0057B8; }
+
+/* Fondos por estado (barra izq sutil) */
+.rec-w-g { background: linear-gradient(90deg, #ecfdf5 0, #ecfdf5 4px, transparent 4px); }
+.rec-w-o { background: linear-gradient(90deg, #fff7ed 0, #fff7ed 4px, transparent 4px); }
+.rec-w-r { background: linear-gradient(90deg, #fef2f2 0, #fef2f2 4px, transparent 4px); }
+.rec-w-b { background: linear-gradient(90deg, #eff6ff 0, #eff6ff 4px, transparent 4px); }
+.rec-w-now { background: linear-gradient(90deg, #ecfeff 0, #ecfeff 4px, transparent 4px); }
+.rec-w-x { }
+
+.rec-w-thisweek {
+  background: linear-gradient(90deg, #cffafe 0, #ecfeff 40%, transparent) !important;
+}
+.rec-w-nowbadge {
+  display: inline-block;
+  background: #059669;
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  margin-left: 6px;
+  animation: pulse 2s infinite;
+}
+.rec-w-best .rec-w-sem { color: #b45309; }
+
+.rec-w-detail { background: #f8fafc; }
+.hidden { display: none; }
+/* ═════ FIN TIMELINE COMPACTO ═════ */
+
+/* ═════ SEPARADORES DE AÑO (legacy — mantener por compat) ═════ */
 .rec-year-header {
   margin: 20px 0 12px;
   padding: 14px 18px;
@@ -388,25 +544,20 @@ tr:last-child td{border-bottom:none}
   .rec-no-print { display: none !important; }
   .rec-print-cover { display: block !important; }
 
-  /* Layout limpio para impresión */
-  .rec-week-card {
-    box-shadow: none !important;
-    border: 1px solid #cbd5e1 !important;
-    margin-bottom: 10px !important;
-    background: #fff !important;
-  }
-  .rec-week-card.wk-best {
-    background: #fffbeb !important;
-    border: 1.5px solid #f59e0b !important;
-  }
-  .rec-wk-dot { box-shadow: none !important; }
-  .rec-wk-metric { background: #fafafa !important; }
+  /* Abrir TODOS los details al imprimir */
+  details { display: block !important; }
+  details > summary { display: flex !important; }
+  details:not([open]) > *:not(summary) { display: block !important; }
+
+  /* Tabla imprimible */
+  .rec-year-details { break-inside: avoid; page-break-inside: avoid; margin-bottom: 8px !important; border: 1px solid #cbd5e1 !important; }
+  .rec-year-summary { padding: 8px 12px !important; }
+  .rec-w-table { font-size: 10.5px !important; }
+  .rec-w-table thead th { padding: 5px 8px !important; }
+  .rec-w-table tbody td { padding: 4px 8px !important; }
 
   /* Colores impresos fielmente */
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-
-  /* Cada 3-4 tarjetas nueva página */
-  .rec-week-card:nth-child(3n+1) { page-break-before: auto; }
 }
 /* ═════ FIN TIMELINE EJECUTIVO ═════ */
 </style>
@@ -914,16 +1065,12 @@ tr:last-child td{border-bottom:none}
           <div style="font-size:11.5px;color:var(--muted);margin-top:3px" id="recLogResumen">—</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap" class="rec-no-print">
-          <label style="font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px">
-            <input type="checkbox" id="recFiltroSoloActividad" checked onchange="renderRecTimeline()" style="cursor:pointer">
-            Solo semanas con actividad
-          </label>
-          <select id="recFiltroSemanas" onchange="renderRecTimeline()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:11.5px;font-weight:600;cursor:pointer">
-            <option value="12" selected>Últimas 12 semanas</option>
-            <option value="24">Últimas 24 semanas</option>
-            <option value="52">Últimas 52 semanas</option>
-            <option value="all">Todo el histórico</option>
-          </select>
+          <button onclick="expandirTodosAnios(true)" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:11.5px;font-weight:600;cursor:pointer">
+            ⤵ Expandir todo
+          </button>
+          <button onclick="expandirTodosAnios(false)" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:11.5px;font-weight:600;cursor:pointer">
+            ⤴ Colapsar todo
+          </button>
           <button onclick="imprimirTimelineIva()" style="padding:6px 14px;border-radius:6px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,40,85,.25)">
             🖨️ Imprimir reporte
           </button>
@@ -1210,7 +1357,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.13';
+const APP_VERSION   = '2026.07.17.14';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -3450,6 +3597,39 @@ function _recWeekLabel(dateStr){
   return `Sem ${String(iw.week).padStart(2,'0')} — ${meses[d.getUTCMonth()]} ${iw.year}`;
 }
 
+// Rango de fechas de una semana ISO (lunes-domingo) → "05-11 Ago"
+function _recWeekRange(year, week){
+  // Lunes de la semana ISO
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const dayOfWeek = (jan4.getUTCDay() + 6) % 7; // Mon=0
+  const week1Monday = new Date(jan4);
+  week1Monday.setUTCDate(jan4.getUTCDate() - dayOfWeek);
+  const monday = new Date(week1Monday);
+  monday.setUTCDate(week1Monday.getUTCDate() + (week - 1) * 7);
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mM = monday.getUTCMonth(), mD = monday.getUTCDate();
+  const dM = sunday.getUTCMonth(), dD = sunday.getUTCDate();
+  if (mM === dM) return `${String(mD).padStart(2,'0')}-${String(dD).padStart(2,'0')} ${meses[mM]}`;
+  return `${String(mD).padStart(2,'0')} ${meses[mM]} - ${String(dD).padStart(2,'0')} ${meses[dM]}`;
+}
+
+// Devuelve 52 o 53 según ISO 8601
+function _recIsoWeeksInYear(year){
+  const dec28 = new Date(Date.UTC(year, 11, 28));
+  return _recIsoWeek(dec28.toISOString().slice(0,10)).week;
+}
+
+// Toggle del detalle expandible de una fila de semana
+function toggleWeekDetail(tr){
+  const next = tr.nextElementSibling;
+  if (next && next.classList.contains('rec-w-detail')) {
+    next.classList.toggle('hidden');
+    tr.classList.toggle('rec-w-expanded');
+  }
+}
+
 function _recDerivarEventos(){
   const eventos = [];
   const hoyISO = new Date().toISOString().slice(0,10);
@@ -3562,59 +3742,35 @@ function renderRecTimeline(){
     return;
   }
 
-  // Calcular acumulados cronológicos (más antiguo → más reciente)
-  const eventosCron = [...eventos].sort((a,b)=> a.fecha.localeCompare(b.fecha));
-  let accPres = 0, accDev = 0;
-  const accByFecha = new Map();
-  eventosCron.forEach(ev => {
-    accPres += ev.monto_presentado;
-    accDev  += ev.monto_devuelto;
-    accByFecha.set(ev, { accPres, accDev });
+  // Rango de años
+  const yearFirst = Math.min(...eventos.map(e => parseInt(e.fecha.slice(0,4))));
+  const hoy = new Date();
+  const hoyISO = hoy.toISOString().slice(0,10);
+  const yearNow = hoy.getFullYear();
+  const currentIsoWeek = _recIsoWeek(hoyISO).week;
+
+  // Agrupar eventos por año-semana
+  const eventsByKey = new Map();
+  eventos.forEach(ev => {
+    const iw = _recIsoWeek(ev.fecha);
+    if (!iw) return;
+    const k = `${iw.year}-${String(iw.week).padStart(2,'0')}`;
+    if (!eventsByKey.has(k)) eventsByKey.set(k, []);
+    eventsByKey.get(k).push(ev);
   });
 
-  // Agrupar por semana
-  const semanas = _recAgruparPorSemana(eventos);
-
-  // Filtros de la UI
-  const soloActividad = document.getElementById('recFiltroSoloActividad')?.checked ?? true;
-  const limSel = document.getElementById('recFiltroSemanas')?.value || '12';
-  const limite = limSel === 'all' ? 9999 : parseInt(limSel);
-
-  // Detectar mejor semana (mayor total devuelto)
-  let mejorSem = null; let mejorMonto = 0;
-  semanas.forEach(sem => {
-    const totDev = sem.eventos.reduce((s,e)=>s+e.monto_devuelto,0);
-    if (totDev > mejorMonto) { mejorMonto = totDev; mejorSem = sem.key; }
+  // Mejor semana (mayor depósito)
+  let mejorKey = null; let mejorDev = 0;
+  eventsByKey.forEach((evs, k) => {
+    const dev = evs.reduce((s,e)=>s+e.monto_devuelto,0);
+    if (dev > mejorDev) { mejorDev = dev; mejorKey = k; }
   });
 
-  // Filtrar solo actividad si aplica
-  let semanasView = semanas;
-  if (soloActividad) {
-    semanasView = semanasView.filter(s =>
-      s.eventos.some(e => e.monto_presentado > 0 || e.monto_devuelto > 0 || e.tipo === 'dep_vencido' || !e.auto)
-    );
-  }
-  semanasView = semanasView.slice(0, limite);
-
-  // Calcular delta por semana (comparar con semana anterior cronológica)
-  const semanasByKey = new Map(semanas.map(s => [s.key, s]));
-  const semanasCronKeys = [...semanas].sort((a,b)=> (a.year - b.year) || (a.week - b.week)).map(s => s.key);
-  const deltaMap = new Map();
-  let prevAccDev = 0;
-  semanasCronKeys.forEach(k => {
-    const sem = semanasByKey.get(k);
-    const ultimoEv = sem.eventos.slice().sort((a,b)=> b.fecha.localeCompare(a.fecha))[0];
-    const acc = accByFecha.get(ultimoEv) || { accDev: 0 };
-    deltaMap.set(k, acc.accDev - prevAccDev);
-    prevAccDev = acc.accDev;
-  });
-
-  // Actualizar portada de impresión
+  // Portada de impresión
   const totFavor    = recPeriodos.reduce((s,p)=>s+Number(p.monto_favor||0),0);
   const totDevuelto = recPeriodos.reduce((s,p)=>s+Number(p.monto_devuelto||0),0);
   const totPendiente = totFavor - totDevuelto;
   const tasaGlobal = totFavor > 0 ? (totDevuelto/totFavor*100) : 0;
-  const hoy = new Date();
   const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const fechaCorte = `${hoy.getDate()} de ${meses[hoy.getMonth()]} de ${hoy.getFullYear()}`;
   document.getElementById('recPrintSubtitle').textContent =
@@ -3626,174 +3782,148 @@ function renderRecTimeline(){
     <div><div style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">📈 Tasa Recup.</div><div style="font-size:16px;font-weight:800;color:#0057B8;margin-top:2px">${tasaGlobal.toFixed(1)}%</div></div>
   `;
 
-  if (!semanasView.length){
-    cont.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:14px 0;text-align:center">No hay semanas con actividad en el rango seleccionado. Desactiva el filtro o amplía el rango.</div>';
-    return;
-  }
+  // Render por año (más reciente primero)
+  const yearsList = [];
+  for (let y = yearNow; y >= yearFirst; y--) yearsList.push(y);
 
-  // Render de tarjetas agrupadas por año
-  let currentYear = null;
-  const semanasHtml = semanasView.map(sem => {
-    const totPresSem = sem.eventos.reduce((s,e)=>s+e.monto_presentado, 0);
-    const totDevSem  = sem.eventos.reduce((s,e)=>s+e.monto_devuelto, 0);
-    const nDep       = sem.eventos.filter(e => e.tipo === 'deposito').length;
-    const nPres      = sem.eventos.filter(e => e.tipo === 'presentacion').length;
-    const nVenc      = sem.eventos.filter(e => e.tipo === 'dep_vencido').length;
-    const ultimoEv   = sem.eventos.slice().sort((a,b)=> b.fecha.localeCompare(a.fecha))[0];
-    const acc        = accByFecha.get(ultimoEv) || { accPres: 0, accDev: 0 };
-    const tasa       = acc.accPres > 0 ? (acc.accDev / acc.accPres * 100) : 0;
-    const delta      = deltaMap.get(sem.key) || 0;
-    const esMejor    = sem.key === mejorSem && mejorMonto > 0;
+  cont.innerHTML = yearsList.map(year => {
+    const isCurrent = year === yearNow;
+    const maxWeek = _recIsoWeeksInYear(year);
+    // Límite superior si es año en curso
+    const limitWeek = isCurrent ? currentIsoWeek : maxWeek;
 
-    // Separador de año (cuando cambia el año en el recorrido descendente)
-    let yearSeparator = '';
-    if (sem.year !== currentYear){
-      // Calcular métricas del año completo
-      const semanasDelAnio = semanas.filter(s => s.year === sem.year);
-      let anioPres = 0, anioDev = 0, anioDep = 0, anioPresCount = 0;
-      semanasDelAnio.forEach(s => {
-        s.eventos.forEach(ev => {
-          anioPres += ev.monto_presentado;
-          anioDev  += ev.monto_devuelto;
-          if (ev.tipo === 'deposito') anioDep++;
-          if (ev.tipo === 'presentacion') anioPresCount++;
-        });
+    // KPIs del año
+    let anioPres = 0, anioDev = 0;
+    let nPres = 0, nAut = 0, nDep = 0, nVenc = 0;
+    for (let w = 1; w <= maxWeek; w++){
+      const evs = eventsByKey.get(`${year}-${String(w).padStart(2,'0')}`) || [];
+      evs.forEach(ev => {
+        anioPres += ev.monto_presentado;
+        anioDev  += ev.monto_devuelto;
+        if (ev.tipo === 'presentacion') nPres++;
+        if (ev.tipo === 'aprobado')     nAut++;
+        if (ev.tipo === 'dep_vencido')  { nAut++; nVenc++; }
+        if (ev.tipo === 'deposito')     nDep++;
       });
-      const anioTasa = anioPres > 0 ? (anioDev/anioPres*100) : 0;
-      const esAnioActual = sem.year === new Date().getFullYear();
-      yearSeparator = `
-        <div class="rec-year-header ${esAnioActual?'rec-year-current':''}">
-          <div class="rec-year-title">
-            📅 ${sem.year} ${esAnioActual?'<span class="rec-year-live">EN CURSO</span>':''}
-            <span class="rec-year-sub">${semanasDelAnio.length} semana${semanasDelAnio.length>1?'s':''} con actividad</span>
-          </div>
-          <div class="rec-year-metrics">
-            <div><span class="rec-year-mlbl">📋 Presentado:</span> <b>${fmtMoney(anioPres)}</b> <span style="color:#94a3b8">(${anioPresCount})</span></div>
-            <div><span class="rec-year-mlbl">✅ Devuelto:</span> <b style="color:#059669">${fmtMoney(anioDev)}</b> <span style="color:#94a3b8">(${anioDep} dep.)</span></div>
-            <div><span class="rec-year-mlbl">📈 Tasa año:</span> <b style="color:${anioTasa>=50?'#059669':anioTasa>=20?'#f59e0b':anioTasa>0?'#f97316':'#94a3b8'}">${anioTasa.toFixed(1)}%</b></div>
-          </div>
+    }
+    const anioTasa = anioPres > 0 ? (anioDev/anioPres*100) : 0;
+
+    // Filas de semanas del año
+    const rows = [];
+    for (let w = 1; w <= limitWeek; w++){
+      const key = `${year}-${String(w).padStart(2,'0')}`;
+      const evs = eventsByKey.get(key) || [];
+      const range = _recWeekRange(year, w);
+      const nP = evs.filter(e=>e.tipo==='presentacion').length;
+      const nA = evs.filter(e=>e.tipo==='aprobado' || e.tipo==='dep_vencido').length;
+      const nD = evs.filter(e=>e.tipo==='deposito').length;
+      const nV = evs.filter(e=>e.tipo==='dep_vencido').length;
+      const totPago = evs.reduce((s,e)=>s+e.monto_devuelto,0);
+      const isThisWeek = year === yearNow && w === currentIsoWeek;
+      const isBest = key === mejorKey;
+
+      let estadoTxt, estadoColor, rowCls;
+      if (nV > 0)      { estadoTxt = '🔴 Vencimiento'; estadoColor = '#dc2626'; rowCls = 'rec-w-r'; }
+      else if (nD > 0) { estadoTxt = '🟢 Depósito';    estadoColor = '#059669'; rowCls = 'rec-w-g'; }
+      else if (nA > 0) { estadoTxt = '🟠 Autorizado';  estadoColor = '#ea580c'; rowCls = 'rec-w-o'; }
+      else if (nP > 0) { estadoTxt = '🔵 Presentación';estadoColor = '#0284c7'; rowCls = 'rec-w-b'; }
+      else if (isThisWeek) { estadoTxt = '⚪ En curso'; estadoColor = '#0891b2'; rowCls = 'rec-w-now'; }
+      else             { estadoTxt = '⚪ Sin actividad'; estadoColor = '#94a3b8'; rowCls = 'rec-w-x'; }
+
+      // Detalle expandible con lista de eventos
+      const detHtml = evs.length ? `
+        <div style="padding:8px 12px 8px 40px;background:#f8fafc">
+          ${evs.map(ev => `
+            <div style="padding:5px 0;font-size:12px;display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted #e2e8f0">
+              <div>
+                <span style="font-size:14px">${ev.icon}</span>
+                <b>${ev.titulo}</b>
+                ${ev.periodo ? `<span style="background:#e2e8f0;padding:1px 6px;border-radius:6px;font-size:10.5px;font-weight:700;margin-left:4px">${ev.periodo}</span>` : ''}
+                <span style="color:#94a3b8;font-size:11px;margin-left:6px">${ev.fecha}</span>
+                <div style="color:#64748b;font-size:11px;margin-top:2px;padding-left:20px">${ev.detalle}</div>
+              </div>
+              <div style="text-align:right;min-width:100px">
+                ${ev.monto_presentado>0 ? `<div style="color:#0284c7;font-weight:700">📋 ${fmtMoney(ev.monto_presentado)}</div>` : ''}
+                ${ev.monto_devuelto>0 ? `<div style="color:#10b981;font-weight:800">💰 ${fmtMoney(ev.monto_devuelto)}</div>` : ''}
+              </div>
+            </div>
+          `).join('')}
         </div>
-      `;
-      currentYear = sem.year;
+      ` : '';
+
+      const isClickable = evs.length > 0;
+      rows.push(`
+        <tr class="${rowCls} ${isThisWeek?'rec-w-thisweek':''} ${isBest?'rec-w-best':''} ${isClickable?'rec-w-clickable':''}"
+            ${isClickable ? 'onclick="toggleWeekDetail(this)"' : ''}>
+          <td class="rec-w-sem">${isBest?'★ ':''}Sem ${String(w).padStart(2,'0')}</td>
+          <td class="rec-w-range">${range}${isThisWeek?' <span class="rec-w-nowbadge">HOY</span>':''}</td>
+          <td class="rec-w-num">${nP>0?`<b style="color:#0284c7">📋 ${nP}</b>`:'<span style="color:#cbd5e1">—</span>'}</td>
+          <td class="rec-w-num">${nA>0?`<b style="color:#ea580c">✅ ${nA}</b>`:'<span style="color:#cbd5e1">—</span>'}</td>
+          <td class="rec-w-num">${totPago>0?`<b style="color:#10b981">💰 ${fmtMoney(totPago)}</b>`:'<span style="color:#cbd5e1">—</span>'}</td>
+          <td class="rec-w-status" style="color:${estadoColor};font-weight:700">${estadoTxt}</td>
+          <td class="rec-w-expand">${isClickable?'<span class="rec-w-caret">›</span>':''}</td>
+        </tr>
+        ${detHtml ? `<tr class="rec-w-detail hidden"><td colspan="7" style="padding:0">${detHtml}</td></tr>` : ''}
+      `);
     }
 
-    // Semáforo semanal
-    let sem_color, sem_letra, sem_badge, sem_badge_txt;
-    if (nVenc > 0) { sem_color='r'; sem_letra='!'; sem_badge='r'; sem_badge_txt='🔴 Alerta'; }
-    else if (totDevSem > 0) { sem_color='g'; sem_letra='✓'; sem_badge='g'; sem_badge_txt='🟢 Recuperación'; }
-    else if (totPresSem > 0) { sem_color='b'; sem_letra='📋'; sem_badge='b'; sem_badge_txt='🔵 Presentación'; }
-    else { sem_color='x'; sem_letra='—'; sem_badge='x'; sem_badge_txt='⚪ Sin actividad'; }
-
-    // Frase resumen automática
-    let frase;
-    if (nVenc > 0) {
-      frase = `⚠️ En esta semana venció ${nVenc} depósito${nVenc>1?'s':''} sin cobrar. Requiere acción inmediata (Prodecon o seguimiento SAT).`;
-    } else if (totDevSem > 0 && totPresSem > 0) {
-      frase = `Se recuperaron <span class="rec-wk-money">${fmtMoney(totDevSem)}</span> en ${nDep} depósito${nDep>1?'s':''} y se presentaron ${nPres} nueva${nPres>1?'s':''} solicitud${nPres>1?'es':''} por <span class="rec-wk-money-blue">${fmtMoney(totPresSem)}</span>.`;
-    } else if (totDevSem > 0) {
-      frase = `🎉 Se recuperaron <span class="rec-wk-money">${fmtMoney(totDevSem)}</span> del SAT en ${nDep} depósito${nDep>1?'s':''}.`;
-    } else if (totPresSem > 0) {
-      frase = `Se presentaron ${nPres} solicitud${nPres>1?'es':''} de devolución al SAT por <span class="rec-wk-money-blue">${fmtMoney(totPresSem)}</span>. Esperando respuesta.`;
-    } else {
-      frase = `Semana sin actividad registrada. En espera de respuesta o programación de trámites.`;
-    }
-
-    // Delta vs semana previa con actividad (cronológica)
-    let deltaHtml;
-    if (delta > 0) deltaHtml = `<div class="rec-wk-metric-delta up">▲ +${fmtMoney(delta)} vs semana previa con actividad</div>`;
-    else if (delta < 0) deltaHtml = `<div class="rec-wk-metric-delta down">▼ ${fmtMoney(delta)} vs semana previa con actividad</div>`;
-    else deltaHtml = `<div class="rec-wk-metric-delta eq">— sin cambio vs semana previa</div>`;
-
-    // Lista de eventos de la semana
-    const eventosHtml = sem.eventos.slice().sort((a,b)=> b.fecha.localeCompare(a.fecha)).map(ev => `
-      <div class="rec-wk-event">
-        <div class="rec-wk-event-left">
-          <span style="font-size:14px">${ev.icon}</span>
-          <b>${ev.titulo}</b>
-          ${ev.periodo ? `<span style="background:var(--surface2);color:var(--text);padding:1px 7px;border-radius:8px;font-size:10.5px;font-weight:700;margin-left:6px">${ev.periodo}</span>` : ''}
-          <span class="rec-wk-event-tag ${ev.auto?'auto':'manual'}">${ev.auto?'AUTO':'MANUAL'}</span>
-          <span style="color:var(--muted);font-size:10.5px;margin-left:6px">${ev.fecha}</span>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:3px;padding-left:22px">${ev.detalle}</div>
+    // Header del año con KPIs
+    return `
+      <details ${isCurrent?'open':''} class="rec-year-details">
+        <summary class="rec-year-summary ${isCurrent?'rec-year-current':''}">
+          <span class="rec-year-title-c">
+            📅 ${year}
+            ${isCurrent?'<span class="rec-year-live">EN CURSO</span>':''}
+          </span>
+          <span class="rec-year-kpis-c">
+            <span title="Presentaciones al SAT en ${year}">📋 <b>${nPres}</b> pres.</span>
+            <span title="Autorizaciones/pagos programados por SAT en ${year}">✅ <b>${nAut}</b> aut.${nVenc>0?` <b style="color:#fecaca">(${nVenc} venc.)</b>`:''}</span>
+            <span title="Depósitos bancarios efectivamente recibidos en ${year}">💰 <b>${nDep}</b> dep. <b style="color:#a7f3d0">${fmtMoney(anioDev)}</b></span>
+            <span title="Tasa de recuperación anual = devuelto / presentado en el año">📈 <b>${anioTasa.toFixed(1)}%</b></span>
+          </span>
+        </summary>
+        <div class="rec-year-body">
+          <table class="rec-w-table">
+            <thead>
+              <tr>
+                <th style="width:75px">Sem</th>
+                <th>Rango</th>
+                <th class="rec-w-thn">📋 Pres.</th>
+                <th class="rec-w-thn">✅ Aut.</th>
+                <th class="rec-w-thn">💰 Pago</th>
+                <th>Estado</th>
+                <th style="width:24px"></th>
+              </tr>
+            </thead>
+            <tbody>${rows.join('')}</tbody>
+          </table>
         </div>
-        <div style="text-align:right;min-width:100px">
-          ${ev.monto_presentado>0 ? `<div style="font-size:12px;color:#0284c7;font-weight:700">📋 ${fmtMoney(ev.monto_presentado)}</div>` : ''}
-          ${ev.monto_devuelto>0 ? `<div style="font-size:13.5px;color:#10b981;font-weight:800">✅ ${fmtMoney(ev.monto_devuelto)}</div>` : ''}
-          ${(ev.monto_manual||0)>0 ? `<div style="font-size:12px;color:var(--text);font-weight:700">${fmtMoney(ev.monto_manual)}</div>` : ''}
-        </div>
-      </div>
-    `).join('');
-
-    const cardHtml = `
-      <div class="rec-week-card wk-${sem_color} ${esMejor?'wk-best':''}">
-        <div class="rec-wk-head">
-          <div class="rec-wk-title">
-            <div class="rec-wk-dot ${sem_color}">${sem_letra}</div>
-            <div class="rec-wk-info">
-              <h3>📅 ${sem.label}</h3>
-              <div class="rec-wk-sub">${sem.eventos.length} evento${sem.eventos.length>1?'s':''} registrado${sem.eventos.length>1?'s':''}</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            ${esMejor ? '<span class="rec-wk-best-badge">🏆 Mejor semana del proyecto</span>' : ''}
-            <span class="rec-wk-badge ${sem_badge}">${sem_badge_txt}</span>
-          </div>
-        </div>
-
-        <div class="rec-wk-summary">${frase}</div>
-
-        <div class="rec-wk-metrics">
-          <div class="rec-wk-metric">
-            <div class="rec-wk-metric-lbl">📋 Presentado en la semana</div>
-            <div class="rec-wk-metric-val" style="color:${totPresSem>0?'#0284c7':'#94a3b8'}">${fmtMoney(totPresSem)}</div>
-            <div class="rec-wk-metric-delta eq">${nPres} solicitud${nPres!==1?'es':''}</div>
-          </div>
-          <div class="rec-wk-metric">
-            <div class="rec-wk-metric-lbl">✅ Devuelto en la semana</div>
-            <div class="rec-wk-metric-val" style="color:${totDevSem>0?'#10b981':'#94a3b8'}">${fmtMoney(totDevSem)}</div>
-            ${deltaHtml}
-          </div>
-          <div class="rec-wk-metric">
-            <div class="rec-wk-metric-lbl">Σ Acum devuelto</div>
-            <div class="rec-wk-metric-val">${fmtMoney(acc.accDev)}</div>
-            <div class="rec-wk-metric-delta eq">de ${fmtMoney(acc.accPres)} presentados</div>
-          </div>
-          <div class="rec-wk-metric">
-            <div class="rec-wk-metric-lbl">📈 Tasa de recuperación</div>
-            <div class="rec-wk-metric-val" style="color:${tasa>=50?'#10b981':tasa>=20?'#f59e0b':tasa>0?'#f97316':'#94a3b8'}">${tasa.toFixed(1)}%</div>
-            <div class="rec-wk-bar-wrap">
-              <div class="rec-wk-bar" style="width:${Math.min(100,tasa).toFixed(1)}%"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="rec-wk-events">${eventosHtml}</div>
-      </div>
+      </details>
     `;
-
-    return yearSeparator + cardHtml;
   }).join('');
-
-  cont.innerHTML = semanasHtml +
-    (semanas.length > semanasView.length ? `<div style="padding:10px;color:var(--muted);font-size:12px;font-style:italic;text-align:center">… ${semanas.length - semanasView.length} semana(s) adicional(es) no mostradas · ajusta el filtro para ver más</div>` : '');
 }
 
-/* ---------- IMPRESIÓN DEL TIMELINE ---------- */
+
+/* ---------- CONTROLES DEL TIMELINE ---------- */
+function expandirTodosAnios(open){
+  document.querySelectorAll('.rec-year-details').forEach(d => { d.open = !!open; });
+}
+
 function imprimirTimelineIva(){
-  // Asegura que el timeline esté renderizado y muestra todo el histórico para imprimir
-  const chkAct = document.getElementById('recFiltroSoloActividad');
-  const selSem = document.getElementById('recFiltroSemanas');
-  const prevAct = chkAct.checked;
-  const prevSem = selSem.value;
-  // Para impresión: mostrar todo el histórico y solo semanas con actividad
-  chkAct.checked = true;
-  selSem.value = 'all';
-  renderRecTimeline();
+  // Guardar estado actual, abrir todos, imprimir, restaurar
+  const details = document.querySelectorAll('.rec-year-details');
+  const prevStates = [];
+  details.forEach(d => { prevStates.push(d.open); d.open = true; });
+  // También expandir todos los detalles de semanas
+  document.querySelectorAll('.rec-w-detail').forEach(t => t.classList.remove('hidden'));
+  document.querySelectorAll('.rec-w-clickable').forEach(t => t.classList.add('rec-w-expanded'));
+
   setTimeout(()=>{
     window.print();
-    // Restaurar filtros después de imprimir
-    chkAct.checked = prevAct;
-    selSem.value = prevSem;
-    renderRecTimeline();
+    // Restaurar
+    details.forEach((d,i) => { d.open = prevStates[i]; });
+    document.querySelectorAll('.rec-w-detail').forEach(t => t.classList.add('hidden'));
+    document.querySelectorAll('.rec-w-clickable').forEach(t => t.classList.remove('rec-w-expanded'));
   }, 400);
 }
 
