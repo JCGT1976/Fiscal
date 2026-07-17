@@ -212,6 +212,7 @@ tr:last-child td{border-bottom:none}
     <button class="nav-tab" data-view="impuestos" data-i18n="tab_imp" onclick="showView('impuestos')">🧮 Cálculo de Impuestos</button>
     <button class="nav-tab" data-view="gobernanza" id="tabGobernanza" style="display:none" onclick="showView('gobernanza');cargarGobernanza()">🔐 Gobernanza</button>
     <button class="nav-tab" data-view="grupo" id="tabGrupo" onclick="showView('grupo');cargarGrupo()">🏢 Grupo</button>
+    <button class="nav-tab" data-view="inteligencia" id="tabInteligencia" style="display:none" onclick="showView('inteligencia');cargarInteligencia()">🧠 Inteligencia</button>
   </div>
 
   <!-- ===================== CxC FISCAL (semáforo de riesgo) ===================== -->
@@ -596,6 +597,127 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 
+  <!-- ═══════════ VISTA: INTELIGENCIA FISCAL (Ola 3) ═══════════ -->
+  <div class="view" id="view-inteligencia">
+
+    <!-- 3-A: Detector de anomalías -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px">
+        <h2 style="margin:0">🔍 Detector de anomalías</h2>
+        <button onclick="ejecutarDetectorAnomalias()" style="padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer">▶ Analizar ahora</button>
+      </div>
+      <div class="desc">Analiza patrones anómalos: obligaciones sin mes exigible, concentración de deuda fiduciaria, montos atípicos por empresa, vencimientos críticos y más. Basado en tus datos reales de <code>fiscal_cxc_impuestos</code>.</div>
+
+      <!-- KPIs anomalías -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0">
+        <div style="background:#fef3cd;border:1px solid #fbbf24;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#92400e" id="anomN_critica">—</div>
+          <div style="font-size:11px;color:#92400e;font-weight:600">🔴 Críticas</div>
+        </div>
+        <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#991b1b" id="anomN_alta">—</div>
+          <div style="font-size:11px;color:#991b1b;font-weight:600">🟠 Altas</div>
+        </div>
+        <div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#713f12" id="anomN_media">—</div>
+          <div style="font-size:11px;color:#713f12;font-weight:600">🟡 Medias</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--muted)" id="anomN_baja">—</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600">⚪ Bajas</div>
+        </div>
+      </div>
+
+      <div id="anomaliasLista" style="display:flex;flex-direction:column;gap:8px">
+        <div style="color:var(--muted);font-size:13px;padding:16px 0">Presiona "Analizar ahora" para ejecutar el detector.</div>
+      </div>
+    </div>
+
+    <!-- 3-B: Simulador what-if -->
+    <div class="card">
+      <h2>🎲 Simulador what-if</h2>
+      <div class="desc">Compara escenarios: pago total hoy, pago diferido, acogerse al estímulo LIF 2026, o pago en parcialidades. El ahorro se mide versus no hacer nada (mora continua).</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">EMPRESA</label>
+          <select id="wif_empresa" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
+            <option value="">Todas las empresas</option>
+            <option>Internacional</option><option>Comercial</option>
+            <option>Autobot</option><option>Ariitranst</option><option>Boughts</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">CATEGORÍA</label>
+          <select id="wif_categoria" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
+            <option value="">Todas</option>
+            <option>ISR Propio</option><option>ISR Retenido a Empleados</option>
+            <option>ISR Retenido a Terceros</option><option>IVA</option>
+            <option>IVA Retenido a Terceros</option><option>IMSS / Seguridad Social</option>
+            <option>INFONAVIT / RCV</option><option>ISN Estatal</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px">
+        <!-- Escenario A: Pago total hoy -->
+        <div style="border:2px solid #10b981;border-radius:12px;padding:14px;cursor:pointer;transition:all .2s" onclick="wifSeleccionar('pago_total',this)" id="wifCardPago">
+          <div style="font-size:16px;margin-bottom:6px">💰</div>
+          <div style="font-weight:700;font-size:13px;color:#059669">Pago total hoy</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:4px">Paga el monto histórico ahora. Detiene recargos inmediatamente.</div>
+        </div>
+        <!-- Escenario B: Parcialidades 12 meses -->
+        <div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s" onclick="wifSeleccionar('parcialidades_12',this)" id="wifCardParc12">
+          <div style="font-size:16px;margin-bottom:6px">📅</div>
+          <div style="font-weight:700;font-size:13px">Parcialidades 12m</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:4px">1.42%/mes. Arts. 66-A CFF. Distribuye el pago en 12 mensualidades.</div>
+        </div>
+        <!-- Escenario C: Parcialidades 24 meses -->
+        <div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s" onclick="wifSeleccionar('parcialidades_24',this)" id="wifCardParc24">
+          <div style="font-size:16px;margin-bottom:6px">🗓️</div>
+          <div style="font-weight:700;font-size:13px">Parcialidades 24m</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:4px">1.63%/mes. Arts. 66-A CFF. Pagos mensuales por 2 años.</div>
+        </div>
+        <!-- Escenario D: Estímulo LIF 2026 -->
+        <div style="border:1.5px solid #f59e0b;border-radius:12px;padding:14px;cursor:pointer;transition:all .2s" onclick="wifSeleccionar('condonacion_lif',this)" id="wifCardLif">
+          <div style="font-size:16px;margin-bottom:6px">🎁</div>
+          <div style="font-weight:700;font-size:13px;color:#b45309">Estímulo LIF 2026</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:4px">100% condonación multas+recargos. Solo ISR/IVA. Ingresos ≤$300M MXN.</div>
+        </div>
+      </div>
+
+      <button onclick="ejecutarWhatIf()" style="padding:10px 24px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:16px">
+        🧮 Calcular escenarios
+      </button>
+
+      <div id="wifResultados" style="display:none">
+        <div style="font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:12px">COMPARATIVA DE ESCENARIOS</div>
+        <div id="wifTabla" style="display:grid;gap:10px"></div>
+        <div id="wifRecomendacion" style="margin-top:16px;padding:14px;background:var(--surface);border:1.5px solid var(--accent);border-radius:10px;font-size:13px"></div>
+        <button onclick="guardarEscenario()" style="margin-top:12px;padding:9px 20px;border-radius:8px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer">
+          💾 Guardar escenario
+        </button>
+      </div>
+    </div>
+
+    <!-- 3-C: Predictor de vencimientos -->
+    <div class="card">
+      <h2>📡 Predictor de vencimientos</h2>
+      <div class="desc">Proyecta los próximos 6 meses de obligaciones fiscales basado en la cartera actual. Identifica meses de alta presión y el impacto acumulado de recargos si no se paga.</div>
+
+      <button onclick="ejecutarPredictor()" style="padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:16px">
+        ▶ Generar proyección 6 meses
+      </button>
+
+      <div id="predictorResultados" style="display:none">
+        <div style="font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:12px">PROYECCIÓN MENSUAL — RECARGOS ACUMULADOS</div>
+        <div id="predictorBars" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div id="predictorAlerta" style="margin-top:14px;font-size:12.5px;color:var(--muted)"></div>
+      </div>
+    </div>
+
+  </div>
+
 </div>
 </div>
 
@@ -648,7 +770,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.4';
+const APP_VERSION   = '2026.07.17.5';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -706,6 +828,8 @@ async function bootstrapAuth() {
           if (['admin_master','admin'].includes(currentUserRol)) {
             const tabGob = document.getElementById('tabGobernanza');
             if (tabGob) tabGob.style.display = 'inline-flex';
+            const tabInt = document.getElementById('tabInteligencia');
+            if (tabInt) tabInt.style.display = 'inline-flex';
           }
         }
       } catch(e) { console.warn('Sin datos de usuario:', e); }
@@ -2163,6 +2287,345 @@ function mostrarToast(msg, color='#002855'){
   t.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${color};color:#fff;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25)`;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3000);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   OLA 3 · INTELIGENCIA FISCAL
+   3-A: Detector de anomalías
+   3-B: Simulador what-if
+   3-C: Predictor de vencimientos
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── 3-A: Detector de anomalías ─────────────────────────── */
+
+let wifEscenarioSeleccionado = 'pago_total';
+let wifDatosBase = [];
+
+async function cargarInteligencia(){
+  /* Pre-cargar datos al abrir la pestaña */
+  if (!cxcImpuestos.length) await cargarCxc();
+}
+
+async function ejecutarDetectorAnomalias(){
+  const datos = cxcImpuestos.length ? cxcImpuestos : [];
+  if (!datos.length){ mostrarToast('Sin datos en CxC Fiscal para analizar.','#6b7280'); return; }
+
+  const anomalias = [];
+
+  /* Regla 1 — Fiduciario pendiente (riesgo penal arts.108-109 CFF) */
+  datos.filter(r => r.fiduciario && r.estatus !== 'Pagado').forEach(r => {
+    anomalias.push({
+      tipo:'retencion_no_enterada', severidad:'critica',
+      empresa: r.empresa, categoria: r.categoria,
+      descripcion:`Retención no enterada: ${r.empresa} · ${r.categoria}`,
+      detalle:`Monto: ${fmtMoney(r.monto)} · Riesgo penal arts.108-109 CFF`,
+      fundamento:'Arts. 108-109 CFF — defraudación fiscal equiparada',
+      cxc_id: r.id
+    });
+  });
+
+  /* Regla 2 — Sin mes_exigibilidad (cálculo impreciso) */
+  const sinMes = datos.filter(r => !r.mes_exigibilidad && r.estatus !== 'Pagado');
+  if (sinMes.length > 0) {
+    anomalias.push({
+      tipo:'dato_incompleto', severidad:'media',
+      descripcion:`${sinMes.length} obligación(es) sin mes de exigibilidad exacto`,
+      detalle:`El cálculo de recargos se aproxima desde enero del año — puede subestimar o sobreestimar accesorios.`,
+      fundamento:'Art. 17-A CFF — la actualización requiere fecha exacta de exigibilidad'
+    });
+  }
+
+  /* Regla 3 — Mora mayor a 36 meses (posible prescripción parcial) */
+  const hoy = new Date();
+  datos.filter(r => r.estatus !== 'Pagado').forEach(r => {
+    const anio = r.anio_exigibilidad || r.anio_inicio || 2023;
+    const mes  = r.mes_exigibilidad ? r.mes_exigibilidad - 1 : 0;
+    const origen = new Date(anio, mes, 1);
+    const meses = (hoy.getFullYear()-origen.getFullYear())*12 + (hoy.getMonth()-origen.getMonth());
+    if (meses > 36 && meses <= 60) {
+      anomalias.push({
+        tipo:'mora_critica', severidad:'alta',
+        empresa: r.empresa, categoria: r.categoria,
+        descripcion:`Mora de ${meses} meses — ${r.empresa} · ${r.categoria}`,
+        detalle:`${fmtMoney(r.monto)} histórico · Recargos al ${((window.__tasaMoraFederal||0.0207)*100).toFixed(2)}%/mes ya superan el capital`,
+        fundamento:'Art. 21 CFF — tope de recargos 5 años (60 meses)',
+        cxc_id: r.id
+      });
+    }
+    if (meses > 60) {
+      anomalias.push({
+        tipo:'mora_tope', severidad:'critica',
+        empresa: r.empresa, categoria: r.categoria,
+        descripcion:`Mora de ${meses} meses — supera el tope de 60 meses del art.21 CFF`,
+        detalle:`${fmtMoney(r.monto)} · Los recargos se capearon. Evaluar con fiscalista si procede prescripción.`,
+        fundamento:'Art. 21 CFF párrafo 7 — tope de 5 años en recargos',
+        cxc_id: r.id
+      });
+    }
+  });
+
+  /* Regla 4 — Concentración en una sola empresa (>70% de deuda total) */
+  const total = datos.reduce((s,r) => s + Number(r.monto||0), 0);
+  const porEmpresa = {};
+  datos.forEach(r => { porEmpresa[r.empresa] = (porEmpresa[r.empresa]||0) + Number(r.monto||0); });
+  Object.entries(porEmpresa).forEach(([emp, monto]) => {
+    if (total > 0 && monto/total > 0.70) {
+      anomalias.push({
+        tipo:'concentracion', severidad:'alta',
+        empresa: emp,
+        descripcion:`Alta concentración de deuda en ${emp}: ${((monto/total)*100).toFixed(1)}% del total del grupo`,
+        detalle:`${fmtMoney(monto)} de ${fmtMoney(total)} total. Riesgo de liquidez concentrado.`,
+        fundamento:'Análisis de concentración de riesgo fiscal'
+      });
+    }
+  });
+
+  /* Regla 5 — Obligaciones en workflow borrador por más de 7 días (no han avanzado) */
+  const borrador = datos.filter(r => !r.workflow_estado || r.workflow_estado === 'borrador');
+  if (borrador.length > datos.length * 0.8) {
+    anomalias.push({
+      tipo:'workflow_estancado', severidad:'baja',
+      descripcion:`${borrador.length} obligaciones siguen en estado "Borrador" — no han iniciado revisión`,
+      detalle:'Considera enviarlas a revisión en la pestaña Gobernanza para activar el flujo de aprobación.',
+      fundamento:'Buenas prácticas de gobernanza fiscal interna'
+    });
+  }
+
+  /* Guardar en Supabase si existen */
+  if (anomalias.length > 0) {
+    try {
+      await sb.from('fiscal_anomalias').insert(
+        anomalias.map(a => ({
+          tipo: a.tipo, severidad: a.severidad,
+          empresa: a.empresa || null, categoria: a.categoria || null,
+          cxc_id: a.cxc_id || null,
+          descripcion: a.descripcion,
+          detalle_json: { detalle: a.detalle },
+          fundamento: a.fundamento || null,
+        }))
+      );
+    } catch(e) { console.warn('[anomalias] No se pudo persistir:', e.message); }
+  }
+
+  renderAnomalias(anomalias);
+  auditLog({ accion:'DETECTOR_ANOMALIAS', input_json:{ total_analizadas: datos.length },
+    output_json:{ anomalias_detectadas: anomalias.length }, fundamento:'Ola 3-A' });
+}
+
+function renderAnomalias(lista){
+  const counts = { critica:0, alta:0, media:0, baja:0 };
+  lista.forEach(a => { if(counts[a.severidad]!==undefined) counts[a.severidad]++; });
+  document.getElementById('anomN_critica').textContent = counts.critica;
+  document.getElementById('anomN_alta').textContent    = counts.alta;
+  document.getElementById('anomN_media').textContent   = counts.media;
+  document.getElementById('anomN_baja').textContent    = counts.baja;
+
+  const COLORS = { critica:'#dc2626', alta:'#ea580c', media:'#ca8a04', baja:'#6b7280' };
+  const ICONS  = { critica:'🔴', alta:'🟠', media:'🟡', baja:'⚪' };
+  const BG     = { critica:'#fee2e2', alta:'#ffedd5', media:'#fef9c3', baja:'var(--surface)' };
+
+  const lista_el = document.getElementById('anomaliasLista');
+  lista_el.innerHTML = lista.length === 0
+    ? '<div style="padding:20px;text-align:center;color:#059669;font-weight:600">✅ Sin anomalías detectadas. La cartera fiscal está dentro de parámetros normales.</div>'
+    : lista.sort((a,b) => ['critica','alta','media','baja'].indexOf(a.severidad) - ['critica','alta','media','baja'].indexOf(b.severidad))
+        .map(a => `
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:${BG[a.severidad]};border:1px solid ${COLORS[a.severidad]}30;border-left:4px solid ${COLORS[a.severidad]};border-radius:10px">
+            <span style="font-size:18px;flex-shrink:0">${ICONS[a.severidad]}</span>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:13px;color:${COLORS[a.severidad]}">${a.descripcion}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5">${a.detalle}</div>
+              ${a.fundamento ? `<div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic">${a.fundamento}</div>` : ''}
+            </div>
+            <span style="font-size:10px;font-weight:700;color:${COLORS[a.severidad]};background:${COLORS[a.severidad]}15;padding:3px 8px;border-radius:12px;white-space:nowrap;flex-shrink:0">${a.severidad.toUpperCase()}</span>
+          </div>`).join('');
+}
+
+/* ─── 3-B: Simulador what-if ─────────────────────────────── */
+
+function wifSeleccionar(tipo, el){
+  wifEscenarioSeleccionado = tipo;
+  document.querySelectorAll('[id^="wifCard"]').forEach(c => {
+    c.style.borderWidth = '1.5px';
+    c.style.borderColor = 'var(--border)';
+    c.style.background  = 'var(--surface)';
+  });
+  el.style.borderWidth = '2.5px';
+  el.style.borderColor = tipo === 'condonacion_lif' ? '#f59e0b' : '#002855';
+  el.style.background  = tipo === 'condonacion_lif' ? '#fffbeb' : '#e6f1fb';
+}
+
+function ejecutarWhatIf(){
+  const empresa  = document.getElementById('wif_empresa').value;
+  const cat      = document.getElementById('wif_categoria').value;
+
+  let datos = cxcImpuestos.filter(r => r.estatus !== 'Pagado');
+  if (empresa)  datos = datos.filter(r => r.empresa   === empresa);
+  if (cat)      datos = datos.filter(r => r.categoria === cat);
+  if (!datos.length){ mostrarToast('Sin obligaciones pendientes para ese filtro.','#6b7280'); return; }
+
+  const hoy     = new Date();
+  const TASA_M  = window.__tasaMoraFederal || 0.0207;
+  const TASA_BC = window.__tasaMoraBC      || 0.0225;
+
+  /* Calcular base actual (mora continua) */
+  let montoHist = 0, accesoriosActuales = 0;
+  datos.forEach(r => {
+    const anio   = r.anio_exigibilidad || r.anio_inicio || 2023;
+    const mes    = r.mes_exigibilidad ? r.mes_exigibilidad - 1 : 0;
+    const factor = INPC_FACTOR[anio] || 1.138;
+    const origen = new Date(anio, mes, 1);
+    const meses  = Math.min((hoy.getFullYear()-origen.getFullYear())*12+(hoy.getMonth()-origen.getMonth()),60);
+    const tasa   = (r.categoria||'').includes('ISN') ? TASA_BC : TASA_M;
+    const mAct   = Number(r.monto)*factor;
+    montoHist   += Number(r.monto);
+    accesoriosActuales += mAct * tasa * Math.max(meses,0);
+  });
+  const totalActual = montoHist + accesoriosActuales;
+
+  /* Escenarios */
+  const escenarios = [
+    {
+      id:'pago_total', label:'💰 Pago total hoy',
+      total: montoHist,
+      accesorios: 0,
+      ahorro: accesoriosActuales,
+      nota:'Pago del monto histórico. Detiene recargos inmediatamente. Sin accesorios adicionales.'
+    },
+    {
+      id:'parcialidades_12', label:'📅 Parcialidades 12 meses',
+      total: montoHist * (1 + 0.0142*12),
+      accesorios: montoHist * 0.0142 * 12,
+      ahorro: accesoriosActuales - montoHist * 0.0142 * 12,
+      nota:'Tasa 1.42%/mes (arts. 66-A CFF). Pagos mensuales: ' + fmtMoney(montoHist*(1+0.0142*12)/12)
+    },
+    {
+      id:'parcialidades_24', label:'🗓️ Parcialidades 24 meses',
+      total: montoHist * (1 + 0.0163*24),
+      accesorios: montoHist * 0.0163 * 24,
+      ahorro: accesoriosActuales - montoHist * 0.0163 * 24,
+      nota:'Tasa 1.63%/mes (arts. 66-A CFF). Pagos mensuales: ' + fmtMoney(montoHist*(1+0.0163*24)/24)
+    },
+    {
+      id:'condonacion_lif', label:'🎁 Estímulo LIF 2026',
+      total: montoHist,
+      accesorios: 0,
+      ahorro: accesoriosActuales,
+      nota:'100% condonación de multas y recargos (art. Vigésimo Segundo Transitorio LIF 2026). Solo aplica a ISR/IVA federal, empresas con ingresos 2024 ≤ $300M MXN, no incluidas en listas 69-B/69-B Bis. Validar con fiscalista.'
+    }
+  ];
+
+  wifDatosBase = { montoHist, accesoriosActuales, totalActual, escenarios };
+
+  const tablaEl = document.getElementById('wifTabla');
+  tablaEl.innerHTML = escenarios.map(e => {
+    const ahorroPos = e.ahorro > 0;
+    const seleccionado = e.id === wifEscenarioSeleccionado;
+    return `<div style="padding:14px 16px;border-radius:10px;border:${seleccionado?'2px solid #002855':'1px solid var(--border)'};background:${seleccionado?'#e6f1fb':'var(--surface)'}">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="font-weight:700;font-size:13px">${e.label}</div>
+        <div style="display:flex;gap:16px;font-size:13px">
+          <div><span style="color:var(--muted);font-size:11px">TOTAL A PAGAR</span><br><b>${fmtMoney(e.total)}</b></div>
+          <div><span style="color:var(--muted);font-size:11px">AHORRO vs MORA</span><br><b style="color:${ahorroPos?'#059669':'#dc2626'}">${ahorroPos?'+':''}${fmtMoney(e.ahorro)}</b></div>
+        </div>
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:6px">${e.nota}</div>
+    </div>`;
+  }).join('');
+
+  /* Recomendación automática */
+  const mejorAhorro = [...escenarios].sort((a,b) => b.ahorro - a.ahorro)[0];
+  const recEl = document.getElementById('wifRecomendacion');
+  recEl.innerHTML = `<b>💡 Recomendación del sistema:</b> "${mejorAhorro.label}" ofrece el mayor ahorro estimado de <b style="color:#059669">${fmtMoney(mejorAhorro.ahorro)}</b> frente a continuar en mora. Sin acción, los accesorios actuales suman <b style="color:#dc2626">${fmtMoney(accesoriosActuales)}</b> sobre un capital histórico de ${fmtMoney(montoHist)}. <em style="color:var(--muted);font-size:11.5px">Este análisis es orientativo — consulta con el fiscalista de MI Global antes de cualquier decisión.</em>`;
+
+  document.getElementById('wifResultados').style.display = 'block';
+  document.getElementById('wifResultados').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+async function guardarEscenario(){
+  if (!wifDatosBase) return;
+  const nombre = prompt('Nombre del escenario (p.ej. "Escenario Internacional jul-2026"):');
+  if (!nombre) return;
+
+  const esc = wifDatosBase.escenarios.find(e => e.id === wifEscenarioSeleccionado) || wifDatosBase.escenarios[0];
+  const { error } = await sb.from('fiscal_escenarios').insert({
+    nombre,
+    tipo: wifEscenarioSeleccionado,
+    empresa: document.getElementById('wif_empresa').value || null,
+    input_json: { empresa: document.getElementById('wif_empresa').value, categoria: document.getElementById('wif_categoria').value, monto_historico: wifDatosBase.montoHist },
+    output_json: { escenarios: wifDatosBase.escenarios },
+    ahorro_estimado: esc.ahorro,
+    usuario_id: currentUserId || null,
+    usuario_nombre: currentUser?.nombre || currentUser?.username || null
+  });
+  if (error){ mostrarToast('Error al guardar: '+error.message,'#dc2626'); return; }
+  mostrarToast('✅ Escenario guardado: '+nombre);
+  auditLog({ accion:'ESCENARIO_GUARDADO', input_json:{ nombre, tipo:wifEscenarioSeleccionado },
+    output_json:{ ahorro_estimado: esc.ahorro }, fundamento:'Ola 3-B simulador what-if' });
+}
+
+/* ─── 3-C: Predictor de vencimientos ────────────────────── */
+
+function ejecutarPredictor(){
+  const datos = cxcImpuestos.filter(r => r.estatus !== 'Pagado');
+  if (!datos.length){ mostrarToast('Sin datos para proyectar.','#6b7280'); return; }
+
+  const hoy    = new Date();
+  const TASA_M = window.__tasaMoraFederal || 0.0207;
+  const TASA_BC= window.__tasaMoraBC      || 0.0225;
+  const meses  = [];
+
+  for (let i = 0; i < 6; i++) {
+    const fecha  = new Date(hoy.getFullYear(), hoy.getMonth() + i + 1, 1);
+    const MESES_LABEL = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    let recargosProyectados = 0;
+
+    datos.forEach(r => {
+      const anio   = r.anio_exigibilidad || r.anio_inicio || 2023;
+      const mes    = r.mes_exigibilidad ? r.mes_exigibilidad-1 : 0;
+      const factor = INPC_FACTOR[anio] || 1.138;
+      const origen = new Date(anio, mes, 1);
+      const mesesTotal = Math.min(
+        (fecha.getFullYear()-origen.getFullYear())*12+(fecha.getMonth()-origen.getMonth()), 60
+      );
+      const tasa = (r.categoria||'').includes('ISN') ? TASA_BC : TASA_M;
+      recargosProyectados += Number(r.monto) * factor * tasa * Math.max(mesesTotal,0);
+    });
+
+    meses.push({
+      label: `${MESES_LABEL[fecha.getMonth()]} ${fecha.getFullYear()}`,
+      recargos: recargosProyectados,
+      incremento: i > 0 ? recargosProyectados - meses[i-1]?.recargos : 0
+    });
+  }
+
+  const maxRecargos = Math.max(...meses.map(m => m.recargos));
+  const barsEl = document.getElementById('predictorBars');
+  barsEl.innerHTML = meses.map((m,i) => {
+    const pct = maxRecargos > 0 ? (m.recargos/maxRecargos)*100 : 0;
+    const color = pct > 80 ? '#dc2626' : pct > 50 ? '#ea580c' : '#3b82f6';
+    const inc = i > 0 ? `+${fmtMoney(m.incremento)}` : 'Base';
+    return `<div style="display:flex;align-items:center;gap:12px">
+      <div style="width:56px;font-size:12px;font-weight:600;color:var(--muted);text-align:right;flex-shrink:0">${m.label}</div>
+      <div style="flex:1;background:var(--surface);border-radius:6px;height:28px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${color};border-radius:6px;display:flex;align-items:center;padding:0 10px;transition:width .4s ease">
+          <span style="font-size:11.5px;font-weight:700;color:#fff;white-space:nowrap">${fmtMoney(m.recargos)}</span>
+        </div>
+      </div>
+      <div style="width:80px;font-size:11px;color:${i>0?'#dc2626':'var(--muted)'};text-align:right;flex-shrink:0">${inc}</div>
+    </div>`;
+  }).join('');
+
+  const totalIncremento = meses[5].recargos - meses[0].recargos;
+  document.getElementById('predictorAlerta').innerHTML =
+    `⚠️ Si no se realiza ningún pago, los recargos crecerán <b style="color:#dc2626">${fmtMoney(totalIncremento)}</b> adicionales en los próximos 6 meses ` +
+    `(${((totalIncremento/Math.max(meses[0].recargos,1))*100).toFixed(1)}% de incremento). ` +
+    `Mes de mayor presión: <b>${meses.sort((a,b)=>b.incremento-a.incremento)[0].label}</b>. Arts. 17-A y 21 CFF.`;
+
+  document.getElementById('predictorResultados').style.display = 'block';
+  document.getElementById('predictorResultados').scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  auditLog({ accion:'PREDICTOR_VENCIMIENTOS', input_json:{ obligaciones_analizadas: datos.length },
+    output_json:{ incremento_6m: totalIncremento }, fundamento:'Ola 3-C predicción' });
 }
 
 bootstrapAuth();
