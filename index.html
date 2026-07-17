@@ -344,28 +344,16 @@ tr:last-child td{border-bottom:none}
           </div>
         </div>
 
-        <!-- Fila 4: Mes exigible + Año exigible -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-          <div>
-            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">
-              MES EXIGIBLE
-              <span style="font-weight:400;color:var(--muted)"> — para cálculo preciso de recargos</span>
-            </label>
-            <select id="nob_mes_exigibilidad" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
-              <option value="">No especificado (estimado)</option>
-              <option value="1">Enero</option><option value="2">Febrero</option>
-              <option value="3">Marzo</option><option value="4">Abril</option>
-              <option value="5">Mayo</option><option value="6">Junio</option>
-              <option value="7">Julio</option><option value="8">Agosto</option>
-              <option value="9">Septiembre</option><option value="10">Octubre</option>
-              <option value="11">Noviembre</option><option value="12">Diciembre</option>
-            </select>
-          </div>
-          <div>
-            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">AÑO EXIGIBLE</label>
-            <input id="nob_anio_exigibilidad" type="number" min="2020" max="2030" placeholder="2023"
-                   style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;box-sizing:border-box">
-          </div>
+        <!-- Fila 4: Fecha exigible (calendario nativo) -->
+        <div style="margin-bottom:14px">
+          <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">
+            FECHA EXIGIBLE
+            <span style="font-weight:400;color:var(--muted)"> — día en que debió pagarse (día/mes/año)</span>
+          </label>
+          <input id="nob_fecha_exigibilidad" type="date"
+                 onchange="nobFechaCambia()"
+                 style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;box-sizing:border-box">
+          <div id="nob_fecha_status" style="display:none;margin-top:8px;padding:9px 12px;border-radius:8px;font-size:12px;line-height:1.4"></div>
         </div>
 
         <!-- Fila 5: Estatus + Notas -->
@@ -770,7 +758,7 @@ tr:last-child td{border-bottom:none}
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.6';
+const APP_VERSION   = '2026.07.17.7';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -1226,31 +1214,50 @@ const INPC_FACTOR = { 2023:1.138, 2024:1.086, 2025:1.043, 2026:1.016 };
 /* Devuelve { totalDeuda, totalHistorico, totalRecargos, hayEstimados }
    hayEstimados = true cuando algún registro usó fecha aproximada.   */
 function calcDeudaActualizada(datos) {
-  const hoy = new Date();
   let totalDeuda = 0, totalHistorico = 0, totalRecargos = 0, hayEstimados = false;
   datos.filter(r => r.estatus !== 'Pagado').forEach(r => {
     const monto  = Number(r.monto) || 0;
+    const cat    = r.categoria || '';
+    const tasa   = cat.includes('ISN')
+      ? (window.__tasaMoraBC      || 0.0225)
+      : (window.__tasaMoraFederal || 0.0207);
 
-    /* ── Fecha de exigibilidad real (Fase B) ── */
-    const mesReal  = r.mes_exigibilidad  ? Number(r.mes_exigibilidad)  - 1 : null; // 0-indexed
+    /* ── Camino A: fecha_exigibilidad exacta (Fase C) → aplicar marco legal ── */
+    if(r.fecha_exigibilidad){
+      const { mesesMora, dentroPlazo } = calcMoraLegal(cat, r.fecha_exigibilidad);
+      if(dentroPlazo){
+        /* Dentro del plazo legal: sin actualización, sin recargos */
+        totalDeuda     += monto;
+        totalHistorico += monto;
+        return;
+      }
+      const fEx      = new Date(r.fecha_exigibilidad + 'T12:00:00');
+      const factor   = INPC_FACTOR[fEx.getFullYear()] || 1.138;
+      const montoAct = monto * factor;
+      const recargos = montoAct * tasa * mesesMora;
+      totalDeuda     += montoAct + recargos;
+      totalHistorico += monto;
+      totalRecargos  += recargos;
+      return;
+    }
+
+    /* ── Camino B: retrocompat (mes/año exigibilidad o solo anio_inicio) ── */
+    const hoy      = new Date();
+    const mesReal  = r.mes_exigibilidad  ? Number(r.mes_exigibilidad)  - 1 : null;
     const anioReal = r.anio_exigibilidad ? Number(r.anio_exigibilidad)     : null;
     const esEstimado = (mesReal === null || anioReal === null);
-    if (esEstimado) hayEstimados = true;
+    if(esEstimado) hayEstimados = true;
 
     const anioBase = anioReal ?? (r.anio_inicio || 2023);
-    const mesBase  = mesReal  ?? 0; // enero si no hay dato real
+    const mesBase  = mesReal  ?? 0;
     const factor   = INPC_FACTOR[anioBase] || 1.138;
     const origen   = new Date(anioBase, mesBase, 1);
-
-    const meses = Math.min(
+    const meses    = Math.min(
       (hoy.getFullYear() - origen.getFullYear()) * 12 + (hoy.getMonth() - origen.getMonth()),
       60
     );
-    const tasa      = (r.categoria||'').includes('ISN')
-      ? (window.__tasaMoraBC      || 0.0225)
-      : (window.__tasaMoraFederal || 0.0207);
-    const montoAct  = monto * factor;
-    const recargos  = montoAct * tasa * Math.max(meses, 0);
+    const montoAct = monto * factor;
+    const recargos = montoAct * tasa * Math.max(meses, 0);
     totalDeuda     += montoAct + recargos;
     totalHistorico += monto;
     totalRecargos  += recargos;
@@ -1322,12 +1329,13 @@ const NOB_ORIGEN_DEFAULT = {
 function abrirModalNuevaObligacion(){
   const m = document.getElementById('modalNuevaObligacion');
   m.style.display = 'flex';
-  /* Pre-rellenar año exigible con año actual */
+  /* Pre-rellenar año inicio/fin con año actual; fecha exigible se deja vacía (usuario la elige) */
   const hoy = new Date();
-  document.getElementById('nob_anio_inicio').value     = hoy.getFullYear();
-  document.getElementById('nob_anio_fin').value        = hoy.getFullYear();
-  document.getElementById('nob_anio_exigibilidad').value = hoy.getFullYear();
+  document.getElementById('nob_anio_inicio').value = hoy.getFullYear();
+  document.getElementById('nob_anio_fin').value    = hoy.getFullYear();
   document.getElementById('nob_preview').style.display = 'none';
+  const st = document.getElementById('nob_fecha_status');
+  if(st) st.style.display = 'none';
 }
 
 function cerrarModalNuevaObligacion(){
@@ -1336,7 +1344,10 @@ function cerrarModalNuevaObligacion(){
     const el = document.getElementById(id);
     if(el) el.value = '';
   });
-  document.getElementById('nob_mes_exigibilidad').value = '';
+  const fEl = document.getElementById('nob_fecha_exigibilidad');
+  if(fEl) fEl.value = '';
+  const sEl = document.getElementById('nob_fecha_status');
+  if(sEl) sEl.style.display = 'none';
   document.getElementById('nob_estatus').value = 'Pendiente';
   document.getElementById('nob_fiduciario_badge').style.display = 'none';
   document.getElementById('nob_preview').style.display = 'none';
@@ -1348,35 +1359,134 @@ function nobCategoriaCambia(cat){
   /* Auto-seleccionar origen según categoría */
   const origenEl = document.getElementById('nob_origen');
   if(origenEl && NOB_ORIGEN_DEFAULT[cat]) origenEl.value = NOB_ORIGEN_DEFAULT[cat];
+  /* Re-evaluar el status de la fecha si ya se capturó */
+  if(document.getElementById('nob_fecha_exigibilidad').value) nobFechaCambia();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MARCO LEGAL — Fecha límite de pago por categoría
+   ISR/IVA/retenciones: día 17 del mes siguiente (Arts. 14, 96, 106 LISR; 5-D, 1-A LIVA)
+   IMSS: día 17 del mes siguiente (Art. 39 LSS)
+   INFONAVIT: día 17 del bimestre siguiente (Art. 35 Ley INFONAVIT)
+   ISN Baja California: día 15 del mes siguiente (Art. 151-9 Ley Hacienda BC)
+   ═══════════════════════════════════════════════════════════════ */
+function getFechaLimiteLegal(categoria, fechaExigibilidad){
+  if(!fechaExigibilidad) return null;
+  const f = new Date(fechaExigibilidad + 'T12:00:00'); // 12:00 para evitar drift de timezone
+  if(isNaN(f.getTime())) return null;
+  const cat = categoria || '';
+  let mesSig, anioSig, dia;
+  if(cat.includes('ISN')){
+    /* ISN BC: día 15 del mes siguiente */
+    mesSig  = f.getMonth() + 1;
+    anioSig = f.getFullYear();
+    if(mesSig > 11){ mesSig = 0; anioSig++; }
+    dia = 15;
+  } else if(cat.includes('INFONAVIT')){
+    /* INFONAVIT: día 17 del bimestre siguiente (mes + 2) */
+    mesSig  = f.getMonth() + 2;
+    anioSig = f.getFullYear();
+    while(mesSig > 11){ mesSig -= 12; anioSig++; }
+    dia = 17;
+  } else {
+    /* Federal (ISR, IVA, retenciones, IMSS): día 17 del mes siguiente */
+    mesSig  = f.getMonth() + 1;
+    anioSig = f.getFullYear();
+    if(mesSig > 11){ mesSig = 0; anioSig++; }
+    dia = 17;
+  }
+  return new Date(anioSig, mesSig, dia, 23, 59, 59);
+}
+
+/* Devuelve { mesesMora, fechaLimite, dentroPlazo }
+   mesesMora respeta art. 21 CFF (fracción cuenta como mes completo). */
+function calcMoraLegal(categoria, fechaExigibilidad){
+  const fLim = getFechaLimiteLegal(categoria, fechaExigibilidad);
+  if(!fLim) return { mesesMora: 0, fechaLimite: null, dentroPlazo: false };
+  const hoy = new Date();
+  if(hoy.getTime() <= fLim.getTime()){
+    return { mesesMora: 0, fechaLimite: fLim, dentroPlazo: true };
+  }
+  /* Contar meses completos + fracción (art. 21 CFF) */
+  let m = (hoy.getFullYear() - fLim.getFullYear())*12 + (hoy.getMonth() - fLim.getMonth());
+  if(hoy.getDate() > fLim.getDate()) m++; // fracción → mes completo
+  else if(hoy.getDate() === fLim.getDate() && hoy.getHours() > fLim.getHours()) m++;
+  return { mesesMora: Math.min(Math.max(m, 0), 60), fechaLimite: fLim, dentroPlazo: false };
+}
+
+/* Se dispara al cambiar la fecha: muestra badge inline con estado legal */
+function nobFechaCambia(){
+  const fecha  = document.getElementById('nob_fecha_exigibilidad').value;
+  const cat    = document.getElementById('nob_categoria').value;
+  const status = document.getElementById('nob_fecha_status');
+  if(!fecha || !cat){
+    if(status) status.style.display = 'none';
+    return;
+  }
+  const { mesesMora, fechaLimite, dentroPlazo } = calcMoraLegal(cat, fecha);
+  const fLimTxt = fechaLimite ? fechaLimite.toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric'}) : '—';
+  if(dentroPlazo){
+    status.style.background = '#dcfce7';
+    status.style.border     = '1px solid #22c55e';
+    status.style.color      = '#166534';
+    status.innerHTML        = `✅ <b>Dentro del plazo legal</b> — vence el ${fLimTxt}. Sin recargos ni actualización.`;
+  } else {
+    const tasa = cat.includes('ISN') ? 2.25 : 2.07;
+    status.style.background = '#fef3cd';
+    status.style.border     = '1px solid #fbbf24';
+    status.style.color      = '#92400e';
+    status.innerHTML        = `⚠️ <b>${mesesMora} mes(es) de mora</b> — venció el ${fLimTxt} · tasa ${tasa}%/mes (art. 21 CFF).`;
+  }
+  status.style.display = 'block';
 }
 
 function calcularPreviewNob(){
-  const monto   = parseFloat(document.getElementById('nob_monto').value) || 0;
-  const cat     = document.getElementById('nob_categoria').value;
-  const mesRaw  = document.getElementById('nob_mes_exigibilidad').value;
-  const anioRaw = document.getElementById('nob_anio_exigibilidad').value;
+  const monto  = parseFloat(document.getElementById('nob_monto').value) || 0;
+  const cat    = document.getElementById('nob_categoria').value;
+  const fecha  = document.getElementById('nob_fecha_exigibilidad').value;
   if(!monto || !cat){ alert('Ingresa al menos Categoría y Monto para calcular.'); return; }
 
-  const hoy     = new Date();
-  const mes     = mesRaw  ? parseInt(mesRaw)  - 1 : 0;  // 0-indexed
-  const anio    = anioRaw ? parseInt(anioRaw)     : (parseInt(document.getElementById('nob_anio_inicio').value) || 2023);
-  const esEstimado = !mesRaw || !anioRaw;
-  const factor  = INPC_FACTOR[anio] || 1.138;
-  const origen  = new Date(anio, mes, 1);
-  const meses   = Math.min(
-    (hoy.getFullYear()-origen.getFullYear())*12 + (hoy.getMonth()-origen.getMonth()), 60
-  );
-  const tasa    = cat.includes('ISN') ? 0.0225 : 0.0207;
-  const montoAct= monto * factor;
-  const recargos= montoAct * tasa * Math.max(meses, 0);
-  const total   = montoAct + recargos;
+  /* Sin fecha exigible → estimado usando 1-ene del anio_inicio */
+  const esEstimado = !fecha;
+  let mesesMora, dentroPlazo, factor, fechaLimite;
+
+  if(fecha){
+    const r = calcMoraLegal(cat, fecha);
+    mesesMora   = r.mesesMora;
+    dentroPlazo = r.dentroPlazo;
+    fechaLimite = r.fechaLimite;
+    const fEx   = new Date(fecha + 'T12:00:00');
+    factor      = dentroPlazo ? 1 : (INPC_FACTOR[fEx.getFullYear()] || 1.138);
+  } else {
+    const anio  = parseInt(document.getElementById('nob_anio_inicio').value) || 2023;
+    const hoy   = new Date();
+    mesesMora   = Math.min((hoy.getFullYear()-anio)*12 + hoy.getMonth(), 60);
+    dentroPlazo = false;
+    factor      = INPC_FACTOR[anio] || 1.138;
+  }
+
+  const tasa     = cat.includes('ISN') ? 0.0225 : 0.0207;
+  const montoAct = dentroPlazo ? monto : (monto * factor);
+  const recargos = dentroPlazo ? 0 : (montoAct * tasa * mesesMora);
+  const total    = montoAct + recargos;
 
   document.getElementById('nob_prev_hist').textContent  = fmtMoney(monto);
-  document.getElementById('nob_prev_act').textContent   = fmtMoney(montoAct - monto) + ' (×' + factor.toFixed(3) + ')';
-  document.getElementById('nob_prev_total').textContent = fmtMoney(recargos) + ' · Total: ' + fmtMoney(total);
-  document.getElementById('nob_prev_nota').textContent  =
-    (esEstimado ? '⚠️ Estimado (sin mes/año exigible exacto) · ' : '') +
-    `${meses} meses de mora · ${(tasa*100).toFixed(2)}%/mes · Arts. 17-A y 21 CFF`;
+  document.getElementById('nob_prev_act').textContent   = dentroPlazo
+    ? '$0 (dentro del plazo)'
+    : (fmtMoney(montoAct - monto) + ' (×' + factor.toFixed(3) + ')');
+  document.getElementById('nob_prev_total').textContent = dentroPlazo
+    ? '$0 · Total: ' + fmtMoney(total)
+    : (fmtMoney(recargos) + ' · Total: ' + fmtMoney(total));
+
+  let nota;
+  if(dentroPlazo){
+    const fLimTxt = fechaLimite ? fechaLimite.toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric'}) : '';
+    nota = `✅ Dentro del plazo legal (vence ${fLimTxt}) — sin accesorios. Arts. 17-A y 21 CFF.`;
+  } else {
+    nota = (esEstimado ? '⚠️ Estimado (sin fecha exigible exacta) · ' : '') +
+           `${mesesMora} mes(es) de mora · ${(tasa*100).toFixed(2)}%/mes · Arts. 17-A y 21 CFF`;
+  }
+  document.getElementById('nob_prev_nota').textContent = nota;
   document.getElementById('nob_preview').style.display = 'block';
 }
 
@@ -1392,18 +1502,28 @@ async function guardarNuevaObligacion(){
   }
 
   const anioFin  = parseInt(document.getElementById('nob_anio_fin').value) || anioIni;
-  const mesEx    = document.getElementById('nob_mes_exigibilidad').value;
-  const anioEx   = document.getElementById('nob_anio_exigibilidad').value;
+  const fecha    = document.getElementById('nob_fecha_exigibilidad').value; // 'YYYY-MM-DD' o ''
   const origen   = document.getElementById('nob_origen').value;
   const estatus  = document.getElementById('nob_estatus').value;
   const notas    = document.getElementById('nob_notas').value.trim();
   const fiduciario = NOB_FIDUCIARIOS.has(cat);
 
+  /* Derivar mes/año para retrocompatibilidad con lógica existente */
+  let mesEx = null, anioEx = null;
+  if(fecha){
+    const f = new Date(fecha + 'T12:00:00');
+    if(!isNaN(f.getTime())){
+      mesEx  = f.getMonth() + 1;   // 1-indexed
+      anioEx = f.getFullYear();
+    }
+  }
+
   const payload = {
     empresa, categoria: cat, monto, fiduciario,
     anio_inicio: anioIni, anio_fin: anioFin,
-    mes_exigibilidad:  mesEx  ? parseInt(mesEx)  : null,
-    anio_exigibilidad: anioEx ? parseInt(anioEx) : null,
+    fecha_exigibilidad: fecha || null,
+    mes_exigibilidad:  mesEx,
+    anio_exigibilidad: anioEx,
     origen: origen || 'Manual',
     estatus, notas: notas || null,
     updated_at: new Date().toISOString()
