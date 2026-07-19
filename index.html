@@ -628,7 +628,6 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
     <button class="nav-tab active" data-view="cxc" data-i18n="tab_cxc" onclick="showView('cxc')">🚦 CxC Fiscal</button>
     <button class="nav-tab" data-view="impuestos" data-i18n="tab_imp" onclick="showView('impuestos')">🧮 Cálculo de Impuestos</button>
     <button class="nav-tab" data-view="recuperaciones" data-i18n="tab_rec" onclick="showView('recuperaciones');cargarRecuperaciones()">💸 Recuperaciones IVA</button>
-    <button class="nav-tab" data-view="gobernanza" id="tabGobernanza" style="display:none" onclick="showView('gobernanza');cargarGobernanza()">🔐 Gobernanza</button>
     <button class="nav-tab" data-view="grupo" id="tabGrupo" onclick="showView('grupo');cargarGrupo()">🏢 Grupo</button>
     <button class="nav-tab" data-view="inteligencia" id="tabInteligencia" style="display:none" onclick="showView('inteligencia');cargarInteligencia()">🧠 Inteligencia</button>
   </div>
@@ -1094,46 +1093,6 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
 
   </div>
 
-
-    <div class="card">
-      <h2>🔐 Gobernanza — flujo de aprobación fiscal</h2>
-      <div class="desc">Cada obligación pasa por un flujo de 5 estados: <b>Borrador → En revisión → Firmada → Autorizada → Pagada</b>. El historial es inmutable (audit trail).</div>
-
-      <!-- Filtro de estado -->
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-        <button class="btn-secondary btn" style="font-size:12px;padding:5px 12px" onclick="gobFiltrar('')" id="gobFiltTodos">Todos</button>
-        <button class="btn-secondary btn" style="font-size:12px;padding:5px 12px;border-color:#6b7280;color:#6b7280" onclick="gobFiltrar('borrador')" id="gobFiltBorrador">⚪ Borrador</button>
-        <button class="btn-secondary btn" style="font-size:12px;padding:5px 12px;border-color:#3b82f6;color:#3b82f6" onclick="gobFiltrar('en_revision')" id="gobFiltRevision">🔵 En revisión</button>
-        <button class="btn-secondary btn" style="font-size:12px;padding:5px 12px;border-color:#8b5cf6;color:#8b5cf6" onclick="gobFiltrar('firmada')" id="gobFiltFirmada">🟣 Firmada</button>
-        <button class="btn-secondary btn" style="font-size:12px;padding:5px 12px;border-color:#10b981;color:#10b981" onclick="gobFiltrar('autorizada')" id="gobFiltAutorizada">🟢 Autorizada</button>
-        <button class="btn-secondary btn" style="font-size:12px;padding:5px 12px;border-color:#f59e0b;color:#b45309" onclick="gobFiltrar('rechazada')" id="gobFiltRechazada">🔴 Rechazada</button>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Empresa</th>
-            <th>Categoría</th>
-            <th>Monto</th>
-            <th>Estado workflow</th>
-            <th>Firmado por</th>
-            <th>Acciones</th>
-          </tr></thead>
-          <tbody id="tblGobernanza"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Panel historial de una obligación -->
-    <div id="gobHistorialPanel" style="display:none" class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <h3 id="gobHistTitulo" style="margin:0;font-size:15px;font-weight:700">Historial de aprobación</h3>
-        <button onclick="document.getElementById('gobHistorialPanel').style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted)">✕</button>
-      </div>
-      <div id="gobHistorialLista" style="display:flex;flex-direction:column;gap:10px"></div>
-    </div>
-  </div>
-
   <!-- ═══════════ VISTA: GRUPO (consolidación grupal) ═══════════ -->
   <div class="view" id="view-grupo">
     <div class="card">
@@ -1357,7 +1316,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.17.14';
+const APP_VERSION   = '2026.07.18.1';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -1411,10 +1370,8 @@ async function bootstrapAuth() {
             const btnNob = document.getElementById('btnNuevaObligacion');
             if (btnNob) btnNob.style.display = 'inline-flex';
           }
-          /* Mostrar tab Gobernanza e Inteligencia a admin_master, admin y cohost */
+          /* Mostrar tab Inteligencia a admin_master, admin y cohost */
           if (['admin_master','admin','cohost'].includes(currentUserRol)) {
-            const tabGob = document.getElementById('tabGobernanza');
-            if (tabGob) tabGob.style.display = 'inline-flex';
             const tabInt = document.getElementById('tabInteligencia');
             if (tabInt) tabInt.style.display = 'inline-flex';
           }
@@ -1757,7 +1714,7 @@ const SEED_CXC = [
 let cxcModoSoloLectura = false; // true si estamos usando SEED_CXC porque la tabla no existe/está vacía
 
 /* ─── AUDIT LOG ─────────────────────────────────────────────────
-   Escribe un registro en fiscal_audit_log (Capa 4 · Gobernanza).
+   Escribe un registro en fiscal_audit_log (Capa 4 · Auditoría).
    Fire-and-forget: no bloquea la UI si falla. */
 async function auditLog({ accion, tabla, registro_id, empresa, categoria, input_json, output_json, fundamento }) {
   try {
@@ -2762,160 +2719,6 @@ async function enviarADeadpool() {
 
 /* ---------- INIT ---------- */
 /* ═══════════════════════════════════════════════════════════
-   OLA 2 · GOBERNANZA — workflow multi-nivel (Fase Ola2-B)
-   ═══════════════════════════════════════════════════════════ */
-
-const GOB_ESTADOS = {
-  borrador:    { label:'Borrador',    color:'#6b7280', next:'en_revision', accion:'Enviar a revisión' },
-  en_revision: { label:'En revisión', color:'#3b82f6', next:'firmada',     accion:'Firmar' },
-  firmada:     { label:'Firmada',     color:'#8b5cf6', next:'autorizada',  accion:'Autorizar' },
-  autorizada:  { label:'Autorizada',  color:'#10b981', next:'pagada',      accion:'Marcar pagada' },
-  pagada:      { label:'Pagada',      color:'#059669', next:null,          accion:null },
-  rechazada:   { label:'Rechazada',   color:'#dc2626', next:'borrador',    accion:'Reabrir' },
-};
-
-let gobFiltroEstado = '';
-let gobDatos = [];
-
-async function cargarGobernanza(){
-  const { data, error } = await sb.from('fiscal_cxc_impuestos')
-    .select('id,empresa,categoria,monto,estatus,workflow_estado,workflow_firmado_por,workflow_autorizado_por,fiduciario')
-    .order('monto', { ascending: false });
-  if (error){ console.error(error); return; }
-  gobDatos = data || [];
-  renderGobernanza();
-}
-
-function gobFiltrar(estado){
-  gobFiltroEstado = estado;
-  renderGobernanza();
-}
-
-function renderGobernanza(){
-  const filas = gobFiltroEstado
-    ? gobDatos.filter(r => (r.workflow_estado || 'borrador') === gobFiltroEstado)
-    : gobDatos;
-
-  const tbody = document.getElementById('tblGobernanza');
-  if (!tbody) return;
-
-  tbody.innerHTML = filas.map(r => {
-    const estado = r.workflow_estado || 'borrador';
-    const cfg    = GOB_ESTADOS[estado] || GOB_ESTADOS.borrador;
-    const badge  = `<span style="background:${cfg.color}18;color:${cfg.color};border:1px solid ${cfg.color}40;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600">${cfg.label}</span>`;
-    const firmado = r.workflow_firmado_por ? `<span style="font-size:11px;color:var(--muted)">${r.workflow_firmado_por}</span>` : '—';
-
-    let acciones = '';
-    if (cfg.next && ['admin_master','admin','cohost'].includes(currentUserRol)) {
-      acciones += `<button onclick="gobAvanzar(${r.id},'${cfg.next}')" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);cursor:pointer;white-space:nowrap">${cfg.accion}</button> `;
-    }
-    if (estado !== 'rechazada' && estado !== 'pagada' && ['admin_master','admin','cohost'].includes(currentUserRol)) {
-      acciones += `<button onclick="gobRechazar(${r.id})" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #dc2626;background:var(--surface);color:#dc2626;cursor:pointer">Rechazar</button> `;
-    }
-    acciones += `<button onclick="gobVerHistorial(${r.id},'${r.empresa} · ${r.categoria}')" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer">📋</button>`;
-
-    return `<tr>
-      <td>${r.empresa}</td>
-      <td>${r.categoria}${r.fiduciario ? ' <span style="color:#dc2626;font-size:10px">⚠️FID</span>' : ''}</td>
-      <td><b>${fmtMoney(r.monto)}</b></td>
-      <td>${badge}</td>
-      <td>${firmado}</td>
-      <td style="white-space:nowrap">${acciones}</td>
-    </tr>`;
-  }).join('') || `<tr><td colspan="6" style="color:var(--muted)">Sin resultados para este filtro.</td></tr>`;
-}
-
-async function gobAvanzar(cxcId, nuevoEstado){
-  const comentario = nuevoEstado === 'pagada'
-    ? prompt('Referencia de pago (opcional):') || ''
-    : '';
-
-  const hoy = new Date().toISOString();
-  const updatePayload = { workflow_estado: nuevoEstado };
-  if (nuevoEstado === 'firmada')    { updatePayload.workflow_firmado_por = currentUser?.nombre || currentUser?.username || '—'; updatePayload.workflow_fecha_firma = hoy; }
-  if (nuevoEstado === 'autorizada') { updatePayload.workflow_autorizado_por = currentUser?.nombre || currentUser?.username || '—'; updatePayload.workflow_fecha_autorizacion = hoy; }
-
-  const { error } = await sb.from('fiscal_cxc_impuestos').update(updatePayload).eq('id', cxcId);
-  if (error){ alert('Error: ' + error.message); return; }
-
-  /* Escribir en fiscal_workflow (audit) */
-  const prev = gobDatos.find(r => r.id === cxcId);
-  await sb.from('fiscal_workflow').insert({
-    cxc_id: cxcId,
-    estado: nuevoEstado,
-    estado_anterior: prev?.workflow_estado || 'borrador',
-    comentario: comentario || null,
-    usuario_id: currentUserId || null,
-    usuario_nombre: currentUser?.nombre || currentUser?.username || null,
-    usuario_rol: currentUserRol || null,
-    monto_calculado: prev?.monto || null,
-    fundamento: 'Avance de workflow por usuario autorizado'
-  });
-
-  auditLog({ accion:'WORKFLOW', tabla:'fiscal_cxc_impuestos', registro_id: cxcId,
-    empresa: prev?.empresa, categoria: prev?.categoria,
-    input_json: { estado_anterior: prev?.workflow_estado || 'borrador' },
-    output_json: { estado_nuevo: nuevoEstado },
-    fundamento: 'Gobernanza — avance de estado'
-  });
-
-  gobDatos = gobDatos.map(r => r.id === cxcId ? { ...r, ...updatePayload } : r);
-  renderGobernanza();
-  mostrarToast(`✅ Obligación marcada como: ${GOB_ESTADOS[nuevoEstado]?.label || nuevoEstado}`);
-}
-
-async function gobRechazar(cxcId){
-  const motivo = prompt('Motivo del rechazo (obligatorio):');
-  if (!motivo) return;
-
-  const prev = gobDatos.find(r => r.id === cxcId);
-  await sb.from('fiscal_cxc_impuestos').update({ workflow_estado:'rechazada' }).eq('id', cxcId);
-  await sb.from('fiscal_workflow').insert({
-    cxc_id: cxcId, estado:'rechazada',
-    estado_anterior: prev?.workflow_estado || 'borrador',
-    comentario: motivo,
-    usuario_id: currentUserId || null,
-    usuario_nombre: currentUser?.nombre || currentUser?.username || null,
-    usuario_rol: currentUserRol || null,
-    fundamento: 'Rechazo: ' + motivo
-  });
-
-  gobDatos = gobDatos.map(r => r.id === cxcId ? { ...r, workflow_estado:'rechazada' } : r);
-  renderGobernanza();
-  mostrarToast('🔴 Obligación rechazada');
-}
-
-async function gobVerHistorial(cxcId, titulo){
-  const { data, error } = await sb.from('fiscal_workflow')
-    .select('*').eq('cxc_id', cxcId).order('creado_en', { ascending: true });
-  if (error){ alert('Error: ' + error.message); return; }
-
-  document.getElementById('gobHistTitulo').textContent = `📋 ${titulo}`;
-  const lista = document.getElementById('gobHistorialLista');
-  lista.innerHTML = (data||[]).map(h => {
-    const cfgAnterior = GOB_ESTADOS[h.estado_anterior] || { label: h.estado_anterior || '—', color:'#6b7280' };
-    const cfgNuevo   = GOB_ESTADOS[h.estado] || { label: h.estado, color:'#6b7280' };
-    const fecha = new Date(h.creado_en).toLocaleString('es-MX', { dateStyle:'short', timeStyle:'short' });
-    return `<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
-      <div style="font-size:18px;flex-shrink:0">📌</div>
-      <div style="flex:1">
-        <div style="font-size:12px;font-weight:600">
-          <span style="color:${cfgAnterior.color}">${cfgAnterior.label}</span>
-          → <span style="color:${cfgNuevo.color}">${cfgNuevo.label}</span>
-        </div>
-        <div style="font-size:11.5px;color:var(--muted);margin-top:3px">
-          ${h.usuario_nombre || '—'} · ${h.usuario_rol || ''} · ${fecha}
-          ${h.comentario ? `<br><i>"${h.comentario}"</i>` : ''}
-        </div>
-      </div>
-    </div>`;
-  }).join('') || '<div style="color:var(--muted);font-size:13px">Sin historial registrado aún.</div>';
-
-  document.getElementById('gobHistorialPanel').style.display = 'block';
-  document.getElementById('gobHistorialPanel').scrollIntoView({ behavior:'smooth', block:'nearest' });
-}
-
-/* ═══════════════════════════════════════════════════════════
    OLA 2 · CONSOLIDACIÓN GRUPAL (Fase Ola2-C)
    ═══════════════════════════════════════════════════════════ */
 
@@ -3098,17 +2901,6 @@ async function ejecutarDetectorAnomalias(){
       });
     }
   });
-
-  /* Regla 5 — Obligaciones en workflow borrador por más de 7 días (no han avanzado) */
-  const borrador = datos.filter(r => !r.workflow_estado || r.workflow_estado === 'borrador');
-  if (borrador.length > datos.length * 0.8) {
-    anomalias.push({
-      tipo:'workflow_estancado', severidad:'baja',
-      descripcion:`${borrador.length} obligaciones siguen en estado "Borrador" — no han iniciado revisión`,
-      detalle:'Considera enviarlas a revisión en la pestaña Gobernanza para activar el flujo de aprobación.',
-      fundamento:'Buenas prácticas de gobernanza fiscal interna'
-    });
-  }
 
   /* Guardar en Supabase si existen */
   if (anomalias.length > 0) {
