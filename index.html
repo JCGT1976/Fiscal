@@ -929,8 +929,8 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
             <option value="Boughts">🛒 Boughts</option>
             <option value="Comercial">🛒 Comercial</option>
           </select>
-          <button onclick="abrirModalNuevoEvento()" style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer">+ Registrar gestión</button>
-          <button onclick="abrirModalNuevoPeriodo()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">+ Nuevo período</button>
+          <button id="btnRecNuevaGestion" onclick="abrirModalNuevoEvento()" style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer">+ Registrar gestión</button>
+          <button id="btnRecNuevoPeriodo" onclick="abrirModalNuevoPeriodo()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">+ Nuevo período</button>
           <button id="btnCargarExcelIva" onclick="document.getElementById('inputExcelIva').click()"
                   style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,120,200,.25)">
             📤 Cargar Excel
@@ -1316,7 +1316,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.18.1';
+const APP_VERSION   = '2026.07.20.1';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -1329,6 +1329,22 @@ sb.auth.onAuthStateChange((event) => {
 
 let currentUserId = null;
 let currentUserRol = null;
+
+/* ═══════════════════════════════════════════════════════════════
+   GUARDIÁN DE ESCRITURAS (patrón Deadpool) — Solo admin_master y
+   cohost pueden modificar. Cualquier otro rol (view, admin, income)
+   queda en modo solo lectura completo.
+   ═══════════════════════════════════════════════════════════════ */
+function puedeEditarFiscal(){
+  return currentUserRol === 'admin_master' || currentUserRol === 'cohost';
+}
+function requireEditFiscal(mensaje){
+  if (puedeEditarFiscal()) return true;
+  const msg = mensaje || '👁️ Modo solo lectura — no tienes permisos para modificar datos fiscales. Contacta al equipo de Contabilidad.';
+  if (typeof mostrarToast === 'function') mostrarToast(msg, '#e11d48');
+  else alert(msg);
+  return false;
+}
 
 async function bootstrapAuth() {
   /* MODO BYPASS — muestra la app sin bloquear por sesión SSO */
@@ -1374,6 +1390,28 @@ async function bootstrapAuth() {
           if (['admin_master','admin','cohost'].includes(currentUserRol)) {
             const tabInt = document.getElementById('tabInteligencia');
             if (tabInt) tabInt.style.display = 'inline-flex';
+          }
+          /* ═══════════════════════════════════════════════════════
+             MODO SOLO LECTURA (patrón Deadpool para rol 'view')
+             Oculta todos los botones de acción que quedan visibles
+             en tabs accesibles a view. Los guards de las funciones
+             ya bloquean por si acaso.
+             ═══════════════════════════════════════════════════════ */
+          if (!puedeEditarFiscal()) {
+            const idsAOcultar = [
+              'btnCalcularImpuesto',   // Cálculo de Impuestos → botón guardar
+              'btnRecNuevaGestion',    // Recuperaciones IVA → + Registrar gestión
+              'btnRecNuevoPeriodo',    // Recuperaciones IVA → + Nuevo período
+              'btnCargarExcelIva',     // Recuperaciones IVA → Cargar Excel
+              'accBtnEnviar'           // Accesorios → Enviar a Deadpool
+            ];
+            idsAOcultar.forEach(id => {
+              const el = document.getElementById(id);
+              if (el) el.style.display = 'none';
+            });
+            /* Badge visual en el header para que el usuario sepa que está en solo lectura */
+            const roleEl = document.getElementById('userRole');
+            if (roleEl) roleEl.textContent = (user.rol || 'view') + ' · 👁️ solo lectura';
           }
         }
       } catch(e) { console.warn('Sin datos de usuario:', e); }
@@ -2047,6 +2085,7 @@ function calcularPreviewNob(){
 }
 
 async function guardarNuevaObligacion(){
+  if (!requireEditFiscal('Sin permisos para crear obligaciones fiscales')) return;
   const empresa  = document.getElementById('nob_empresa').value;
   const cat      = document.getElementById('nob_categoria').value;
   const monto    = parseFloat(document.getElementById('nob_monto').value);
@@ -2108,6 +2147,7 @@ async function guardarNuevaObligacion(){
 }
 
 async function cxcCambiarEstatus(id, nuevoEstatus){
+  if (!requireEditFiscal('Sin permisos para cambiar el estatus de obligaciones')) return;
   if (cxcModoSoloLectura) {
     alert('Estos datos vienen de la cédula de referencia (no de Supabase). Corre fiscal-cxc-impuestos.sql para poder editar el estatus desde aquí.');
     return;
@@ -2270,6 +2310,7 @@ async function cargarImpuestos(){
   }
 }
 async function calcularImpuesto(){
+  if (!requireEditFiscal('Sin permisos para guardar cálculos de impuestos')) return;
   const periodo = document.getElementById('impPeriodo').value || '—';
   const ingresos = parseFloat(document.getElementById('impIngresos').value)||0;
   const deducciones = parseFloat(document.getElementById('impDeducciones').value)||0;
@@ -2484,7 +2525,7 @@ function cerrarModalCarga(){
 }
 
 async function confirmarCargaMasiva(){
-  if (currentUserRol !== 'admin_master' && currentUserRol !== 'cohost') { alert('Solo admin_master o cohost.'); return; }
+  if (!requireEditFiscal('Sin permisos para carga masiva de CxC')) return;
   if (!cargaMasivaPropuesta || !cargaMasivaPropuesta.length) return;
 
   const btn = document.getElementById('btnConfirmarCarga');
@@ -2647,6 +2688,7 @@ function calcularAccesorios() {
 }
 
 async function enviarADeadpool() {
+  if (!requireEditFiscal('Sin permisos para enviar accesorios a Deadpool')) return;
   const res = window._accCalcResult;
   if (!res) return;
 
@@ -2829,6 +2871,7 @@ async function cargarInteligencia(){
 }
 
 async function ejecutarDetectorAnomalias(){
+  if (!requireEditFiscal('Sin permisos para ejecutar el detector de anomalías')) return;
   const datos = cxcImpuestos.length ? cxcImpuestos : [];
   if (!datos.length){ mostrarToast('Sin datos en CxC Fiscal para analizar.','#6b7280'); return; }
 
@@ -3053,6 +3096,7 @@ function ejecutarWhatIf(){
 }
 
 async function guardarEscenario(){
+  if (!requireEditFiscal('Sin permisos para guardar escenarios what-if')) return;
   if (!wifDatosBase) return;
   const nombre = prompt('Nombre del escenario (p.ej. "Escenario Internacional jul-2026"):');
   if (!nombre) return;
@@ -3356,7 +3400,7 @@ function renderRecPeriodos(){
       <td style="padding:9px 10px;text-align:center"><span style="background:${meta.color}22;color:${meta.color};padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap">${meta.icon} ${meta.label}</span></td>
       <td style="padding:9px 10px;text-align:center;color:var(--muted);font-size:11.5px">${p.dias_sat||'—'}</td>
       <td style="padding:9px 10px;color:var(--muted);font-size:11.5px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(p.observaciones||'').replace(/"/g,'&quot;')}">${p.observaciones||'—'}</td>
-      <td style="padding:9px 10px;text-align:center"><button onclick="editarPeriodo(${p.id})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--text)">✎ Editar</button></td>
+      <td style="padding:9px 10px;text-align:center">${puedeEditarFiscal() ? `<button onclick="editarPeriodo(${p.id})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--text)">✎ Editar</button>` : '<span style="color:var(--muted);font-size:11px">—</span>'}</td>
     </tr>`;
   }).join('');
 }
@@ -3784,6 +3828,7 @@ function cerrarModalNuevoEvento(){
   document.getElementById('recEventoModal').style.display = 'none';
 }
 async function guardarNuevoEvento(){
+  if (!requireEditFiscal('Sin permisos para registrar gestiones de IVA')) return;
   const empresa   = document.getElementById('recEmpresa').value || 'Internacional';
   const actividad = document.getElementById('recEvActividad').value.trim();
   const semana    = document.getElementById('recEvSemana').value.trim();
@@ -3856,6 +3901,7 @@ function editarPeriodo(id){
   document.getElementById('recPeriodoModal').style.display = 'flex';
 }
 async function guardarNuevoPeriodo(){
+  if (!requireEditFiscal('Sin permisos para modificar períodos de IVA')) return;
   const empresa = document.getElementById('recEmpresa').value || 'Internacional';
   const anio    = parseInt(document.getElementById('recPerAnio').value);
   const mes     = parseInt(document.getElementById('recPerMes').value);
@@ -3954,10 +4000,7 @@ function _recMapEstado(estado, observaciones, monto_aprobado, monto_devuelto){
 }
 
 async function procesarExcelIvaRec(file){
-  if (currentUserRol !== 'admin_master' && currentUserRol !== 'cohost') {
-    mostrarToast('Solo admin_master o cohost pueden hacer carga masiva','#e11d48');
-    return;
-  }
+  if (!requireEditFiscal('Sin permisos para carga masiva de Recuperaciones IVA')) return;
   const empresa = document.getElementById('recEmpresa').value || 'Internacional';
   try {
     mostrarToast('⏳ Leyendo archivo…','#0284c7');
