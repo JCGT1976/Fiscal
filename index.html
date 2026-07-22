@@ -1572,7 +1572,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.22.1';
+const APP_VERSION   = '2026.07.22.2';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -2480,12 +2480,19 @@ function renderCxc(){
   tbody.innerHTML = ordenadas.map(r=>{
     const sem = cxcSemaforo(r);
     const vigencia = r.anio_inicio === r.anio_fin ? r.anio_inicio : `${r.anio_inicio}–${r.anio_fin}`;
-    const estatusSelect = `<select style="width:auto;font-size:11.5px;padding:5px 8px" onchange="cxcCambiarEstatus('${r.id}', this.value)" ${cxcModoSoloLectura?'disabled':''}>
-        ${ESTATUS_OPCIONES.map(op=>`<option value="${op}" ${op===r.estatus?'selected':''}>${op}</option>`).join('')}
-      </select>`;
+    /* Estatus: dropdown editable solo para admin_master / cohost (Deadpool pattern) */
+    const puedeEdit = puedeEditarFiscal() && !cxcModoSoloLectura;
+    const estatusSelect = puedeEdit
+      ? `<select style="width:auto;font-size:11.5px;padding:5px 8px" onchange="cxcCambiarEstatus('${r.id}', this.value)">
+          ${ESTATUS_OPCIONES.map(op=>`<option value="${op}" ${op===r.estatus?'selected':''}>${op}</option>`).join('')}
+        </select>`
+      : `<span style="font-size:11px;padding:4px 10px;border-radius:12px;background:var(--surface2);color:var(--muted);border:1px solid var(--border)">${r.estatus||'Pendiente'}</span>`;
     const chkSel = accSeleccionados.has(String(r.id)) ? 'checked' : '';
+    const chkCell = puedeEdit
+      ? '<td style="text-align:center;padding:4px 6px"><input type="checkbox" class="acc-chk" ' + chkSel + ' onchange="accToggleRow(\'' + r.id + '\',this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#185fa5"></td>'
+      : '<td style="text-align:center;padding:4px 6px;color:var(--muted);font-size:11px">—</td>';
     return '<tr id="accRow-' + r.id + '">'
-      + '<td style="text-align:center;padding:4px 6px"><input type="checkbox" class="acc-chk" ' + chkSel + ' onchange="accToggleRow(\'' + r.id + '\',this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#185fa5"></td>'
+      + chkCell
       + '<td>' + r.empresa + '</td>'
       + '<td>' + r.categoria + '</td>'
       + '<td><b>' + fmtMoney(r.monto) + '</b></td>'
