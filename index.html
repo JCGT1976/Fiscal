@@ -77,6 +77,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 /* ── SEMÁFORO CALENDARIO ── */
 .kpi-semaforo{transition:transform .12s,box-shadow .12s}
 .kpi-semaforo:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.18)}
+/* Calculadora multi-impuesto */
+.calc-tab{padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .12s}
+.calc-tab:hover{border-color:var(--accent);color:var(--accent)}
+.calc-tab.activa{background:var(--accent);color:#fff;border-color:var(--accent)}
 .kpi-semaforo.activo{outline:3px solid currentColor;outline-offset:2px}
 .kpi-legal{font-size:9px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);line-height:1.5}
 .sem-chip{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;color:#fff;white-space:nowrap}
@@ -634,6 +638,10 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
 
   <!-- ===================== CxC FISCAL (semáforo de riesgo) ===================== -->
   <div class="view active" id="view-cxc">
+    <!-- Badge de filtro activo sobre KPIs -->
+    <div style="margin-bottom:8px;min-height:22px">
+      <span id="kpiFilterBadge" style="display:none;font-size:10.5px;padding:3px 10px;border-radius:20px;background:var(--accent);color:#fff;font-weight:600;letter-spacing:.03em">🔍 Todos</span>
+    </div>
     <div class="kpi-grid" id="kpiSemaforoGrid" style="margin-bottom:16px">
       <div class="kpi-card kpi-semaforo" id="kpiSem-rojo" onclick="cxcFiltrarStatus('rojo')"
            style="border-color:var(--red);cursor:pointer;user-select:none">
@@ -871,41 +879,289 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
   </div>
 
   <!-- ===================== CALCULO DE IMPUESTOS ===================== -->
+  <!-- ═══════════ VISTA: CÁLCULO DE IMPUESTOS (calculadora multi-impuesto) ═══════════ -->
   <div class="view" id="view-impuestos">
-    <div class="card">
-      <h2 data-i18n="calc_title">Simulador de ISR / IVA del periodo</h2>
-      <div class="desc" data-i18n="calc_desc">Estimación simplificada de pago provisional. No sustituye el cálculo oficial de tu contador — úsalo como control preventivo.</div>
-      <div class="grid-3">
-        <div class="field"><label data-i18n="lbl_periodo">Periodo</label><input id="impPeriodo" type="month"></div>
-        <div class="field"><label data-i18n="lbl_ingresos">Ingresos gravables</label><input id="impIngresos" type="number" step="0.01" placeholder="0.00"></div>
-        <div class="field"><label data-i18n="lbl_deducciones">Deducciones autorizadas</label><input id="impDeducciones" type="number" step="0.01" placeholder="0.00"></div>
+
+    <!-- Header + selector de tipo -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="margin:0">🧮 Calculadora de Impuestos — MI Global</h2>
+          <div class="desc" style="margin-top:6px">Estimación con base legal por tipo de impuesto. No sustituye el cálculo oficial de tu contador — úsalo como control preventivo interno.</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <label style="font-size:12px;color:var(--muted);font-weight:600">EMPRESA</label>
+          <select id="calcEmpresa" style="padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:600">
+            <option value="Ariitranst">🚛 Ariitranst</option>
+            <option value="Autobot">🏭 Autobot</option>
+            <option value="Internacional" selected>🏭 Internacional</option>
+            <option value="Boughts">🛒 Boughts</option>
+            <option value="Comercial">🛒 Comercial</option>
+          </select>
+          <div class="field" style="margin:0">
+            <input id="calcPeriodo" type="month" style="padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
+          </div>
+        </div>
       </div>
-      <div class="grid-3">
-        <div class="field"><label data-i18n="lbl_tasa_isr">Tasa ISR aplicable (%)</label><input id="impTasaIsr" type="number" step="0.01" value="30"></div>
-        <div class="field"><label data-i18n="lbl_tasa_iva">Tasa IVA (%)</label><input id="impTasaIva" type="number" step="0.01" value="16"></div>
-        <div class="field"><label data-i18n="lbl_iva_acred">IVA acreditable del periodo</label><input id="impIvaAcreditable" type="number" step="0.01" placeholder="0.00"></div>
-      </div>
-      <button class="btn" id="btnCalcularImpuesto" data-i18n="btn_calcular" onclick="calcularImpuesto()">Calcular y guardar en historial</button>
-      <div class="result-box" id="impResultado" style="display:none">
-        <div class="result-row"><span class="muted" data-i18n="res_utilidad">Utilidad fiscal (ingresos − deducciones)</span><span id="rUtilidad">$0</span></div>
-        <div class="result-row"><span class="muted" data-i18n="res_isr">ISR estimado</span><span id="rIsr">$0</span></div>
-        <div class="result-row"><span class="muted" data-i18n="res_iva_tras">IVA trasladado</span><span id="rIvaTrasladado">$0</span></div>
-        <div class="result-row"><span class="muted" data-i18n="res_iva_cargo">IVA a favor / a cargo</span><span id="rIvaCargo">$0</span></div>
-        <div class="result-row total"><span data-i18n="res_total">Total estimado a pagar</span><span id="rTotal">$0</span></div>
+
+      <!-- Tabs de tipo de impuesto -->
+      <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:6px" id="calcTipoTabs">
+        <button class="calc-tab activa" data-tipo="ISR Propio" onclick="calcCambiarTipo('ISR Propio')">💼 ISR Propio</button>
+        <button class="calc-tab" data-tipo="ISR Retenido a Empleados" onclick="calcCambiarTipo('ISR Retenido a Empleados')">👷 ISR Ret. Empleados</button>
+        <button class="calc-tab" data-tipo="ISR Retenido a Terceros" onclick="calcCambiarTipo('ISR Retenido a Terceros')">📋 ISR Ret. Terceros</button>
+        <button class="calc-tab" data-tipo="IVA" onclick="calcCambiarTipo('IVA')">🧾 IVA</button>
+        <button class="calc-tab" data-tipo="IVA Retenido a Terceros" onclick="calcCambiarTipo('IVA Retenido a Terceros')">📄 IVA Ret. Terceros</button>
+        <button class="calc-tab" data-tipo="IMSS / Seguridad Social" onclick="calcCambiarTipo('IMSS / Seguridad Social')">🏥 IMSS</button>
+        <button class="calc-tab" data-tipo="INFONAVIT / RCV" onclick="calcCambiarTipo('INFONAVIT / RCV')">🏠 INFONAVIT/RCV</button>
+        <button class="calc-tab" data-tipo="ISN Estatal" onclick="calcCambiarTipo('ISN Estatal')">🏛️ ISN BC</button>
       </div>
     </div>
-    <div class="card">
-      <h2 data-i18n="hist_title">Historial de cálculos</h2>
+
+    <!-- Paneles por tipo de impuesto -->
+    <div id="calcPaneles">
+
+      <!-- ISR PROPIO -->
+      <div class="calc-panel card" id="panel-ISR Propio">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <h3 style="margin:0">ISR Propio — Pago Provisional</h3>
+            <div class="desc" style="margin-top:4px">Arts. 14 LISR (PM). Pago mensual = 1/12 estimado anual o coeficiente de utilidad del ejercicio anterior.</div>
+          </div>
+          <span class="sem-chip naranja" style="font-size:10px">CFF · SAT · Vence día 17</span>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label>Ingresos acumulados del periodo</label><input id="isrp_ingresos" type="number" step="0.01" placeholder="0.00" oninput="calcISRPropio()"></div>
+          <div class="field"><label>Deducciones autorizadas acumuladas</label><input id="isrp_deducciones" type="number" step="0.01" placeholder="0.00" oninput="calcISRPropio()"></div>
+          <div class="field"><label>Coeficiente de utilidad (del ejerc. ant.)</label><input id="isrp_cu" type="number" step="0.0001" placeholder="0.3000" value="0.30" oninput="calcISRPropio()"></div>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label>PTU pagada en el ejercicio</label><input id="isrp_ptu" type="number" step="0.01" placeholder="0.00" oninput="calcISRPropio()"></div>
+          <div class="field"><label>Pérdidas fiscales amortizables</label><input id="isrp_perdidas" type="number" step="0.01" placeholder="0.00" oninput="calcISRPropio()"></div>
+          <div class="field"><label>Pagos provisionales anteriores</label><input id="isrp_pagos_ant" type="number" step="0.01" placeholder="0.00" oninput="calcISRPropio()"></div>
+        </div>
+        <div class="result-box" id="res-ISR Propio" style="margin-top:12px">
+          <div class="result-row"><span class="muted">Utilidad fiscal estimada (ingresos × CU)</span><span id="isrp_r_utilidad">$0.00</span></div>
+          <div class="result-row"><span class="muted">Base ISR (utilidad − PTU − pérdidas)</span><span id="isrp_r_base">$0.00</span></div>
+          <div class="result-row"><span class="muted">ISR provisional (30% × base)</span><span id="isrp_r_isr">$0.00</span></div>
+          <div class="result-row"><span class="muted">Menos: pagos provisionales anteriores</span><span id="isrp_r_menos_pp">$0.00</span></div>
+          <div class="result-row total"><span>ISR a pagar este periodo</span><span id="isrp_r_total">$0.00</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Arts. 14, 9 LISR · Tasa 30% PM · Vence día 17 del mes siguiente</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="guardarCalculo('ISR Propio')">💾 Guardar en historial</button>
+      </div>
+
+      <!-- ISR RETENIDO A EMPLEADOS -->
+      <div class="calc-panel card" id="panel-ISR Retenido a Empleados" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <h3 style="margin:0">ISR Retenido a Empleados</h3>
+            <div class="desc" style="margin-top:4px">Art. 96 LISR. La empresa retiene el ISR de nómina y lo entera. Monto retenido y no enterado: riesgo fiduciario arts. 108-109 CFF.</div>
+          </div>
+          <span class="sem-chip rojo" style="font-size:10px">⚠️ Fiduciario · SAT · Vence día 17</span>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label>Nómina bruta del periodo</label><input id="isre_nomina" type="number" step="0.01" placeholder="0.00" oninput="calcISREmpleados()"></div>
+          <div class="field"><label>ISR retenido según recibos (tabla art. 96)</label><input id="isre_retenido" type="number" step="0.01" placeholder="0.00" oninput="calcISREmpleados()"></div>
+          <div class="field"><label>Subsidio al empleo aplicado</label><input id="isre_subsidio" type="number" step="0.01" placeholder="0.00" oninput="calcISREmpleados()"></div>
+        </div>
+        <div class="result-box" id="res-ISR Retenido a Empleados" style="margin-top:12px">
+          <div class="result-row"><span class="muted">ISR retenido</span><span id="isre_r_retenido">$0.00</span></div>
+          <div class="result-row"><span class="muted">Menos: subsidio al empleo</span><span id="isre_r_subsidio">$0.00</span></div>
+          <div class="result-row total"><span>ISR neto a enterar</span><span id="isre_r_total">$0.00</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Art. 96 LISR · Vence día 17 · No enterar = riesgo penal arts. 108-109 CFF</span><span style="font-size:10px;color:var(--red)">Fiduciario</span></div>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="guardarCalculo('ISR Retenido a Empleados')">💾 Guardar en historial</button>
+      </div>
+
+      <!-- ISR RETENIDO A TERCEROS -->
+      <div class="calc-panel card" id="panel-ISR Retenido a Terceros" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <h3 style="margin:0">ISR Retenido a Terceros</h3>
+            <div class="desc" style="margin-top:4px">Arts. 106, 116 LISR. Retención sobre honorarios (10%), arrendamiento (20% si PM, tablas si PF), fletes (7.5%).</div>
+          </div>
+          <span class="sem-chip rojo" style="font-size:10px">⚠️ Fiduciario · SAT · Vence día 17</span>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label>Honorarios pagados</label><input id="isrt_honorarios" type="number" step="0.01" placeholder="0.00" oninput="calcISRTerceros()"></div>
+          <div class="field"><label>Arrendamiento pagado</label><input id="isrt_arrend" type="number" step="0.01" placeholder="0.00" oninput="calcISRTerceros()"></div>
+          <div class="field"><label>Fletes pagados</label><input id="isrt_fletes" type="number" step="0.01" placeholder="0.00" oninput="calcISRTerceros()"></div>
+        </div>
+        <div class="result-box" id="res-ISR Retenido a Terceros" style="margin-top:12px">
+          <div class="result-row"><span class="muted">ISR honorarios (10% art. 106 LISR)</span><span id="isrt_r_hon">$0.00</span></div>
+          <div class="result-row"><span class="muted">ISR arrendamiento (20% art. 116 LISR)</span><span id="isrt_r_arr">$0.00</span></div>
+          <div class="result-row"><span class="muted">ISR fletes (7.5% art. 106 LISR)</span><span id="isrt_r_fle">$0.00</span></div>
+          <div class="result-row total"><span>Total ISR a enterar</span><span id="isrt_r_total">$0.00</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Arts. 106, 116 LISR · Vence día 17 · Fiduciario: riesgo arts. 108-109 CFF</span><span style="font-size:10px;color:var(--red)">Fiduciario</span></div>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="guardarCalculo('ISR Retenido a Terceros')">💾 Guardar en historial</button>
+      </div>
+
+      <!-- IVA -->
+      <div class="calc-panel card" id="panel-IVA" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <h3 style="margin:0">IVA — Declaración Mensual</h3>
+            <div class="desc" style="margin-top:4px">Arts. 5-D, 1 LIVA. IVA trasladado − IVA acreditable − retenciones recibidas. Tasa general 16% (0% exportación maquila IMMEX).</div>
+          </div>
+          <span class="sem-chip naranja" style="font-size:10px">CFF · SAT · Vence día 17</span>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label>Ingresos gravados al 16%</label><input id="iva_ingresos16" type="number" step="0.01" placeholder="0.00" oninput="calcIVA()"></div>
+          <div class="field"><label>Ingresos gravados al 0% (exportación)</label><input id="iva_ingresos0" type="number" step="0.01" placeholder="0.00" oninput="calcIVA()"></div>
+          <div class="field"><label>IVA acreditable (gastos e insumos)</label><input id="iva_acreditable" type="number" step="0.01" placeholder="0.00" oninput="calcIVA()"></div>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label>IVA retenido recibido de clientes</label><input id="iva_ret_recibida" type="number" step="0.01" placeholder="0.00" oninput="calcIVA()"></div>
+          <div class="field"><label>Saldo a favor periodo anterior</label><input id="iva_saldo_ant" type="number" step="0.01" placeholder="0.00" oninput="calcIVA()"></div>
+          <div class="field"><label>Compensaciones aplicadas</label><input id="iva_compensacion" type="number" step="0.01" placeholder="0.00" oninput="calcIVA()"></div>
+        </div>
+        <div class="result-box" id="res-IVA" style="margin-top:12px">
+          <div class="result-row"><span class="muted">IVA trasladado (16% sobre ingresos gravados)</span><span id="iva_r_trasladado">$0.00</span></div>
+          <div class="result-row"><span class="muted">Menos: IVA acreditable</span><span id="iva_r_acreditable">$0.00</span></div>
+          <div class="result-row"><span class="muted">Menos: IVA retenido recibido</span><span id="iva_r_ret">$0.00</span></div>
+          <div class="result-row"><span class="muted">Menos: saldo a favor anterior / compensaciones</span><span id="iva_r_saldo">$0.00</span></div>
+          <div class="result-row total"><span>IVA a pagar / a favor</span><span id="iva_r_total">$0.00</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Arts. 5-D, 1, 6 LIVA · Tasa 16% / 0% exportación · Vence día 17</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="guardarCalculo('IVA')">💾 Guardar en historial</button>
+      </div>
+
+      <!-- IVA RETENIDO A TERCEROS -->
+      <div class="calc-panel card" id="panel-IVA Retenido a Terceros" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <h3 style="margin:0">IVA Retenido a Terceros</h3>
+            <div class="desc" style="margin-top:4px">Art. 1-A LIVA. Retención 2/3 del IVA facturado por: personas físicas (honorarios, arrendamiento) y fletes terrestres.</div>
+          </div>
+          <span class="sem-chip rojo" style="font-size:10px">⚠️ Fiduciario · SAT · Vence día 17</span>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label>IVA facturado por PF (honorarios/arrend.)</label><input id="ivart_pf" type="number" step="0.01" placeholder="0.00" oninput="calcIVARet()"></div>
+          <div class="field"><label>IVA facturado por fletes terrestres</label><input id="ivart_fletes" type="number" step="0.01" placeholder="0.00" oninput="calcIVARet()"></div>
+          <div class="field"><label>IVA facturado por otros retenibles</label><input id="ivart_otros" type="number" step="0.01" placeholder="0.00" oninput="calcIVARet()"></div>
+        </div>
+        <div class="result-box" id="res-IVA Retenido a Terceros" style="margin-top:12px">
+          <div class="result-row"><span class="muted">Retención PF honorarios/arrend. (2/3 del IVA)</span><span id="ivart_r_pf">$0.00</span></div>
+          <div class="result-row"><span class="muted">Retención fletes (4% sobre valor del servicio, aprox.)</span><span id="ivart_r_fle">$0.00</span></div>
+          <div class="result-row"><span class="muted">Retención otros</span><span id="ivart_r_otros">$0.00</span></div>
+          <div class="result-row total"><span>Total IVA retenido a enterar</span><span id="ivart_r_total">$0.00</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Art. 1-A LIVA · 2/3 del IVA facturado · Fiduciario: riesgo arts. 108-109 CFF</span><span style="font-size:10px;color:var(--red)">Fiduciario</span></div>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="guardarCalculo('IVA Retenido a Terceros')">💾 Guardar en historial</button>
+      </div>
+
+      <!-- IMSS -->
+      <div class="calc-panel card" id="panel-IMSS / Seguridad Social" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <h3 style="margin:0">IMSS — Cuotas Patronales y Obreras</h3>
+            <div class="desc" style="margin-top:4px">Arts. 25-38 LSS. Cuota patronal + cuota obrera por: EnfMatern, IV-D, GVT, RT, Guarderías, RCV. Base: SBC diario × días trabajados. Vence día 17 del mes siguiente. Bimestral: RCV/INFONAVIT.</div>
+          </div>
+          <span class="sem-chip naranja" style="font-size:10px">LSS · IMSS · Vence día 17</span>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label>Número de trabajadores</label><input id="imss_trab" type="number" step="1" placeholder="0" oninput="calcIMSS()"></div>
+          <div class="field"><label>SBC promedio diario (MXN)</label><input id="imss_sbc" type="number" step="0.01" placeholder="0.00" oninput="calcIMSS()"></div>
+          <div class="field"><label>Días del periodo a liquidar</label><input id="imss_dias" type="number" step="1" placeholder="30" value="30" oninput="calcIMSS()"></div>
+        </div>
+        <div style="margin-bottom:10px;font-size:12px;color:var(--muted)">Tasas 2026: EnfMatern patronal 20.40%, obrera 2.125% · GVT patronal 3.150% · IV-D patronal 1.75%, obrera 0.625% · RT según prima · Guarderías 1% · RCV patronal 3.150%, obrera 1.125%</div>
+        <div class="grid-3">
+          <div class="field"><label>Prima RT (riesgo de trabajo)</label><input id="imss_prima_rt" type="number" step="0.0001" placeholder="0.0055" value="0.5" oninput="calcIMSS()"><span style="font-size:10px;color:var(--muted)">% sobre SBC · clases I–V</span></div>
+          <div class="field"><label>Cuotas patronales calculadas (manual)</label><input id="imss_pat" type="number" step="0.01" placeholder="0.00" oninput="calcIMSS()"></div>
+          <div class="field"><label>Cuotas obreras a retener</label><input id="imss_ob" type="number" step="0.01" placeholder="0.00" oninput="calcIMSS()"></div>
+        </div>
+        <div class="result-box" id="res-IMSS / Seguridad Social" style="margin-top:12px">
+          <div class="result-row"><span class="muted">Masa salarial (trab × SBC × días)</span><span id="imss_r_masa">$0.00</span></div>
+          <div class="result-row"><span class="muted">Cuota patronal estimada (≈25.4% masa)*</span><span id="imss_r_pat_est">$0.00</span></div>
+          <div class="result-row"><span class="muted">Cuota obrera estimada (≈3.875% masa)*</span><span id="imss_r_ob_est">$0.00</span></div>
+          <div class="result-row total"><span>Total cuotas a liquidar (patronal + obrera)</span><span id="imss_r_total">$0.00</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">*Tasa compuesta aprox. · Usar SUA para cálculo oficial · Arts. 25-38 LSS · Vence día 17</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="guardarCalculo('IMSS / Seguridad Social')">💾 Guardar en historial</button>
+      </div>
+
+      <!-- INFONAVIT / RCV -->
+      <div class="calc-panel card" id="panel-INFONAVIT / RCV" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <h3 style="margin:0">INFONAVIT / RCV — Aportaciones Bimestrales</h3>
+            <div class="desc" style="margin-top:4px">Arts. 29-35 Ley INFONAVIT · Art. 168 LSS RCV. Aportación patronal INFONAVIT 5% SBC + descuento crédito obrero. RCV patronal 2% SBC. Bimestral.</div>
+          </div>
+          <span class="sem-chip naranja" style="font-size:10px">INFONAVIT · Bimestral · Vence día 17</span>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label>Número de trabajadores</label><input id="info_trab" type="number" step="1" placeholder="0" oninput="calcINFO()"></div>
+          <div class="field"><label>SBC promedio diario (MXN)</label><input id="info_sbc" type="number" step="0.01" placeholder="0.00" oninput="calcINFO()"></div>
+          <div class="field"><label>Días del bimestre</label><input id="info_dias" type="number" step="1" placeholder="60" value="60" oninput="calcINFO()"></div>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label>Trabajadores con crédito INFONAVIT</label><input id="info_trab_cred" type="number" step="1" placeholder="0" oninput="calcINFO()"></div>
+          <div class="field"><label>Descuento promedio mensual por crédito</label><input id="info_desc_cred" type="number" step="0.01" placeholder="0.00" oninput="calcINFO()"></div>
+          <div class="field"></div>
+        </div>
+        <div class="result-box" id="res-INFONAVIT / RCV" style="margin-top:12px">
+          <div class="result-row"><span class="muted">Masa salarial bimestral</span><span id="info_r_masa">$0.00</span></div>
+          <div class="result-row"><span class="muted">Aportación INFONAVIT patronal (5% masa)</span><span id="info_r_infonavit">$0.00</span></div>
+          <div class="result-row"><span class="muted">Aportación RCV patronal (2% masa)</span><span id="info_r_rcv">$0.00</span></div>
+          <div class="result-row"><span class="muted">Descuentos crédito obrero (estimado bimestre)</span><span id="info_r_desc">$0.00</span></div>
+          <div class="result-row total"><span>Total a enterar (INFONAVIT + RCV + créditos)</span><span id="info_r_total">$0.00</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Arts. 29 Ley INFONAVIT · Art. 168 LSS · 5% + 2% SBC patronal · Vence día 17 bimestre sig.</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="guardarCalculo('INFONAVIT / RCV')">💾 Guardar en historial</button>
+      </div>
+
+      <!-- ISN ESTATAL BC -->
+      <div class="calc-panel card" id="panel-ISN Estatal" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <h3 style="margin:0">ISN — Impuesto Sobre Nómina · Baja California</h3>
+            <div class="desc" style="margin-top:4px">Art. 151-9 Ley de Hacienda del Estado de BC. Tasa 2.5% sobre nómina gravable. Vence día 15 del mes siguiente. Recargos BC: 2.25%/mes.</div>
+          </div>
+          <span class="sem-chip amarillo" style="font-size:10px">Estatal BC · Hacienda BC · Vence día 15</span>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label>Nómina gravable del periodo</label><input id="isn_nomina" type="number" step="0.01" placeholder="0.00" oninput="calcISN()"></div>
+          <div class="field"><label>Tasa ISN (%)</label><input id="isn_tasa" type="number" step="0.01" value="2.5" oninput="calcISN()"></div>
+          <div class="field"><label>Deducciones exentas (aguinaldo, PTU exenta, etc.)</label><input id="isn_exento" type="number" step="0.01" placeholder="0.00" oninput="calcISN()"></div>
+        </div>
+        <div class="result-box" id="res-ISN Estatal" style="margin-top:12px">
+          <div class="result-row"><span class="muted">Nómina gravable neta (nómina − exentos)</span><span id="isn_r_base">$0.00</span></div>
+          <div class="result-row total"><span>ISN a pagar (tasa × base)</span><span id="isn_r_total">$0.00</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Art. 151-9 Ley Hacienda BC · Tasa 2.5% · Recargos mora 2.25%/mes · Vence día 15</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="guardarCalculo('ISN Estatal')">💾 Guardar en historial</button>
+      </div>
+
+    </div><!-- fin calcPaneles -->
+
+    <!-- Historial de cálculos -->
+    <div class="card" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 style="margin:0">📋 Historial de cálculos</h2>
+        <select id="histFiltroTipo" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px" onchange="renderImpuestos()">
+          <option value="">Todos los tipos</option>
+          <option value="ISR Propio">ISR Propio</option>
+          <option value="ISR Retenido a Empleados">ISR Ret. Empleados</option>
+          <option value="ISR Retenido a Terceros">ISR Ret. Terceros</option>
+          <option value="IVA">IVA</option>
+          <option value="IVA Retenido a Terceros">IVA Ret. Terceros</option>
+          <option value="IMSS / Seguridad Social">IMSS</option>
+          <option value="INFONAVIT / RCV">INFONAVIT/RCV</option>
+          <option value="ISN Estatal">ISN Estatal</option>
+        </select>
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th data-i18n="th_periodo">Periodo</th>
-            <th data-i18n="th_utilidad">Utilidad fiscal</th>
-            <th data-i18n="th_isr">ISR</th>
-            <th data-i18n="th_iva_cargo">IVA a cargo</th>
-            <th data-i18n="th_total">Total</th>
+            <th>Periodo</th>
+            <th>Tipo</th>
+            <th>Empresa</th>
+            <th>Base/Utilidad</th>
+            <th>Impuesto calc.</th>
+            <th>Total a pagar</th>
           </tr></thead>
-          <tbody id="tblImpuestos"><tr><td colspan="5" style="color:var(--muted)">Cargando…</td></tr></tbody>
+          <tbody id="tblImpuestos"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1316,7 +1572,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.20.1';
+const APP_VERSION   = '2026.07.22.1';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -2240,22 +2496,40 @@ function renderCxc(){
   }).join('') || '<tr><td colspan="7" style="color:var(--muted)">Sin conceptos registrados.</td></tr>';
 
   const sum = (arr) => arr.reduce((s,r)=>s+Number(r.monto||0),0);
-  const total = sum(cxcImpuestos);
-  /* KPIs semáforo legal — calculados sobre todos los datos (sin filtros de empresa/tipo/semáforo) */
+  /* Base para KPIs: aplica filtros empresa+categoria pero NO semáforo
+     así los 4 KPIs siempre suman el universo seleccionado y cada uno
+     muestra su porción — reactive al selector de empresa y tipo */
+  let kpiBase = cxcFiltroEmpresa === 'Todas' ? cxcImpuestos : cxcImpuestos.filter(r=>r.empresa===cxcFiltroEmpresa);
+  kpiBase = cxcFiltroCategoria === 'Todas' ? kpiBase : kpiBase.filter(r=>r.categoria===cxcFiltroCategoria);
+  const total = sum(kpiBase);
+  /* KPIs semáforo legal — calculados sobre kpiBase (empresa+tipo filtrados) */
   ['rojo','naranja','amarillo','verde'].forEach(code => {
-    const subset = cxcImpuestos.filter(r => cxcSemaforo(r).code === code);
+    const subset = kpiBase.filter(r => cxcSemaforo(r).code === code);
     const el = document.getElementById('kpiSem-'+code);
     if (!el) return;
     el.classList.toggle('activo', cxcFiltroSemaforo === code);
     document.getElementById('kpiSemN-'+code).textContent = subset.length;
     document.getElementById('kpiSemM-'+code).textContent = fmtMoney(sum(subset));
   });
+  /* Indicador de filtro activo sobre KPIs */
+  const kpiBadgeEl = document.getElementById('kpiFilterBadge');
+  if (kpiBadgeEl) {
+    const partes = [];
+    if (cxcFiltroEmpresa !== 'Todas') partes.push(cxcFiltroEmpresa);
+    if (cxcFiltroCategoria !== 'Todas') partes.push(cxcFiltroCategoria);
+    if (partes.length) {
+      kpiBadgeEl.textContent = '🔍 ' + partes.join(' · ');
+      kpiBadgeEl.style.display = 'inline-block';
+    } else {
+      kpiBadgeEl.style.display = 'none';
+    }
+  }
   /* KPI global cartera total (topbar) */
   const kpiTotalEl = document.getElementById('kpiCxcTotal');
   if (kpiTotalEl) kpiTotalEl.textContent = fmtMoney(total);
 
   /* ── KPI Deuda fiscal con accesorios (art.17-A + art.21 CFF) ── */
-  const { totalDeuda, totalHistorico, totalRecargos, hayEstimados } = calcDeudaActualizada(cxcImpuestos);
+  const { totalDeuda, totalHistorico, totalRecargos, hayEstimados } = calcDeudaActualizada(kpiBase);
   const dtEl = document.getElementById('kpiDeudaTotal');
   if (dtEl) dtEl.textContent = (hayEstimados ? '~' : '') + fmtMoney(totalDeuda);
   const dsEl = document.getElementById('kpiDeudaSub');
@@ -2309,45 +2583,206 @@ async function cargarImpuestos(){
     document.getElementById('kpiImpuestoMes').textContent = '~' + fmtMoney(estimadoMes);
   }
 }
-async function calcularImpuesto(){
-  if (!requireEditFiscal('Sin permisos para guardar cálculos de impuestos')) return;
-  const periodo = document.getElementById('impPeriodo').value || '—';
-  const ingresos = parseFloat(document.getElementById('impIngresos').value)||0;
-  const deducciones = parseFloat(document.getElementById('impDeducciones').value)||0;
-  const tasaIsr = parseFloat(document.getElementById('impTasaIsr').value)||0;
-  const tasaIva = parseFloat(document.getElementById('impTasaIva').value)||0;
-  const ivaAcreditable = parseFloat(document.getElementById('impIvaAcreditable').value)||0;
+/* ═══════════════════════════════════════════════════════
+   CALCULADORA MULTI-IMPUESTO — MI Global Fiscal
+   Cubre los 8 tipos de la CxC: ISR Propio, ISR Ret Empleados,
+   ISR Ret Terceros, IVA, IVA Ret Terceros, IMSS, INFONAVIT/RCV, ISN BC
+   Base legal: LISR, LIVA, LSS, Ley INFONAVIT, Ley Hacienda BC
+   ═══════════════════════════════════════════════════════ */
 
-  const utilidad = Math.max(ingresos - deducciones, 0);
-  const isr = utilidad * (tasaIsr/100);
-  const ivaTrasladado = ingresos * (tasaIva/100);
-  const ivaCargo = Math.max(ivaTrasladado - ivaAcreditable, 0);
-  const total = isr + ivaCargo;
+let calcTipoActivo = 'ISR Propio';
 
-  document.getElementById('rUtilidad').textContent = fmtMoney(utilidad);
-  document.getElementById('rIsr').textContent = fmtMoney(isr);
-  document.getElementById('rIvaTrasladado').textContent = fmtMoney(ivaTrasladado);
-  document.getElementById('rIvaCargo').textContent = fmtMoney(ivaCargo);
-  document.getElementById('rTotal').textContent = fmtMoney(total);
-  document.getElementById('impResultado').style.display = 'block';
-
-  const btn = document.getElementById('btnCalcularImpuesto');
-  btn.disabled = true;
-  const { error } = await sb.from('fiscal_calculos_impuestos').insert({
-    periodo, ingresos, deducciones, tasa_isr: tasaIsr, tasa_iva: tasaIva,
-    iva_acreditable: ivaAcreditable, utilidad, isr, iva_cargo: ivaCargo, total,
-    creado_por: currentUserId
+function calcCambiarTipo(tipo) {
+  calcTipoActivo = tipo;
+  // Tabs activos
+  document.querySelectorAll('.calc-tab').forEach(b => {
+    b.classList.toggle('activa', b.dataset.tipo === tipo);
   });
-  btn.disabled = false;
-  if (error) { alert('No se pudo guardar el cálculo: ' + error.message); return; }
-  await cargarImpuestos();
+  // Paneles
+  document.querySelectorAll('.calc-panel').forEach(p => {
+    p.style.display = p.id === 'panel-' + tipo ? '' : 'none';
+  });
 }
+
+/* ── ISR PROPIO (art. 14 LISR) ── */
+function calcISRPropio() {
+  const ingresos = parseFloat(document.getElementById('isrp_ingresos').value)||0;
+  const cu       = parseFloat(document.getElementById('isrp_cu').value)||0.30;
+  const ptu      = parseFloat(document.getElementById('isrp_ptu').value)||0;
+  const perdidas = parseFloat(document.getElementById('isrp_perdidas').value)||0;
+  const pagos_ant= parseFloat(document.getElementById('isrp_pagos_ant').value)||0;
+  const utilidad = ingresos * cu;
+  const base     = Math.max(utilidad - ptu - perdidas, 0);
+  const isr      = base * 0.30;
+  const total    = Math.max(isr - pagos_ant, 0);
+  document.getElementById('isrp_r_utilidad').textContent  = fmtMoney(utilidad);
+  document.getElementById('isrp_r_base').textContent      = fmtMoney(base);
+  document.getElementById('isrp_r_isr').textContent       = fmtMoney(isr);
+  document.getElementById('isrp_r_menos_pp').textContent  = fmtMoney(pagos_ant);
+  document.getElementById('isrp_r_total').textContent     = fmtMoney(total);
+}
+
+/* ── ISR RETENIDO A EMPLEADOS (art. 96 LISR) ── */
+function calcISREmpleados() {
+  const retenido = parseFloat(document.getElementById('isre_retenido').value)||0;
+  const subsidio = parseFloat(document.getElementById('isre_subsidio').value)||0;
+  const total    = Math.max(retenido - subsidio, 0);
+  document.getElementById('isre_r_retenido').textContent = fmtMoney(retenido);
+  document.getElementById('isre_r_subsidio').textContent = fmtMoney(subsidio);
+  document.getElementById('isre_r_total').textContent    = fmtMoney(total);
+}
+
+/* ── ISR RETENIDO A TERCEROS (arts. 106, 116 LISR) ── */
+function calcISRTerceros() {
+  const honorarios = parseFloat(document.getElementById('isrt_honorarios').value)||0;
+  const arrend     = parseFloat(document.getElementById('isrt_arrend').value)||0;
+  const fletes     = parseFloat(document.getElementById('isrt_fletes').value)||0;
+  const r_hon  = honorarios * 0.10;
+  const r_arr  = arrend     * 0.20;
+  const r_fle  = fletes     * 0.075;
+  const total  = r_hon + r_arr + r_fle;
+  document.getElementById('isrt_r_hon').textContent   = fmtMoney(r_hon);
+  document.getElementById('isrt_r_arr').textContent   = fmtMoney(r_arr);
+  document.getElementById('isrt_r_fle').textContent   = fmtMoney(r_fle);
+  document.getElementById('isrt_r_total').textContent = fmtMoney(total);
+}
+
+/* ── IVA (arts. 5-D, 1, 6 LIVA) ── */
+function calcIVA() {
+  const ingresos16   = parseFloat(document.getElementById('iva_ingresos16').value)||0;
+  const acreditable  = parseFloat(document.getElementById('iva_acreditable').value)||0;
+  const ret_recibida = parseFloat(document.getElementById('iva_ret_recibida').value)||0;
+  const saldo_ant    = parseFloat(document.getElementById('iva_saldo_ant').value)||0;
+  const compensacion = parseFloat(document.getElementById('iva_compensacion').value)||0;
+  const trasladado = ingresos16 * 0.16;
+  const reductions = acreditable + ret_recibida + saldo_ant + compensacion;
+  const cargo  = trasladado - reductions;
+  const total  = cargo; // puede ser negativo = a favor
+  document.getElementById('iva_r_trasladado').textContent = fmtMoney(trasladado);
+  document.getElementById('iva_r_acreditable').textContent= fmtMoney(acreditable);
+  document.getElementById('iva_r_ret').textContent        = fmtMoney(ret_recibida);
+  document.getElementById('iva_r_saldo').textContent      = fmtMoney(saldo_ant + compensacion);
+  const totalEl = document.getElementById('iva_r_total');
+  totalEl.textContent = (cargo < 0 ? '🟢 A favor: ' : '') + fmtMoney(Math.abs(cargo));
+  totalEl.style.color = cargo < 0 ? 'var(--green)' : '';
+}
+
+/* ── IVA RETENIDO A TERCEROS (art. 1-A LIVA) ── */
+function calcIVARet() {
+  const pf     = parseFloat(document.getElementById('ivart_pf').value)||0;
+  const fletes = parseFloat(document.getElementById('ivart_fletes').value)||0;
+  const otros  = parseFloat(document.getElementById('ivart_otros').value)||0;
+  const r_pf   = pf     * (2/3);
+  const r_fle  = fletes * (2/3);  // 2/3 del IVA facturado por fletes
+  const r_otros= otros  * (2/3);
+  const total  = r_pf + r_fle + r_otros;
+  document.getElementById('ivart_r_pf').textContent    = fmtMoney(r_pf);
+  document.getElementById('ivart_r_fle').textContent   = fmtMoney(r_fle);
+  document.getElementById('ivart_r_otros').textContent = fmtMoney(r_otros);
+  document.getElementById('ivart_r_total').textContent = fmtMoney(total);
+}
+
+/* ── IMSS (arts. 25-38 LSS) ── */
+function calcIMSS() {
+  const trab = parseFloat(document.getElementById('imss_trab').value)||0;
+  const sbc  = parseFloat(document.getElementById('imss_sbc').value)||0;
+  const dias = parseFloat(document.getElementById('imss_dias').value)||30;
+  const pat_manual = parseFloat(document.getElementById('imss_pat').value)||0;
+  const ob_manual  = parseFloat(document.getElementById('imss_ob').value)||0;
+  const masa = trab * sbc * dias;
+  // Tasa compuesta estimada: patronal ≈25.4% + obrera ≈3.875% (incluye EM, IVDG, GVT, RT prom, Guard, RCV)
+  const pat_est = masa * 0.254;
+  const ob_est  = masa * 0.03875;
+  // Si el usuario capturó cuotas manuales, usar esas; si no, mostrar estimado
+  const pat_final = pat_manual > 0 ? pat_manual : pat_est;
+  const ob_final  = ob_manual  > 0 ? ob_manual  : ob_est;
+  const total = pat_final + ob_final;
+  document.getElementById('imss_r_masa').textContent    = fmtMoney(masa);
+  document.getElementById('imss_r_pat_est').textContent = fmtMoney(pat_est);
+  document.getElementById('imss_r_ob_est').textContent  = fmtMoney(ob_est);
+  document.getElementById('imss_r_total').textContent   = fmtMoney(total);
+}
+
+/* ── INFONAVIT / RCV (arts. 29 Ley INFONAVIT · art. 168 LSS) ── */
+function calcINFO() {
+  const trab      = parseFloat(document.getElementById('info_trab').value)||0;
+  const sbc       = parseFloat(document.getElementById('info_sbc').value)||0;
+  const dias      = parseFloat(document.getElementById('info_dias').value)||60;
+  const trab_cred = parseFloat(document.getElementById('info_trab_cred').value)||0;
+  const desc_cred = parseFloat(document.getElementById('info_desc_cred').value)||0;
+  const masa       = trab * sbc * dias;
+  const infonavit  = masa * 0.05;   // 5% patronal
+  const rcv        = masa * 0.02;   // 2% patronal RCV
+  const desc_total = trab_cred * desc_cred * 2; // bimestre = 2 meses
+  const total      = infonavit + rcv + desc_total;
+  document.getElementById('info_r_masa').textContent     = fmtMoney(masa);
+  document.getElementById('info_r_infonavit').textContent= fmtMoney(infonavit);
+  document.getElementById('info_r_rcv').textContent      = fmtMoney(rcv);
+  document.getElementById('info_r_desc').textContent     = fmtMoney(desc_total);
+  document.getElementById('info_r_total').textContent    = fmtMoney(total);
+}
+
+/* ── ISN ESTATAL BC (art. 151-9 Ley Hacienda BC) ── */
+function calcISN() {
+  const nomina  = parseFloat(document.getElementById('isn_nomina').value)||0;
+  const tasa    = parseFloat(document.getElementById('isn_tasa').value)||2.5;
+  const exento  = parseFloat(document.getElementById('isn_exento').value)||0;
+  const base    = Math.max(nomina - exento, 0);
+  const total   = base * (tasa / 100);
+  document.getElementById('isn_r_base').textContent  = fmtMoney(base);
+  document.getElementById('isn_r_total').textContent = fmtMoney(total);
+}
+
+/* ── GUARDAR CÁLCULO (adaptable a cualquier tipo) ── */
+async function guardarCalculo(tipo) {
+  if (!requireEditFiscal('Sin permisos para guardar cálculos')) return;
+  const periodo  = document.getElementById('calcPeriodo').value || '—';
+  const empresa  = document.getElementById('calcEmpresa').value || '—';
+  // Obtener el total visible del panel activo
+  const panelId  = 'panel-' + tipo;
+  const totalEl  = document.querySelector('#' + CSS.escape(panelId) + ' .result-row.total span:last-child');
+  const totalStr = totalEl ? totalEl.textContent.replace(/[^0-9.-]/g,'') : '0';
+  const total    = parseFloat(totalStr)||0;
+  // Base/utilidad: primer result-row del panel
+  const baseEl   = document.querySelector('#' + CSS.escape(panelId) + ' .result-row:first-child span:last-child');
+  const baseStr  = baseEl ? baseEl.textContent.replace(/[^0-9.-]/g,'') : '0';
+  const base     = parseFloat(baseStr)||0;
+
+  const payload = {
+    periodo, empresa,
+    tipo_impuesto: tipo,
+    base_calculo: base,
+    total,
+    creado_por: currentUserId
+  };
+  const { error } = await sb.from('fiscal_calculos_impuestos').insert(payload);
+  if (error) {
+    // Si falla por columnas faltantes (tabla vieja), intentar con schema legacy
+    const payloadLegacy = { periodo, total, creado_por: currentUserId };
+    const { error: e2 } = await sb.from('fiscal_calculos_impuestos').insert(payloadLegacy);
+    if (e2) { alert('Error al guardar: ' + (e2.message||error.message)); return; }
+  }
+  await cargarImpuestos();
+  alert('✅ Cálculo guardado en historial');
+}
+
+/* Compatibilidad: función antigua renombrada */
+async function calcularImpuesto(){ await guardarCalculo('ISR Propio'); }
+
 function renderImpuestos(){
   const tbody = document.getElementById('tblImpuestos');
-  tbody.innerHTML = calculosImpuestos.map(c=>`<tr>
-      <td>${c.periodo}</td><td>${fmtMoney(c.utilidad)}</td><td>${fmtMoney(c.isr)}</td>
-      <td>${fmtMoney(c.iva_cargo)}</td><td>${fmtMoney(c.total)}</td>
-    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">Sin cálculos registrados.</td></tr>';
+  const filtroTipo = (document.getElementById('histFiltroTipo')||{}).value || '';
+  const data = filtroTipo
+    ? calculosImpuestos.filter(c => (c.tipo_impuesto||'') === filtroTipo)
+    : calculosImpuestos;
+  tbody.innerHTML = data.map(c=>`<tr>
+      <td>${c.periodo||'—'}</td>
+      <td>${c.tipo_impuesto||'ISR/IVA'}</td>
+      <td>${c.empresa||'—'}</td>
+      <td>${fmtMoney(c.base_calculo||c.utilidad||0)}</td>
+      <td>${fmtMoney(c.isr||c.total||0)}</td>
+      <td><b>${fmtMoney(c.total||0)}</b></td>
+    </tr>`).join('') || '<tr><td colspan="6" style="color:var(--muted)">Sin cálculos registrados.</td></tr>';
 }
 
 /* ============================================================
