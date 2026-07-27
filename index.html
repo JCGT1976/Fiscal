@@ -850,7 +850,12 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
         </div>
       </div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;min-height:30px">
+      <div style="margin-top:10px;padding:10px 14px;border:0.5px solid #85b7eb;border-radius:10px;background:#f0f7fd">
+        <label style="display:block;font-size:11px;font-weight:600;color:#185fa5;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Ciudad / Sucursal</label>
+        <div id="cxcFiltrosCiudad" class="chips"></div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;min-height:30px;margin-top:10px">
         <span id="accSelCount" style="font-size:13px;color:var(--muted)"></span>
         <button id="btnAccesorios" onclick="abrirAccesoriosModal()" style="display:none;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid #185fa5;background:#e6f1fb;color:#0c447c">
           &#x1F9EE; Calcular accesorios
@@ -863,6 +868,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
             <th style="width:28px;padding:4px 6px"></th>
             <th data-i18n="th_empresa">Empresa</th>
             <th data-i18n="th_tipo">Tipo de impuesto</th>
+            <th data-i18n="th_ciudad">Ciudad</th>
             <th data-i18n="th_monto">Monto</th>
             <th data-i18n="th_vigencia">Vigencia</th>
             <th data-i18n="th_estatus">Estatus</th>
@@ -1710,7 +1716,22 @@ let calculosImpuestos = [];
 let cxcImpuestos = [];
 let cxcFiltroEmpresa = 'Todas';
 let cxcFiltroCategoria = 'Todas';
+let cxcFiltroCiudad = 'Todas';
 let cxcOrden = 'monto_desc';
+
+function parsearCiudad(empresa, tipoImpuesto) {
+  if (empresa !== 'Internacional') return 'Tijuana';
+  const t = (tipoImpuesto || '').toUpperCase();
+  if (t.includes('TIJ') || t.includes('TIJUANA')) return 'Tijuana';
+  if (t.includes('MTY') || t.includes('MONTERREY')) return 'Monterrey';
+  if (t.includes('MEX') || t.includes('MEXICO') || t.includes('MÉXICO')) return 'México / Cuautitlán';
+  return 'Tijuana';
+}
+
+function cxcSetFiltroCiudad(ciudad) {
+  cxcFiltroCiudad = ciudad;
+  renderCxc();
+}
 
 function fmtMoney(n){
   n = Number(n)||0;
@@ -1751,7 +1772,7 @@ const LANG = {
     ord_monto_desc:'Monto (mayor a menor)', ord_monto_asc:'Monto (menor a mayor)',
     ord_empresa:'Empresa (A-Z)', ord_categoria:'Tipo de impuesto (A-Z)',
     ord_anio_asc:'Año (más antiguo primero)', ord_anio_desc:'Año (más reciente primero)',
-    th_empresa:'Empresa', th_tipo:'Tipo de impuesto', th_monto:'Monto',
+    th_empresa:'Empresa', th_tipo:'Tipo de impuesto', th_ciudad:'Ciudad', th_monto:'Monto',
     th_vigencia:'Vigencia', th_estatus:'Estatus', th_semaforo:'Semáforo legal',
     cxc_note:'<b>Nota sobre periodicidad:</b> esta cartera se registra a nivel anual (vigencia por año, no por mes), tomada de la cédula fiscal corporativa consolidada 2023–2026. El filtro de "Tipo de impuesto" y el orden por "Año" ya están disponibles arriba. Si necesitas desglose mes por mes, hay que ampliar la tabla <code>fiscal_cxc_impuestos</code> con un campo de periodo mensual y volver a cargar los montos con ese detalle — avísame y lo preparamos.',
     calc_title:'Simulador de ISR / IVA del periodo',
@@ -1794,7 +1815,7 @@ const LANG = {
     ord_monto_desc:'Amount (high to low)', ord_monto_asc:'Amount (low to high)',
     ord_empresa:'Company (A-Z)', ord_categoria:'Tax type (A-Z)',
     ord_anio_asc:'Year (oldest first)', ord_anio_desc:'Year (newest first)',
-    th_empresa:'Company', th_tipo:'Tax type', th_monto:'Amount',
+    th_empresa:'Company', th_tipo:'Tax type', th_ciudad:'City', th_monto:'Amount',
     th_vigencia:'Period', th_estatus:'Status', th_semaforo:'Legal traffic light',
     cxc_note:'<b>Note on periodicity:</b> this portfolio is recorded annually (yearly validity, not monthly), sourced from the consolidated 2023–2026 corporate tax ledger. The "Tax type" filter and "Year" sorting are available above. For month-by-month breakdown, <code>fiscal_cxc_impuestos</code> would need a monthly period field — let us know and we\'ll set it up.',
     calc_title:'ISR / VAT Period Simulator',
@@ -2470,8 +2491,29 @@ function renderCxc(){
     }).join('');
   }
 
+  const CIUDADES_CONFIG = {
+    'Tijuana':             { color:'#185FA5', bg:'#e6f1fb', dot:'#2a78d6' },
+    'Monterrey':           { color:'#854F0B', bg:'#faeeda', dot:'#eb6834' },
+    'México / Cuautitlán': { color:'#3B6D11', bg:'#eaf3de', dot:'#1baf7a' }
+  };
+  const ciudadFiltrosEl = document.getElementById('cxcFiltrosCiudad');
+  if (ciudadFiltrosEl) {
+    const ciudadesDisp = ['Todas', 'Tijuana', 'Monterrey', 'México / Cuautitlán'];
+    ciudadFiltrosEl.innerHTML = ciudadesDisp.map(function(c) {
+      const activo = c === cxcFiltroCiudad;
+      if (c === 'Todas') {
+        return '<button class="btn-secondary btn" style="padding:5px 12px;font-size:11.5px;' + (activo ? 'border-color:var(--accent);color:var(--accent)' : '') + '" onclick="cxcSetFiltroCiudad(\'Todas\')">Todas</button>';
+      }
+      const cfg = CIUDADES_CONFIG[c];
+      const dotStyle = 'display:inline-block;width:7px;height:7px;border-radius:50%;background:' + cfg.dot + ';margin-right:4px;vertical-align:middle';
+      const btnStyle = 'padding:5px 12px;font-size:11.5px;' + (activo ? 'border-color:' + cfg.dot + ';color:' + cfg.color + ';background:' + cfg.bg : '');
+      return '<button class="btn-secondary btn" style="' + btnStyle + '" onclick="cxcSetFiltroCiudad(\'' + c + '\')"><span style="' + dotStyle + '"></span>' + c + '</button>';
+    }).join('');
+  }
+
   let filas = cxcFiltroEmpresa === 'Todas' ? cxcImpuestos : cxcImpuestos.filter(r=>r.empresa===cxcFiltroEmpresa);
   filas = cxcFiltroCategoria === 'Todas' ? filas : filas.filter(r=>r.categoria===cxcFiltroCategoria);
+  if (cxcFiltroCiudad !== 'Todas') filas = filas.filter(r => parsearCiudad(r.empresa, r.categoria) === cxcFiltroCiudad);
   filas = cxcFiltroSemaforo ? filas.filter(r=>cxcSemaforo(r).code===cxcFiltroSemaforo) : filas;
   const ordenadas = [...filas].sort(CXC_ORDENADORES[cxcOrden] || CXC_ORDENADORES.monto_desc);
 
@@ -2491,16 +2533,27 @@ function renderCxc(){
     const chkCell = puedeEdit
       ? '<td style="text-align:center;padding:4px 6px"><input type="checkbox" class="acc-chk" ' + chkSel + ' onchange="accToggleRow(\'' + r.id + '\',this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#185fa5"></td>'
       : '<td style="text-align:center;padding:4px 6px;color:var(--muted);font-size:11px">—</td>';
+    const ciudad = parsearCiudad(r.empresa, r.categoria);
+    const CIUDADES_CONF = {
+      'Tijuana':             { color:'#185FA5', bg:'#e6f1fb', dot:'#2a78d6' },
+      'Monterrey':           { color:'#854F0B', bg:'#faeeda', dot:'#eb6834' },
+      'México / Cuautitlán': { color:'#3B6D11', bg:'#eaf3de', dot:'#1baf7a' }
+    };
+    const cc = CIUDADES_CONF[ciudad] || { color:'#52514e', bg:'#f1efe8', dot:'#888780' };
+    const ciudadPill = '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;background:' + cc.bg + ';color:' + cc.color + '">'
+      + '<span style="width:6px;height:6px;border-radius:50%;background:' + cc.dot + ';flex-shrink:0"></span>'
+      + ciudad + '</span>';
     return '<tr id="accRow-' + r.id + '">'
       + chkCell
       + '<td>' + r.empresa + '</td>'
       + '<td>' + r.categoria + '</td>'
+      + '<td>' + ciudadPill + '</td>'
       + '<td><b>' + fmtMoney(r.monto) + '</b></td>'
       + '<td>' + vigencia + '</td>'
       + '<td>' + estatusSelect + '</td>'
       + '<td><span class="' + sem.cls + '">' + sem.label + '</span></td>'
       + '</tr>';
-  }).join('') || '<tr><td colspan="7" style="color:var(--muted)">Sin conceptos registrados.</td></tr>';
+  }).join('') || '<tr><td colspan="8" style="color:var(--muted)">Sin conceptos registrados.</td></tr>';
 
   const sum = (arr) => arr.reduce((s,r)=>s+Number(r.monto||0),0);
   /* Base para KPIs: aplica filtros empresa+categoria pero NO semáforo
@@ -2524,6 +2577,7 @@ function renderCxc(){
     const partes = [];
     if (cxcFiltroEmpresa !== 'Todas') partes.push(cxcFiltroEmpresa);
     if (cxcFiltroCategoria !== 'Todas') partes.push(cxcFiltroCategoria);
+    if (cxcFiltroCiudad !== 'Todas') partes.push(cxcFiltroCiudad);
     if (partes.length) {
       kpiBadgeEl.textContent = '🔍 ' + partes.join(' · ');
       kpiBadgeEl.style.display = 'inline-block';
