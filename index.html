@@ -706,7 +706,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
           <div>
             <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">EMPRESA *</label>
-            <select id="nob_empresa" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
+            <select id="nob_empresa" onchange="nobEmpresaCambia(this.value)" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
               <option value="">Selecciona…</option>
               <option>Internacional</option>
               <option>Comercial</option>
@@ -729,6 +729,16 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
               <option>ISN Estatal</option>
             </select>
           </div>
+        </div>
+
+        <!-- Fila 1b: Ciudad (solo visible/requerida cuando empresa = Internacional) -->
+        <div id="nob_ciudad_row" style="margin-bottom:14px;display:none">
+          <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">CIUDAD / SUCURSAL</label>
+          <select id="nob_ciudad" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
+            <option value="Tijuana">Tijuana</option>
+            <option value="Monterrey">Monterrey</option>
+            <option value="México / Cuautitlán">México / Cuautitlán</option>
+          </select>
         </div>
 
         <!-- Fiduciario badge (se muestra automático) -->
@@ -1719,13 +1729,8 @@ let cxcFiltroCategoria = 'Todas';
 let cxcFiltroCiudad = 'Todas';
 let cxcOrden = 'monto_desc';
 
-function parsearCiudad(empresa, tipoImpuesto) {
-  if (empresa !== 'Internacional') return 'Tijuana';
-  const t = (tipoImpuesto || '').toUpperCase();
-  if (t.includes('TIJ') || t.includes('TIJUANA')) return 'Tijuana';
-  if (t.includes('MTY') || t.includes('MONTERREY')) return 'Monterrey';
-  if (t.includes('MEX') || t.includes('MEXICO') || t.includes('MÉXICO')) return 'México / Cuautitlán';
-  return 'Tijuana';
+function getCiudad(r) {
+  return r.ciudad || 'Tijuana';
 }
 
 function cxcSetFiltroCiudad(ciudad) {
@@ -1998,33 +2003,33 @@ async function cargarBibliotecaLegal(){
    aplica a este set de datos todavía (ver nota en la vista). El
    filtro por Tipo de impuesto y el orden por Año sí están disponibles. */
 const SEED_CXC = [
-  { empresa:'Internacional', categoria:'ISR Retenido a Empleados', monto:14808998.20, fiduciario:true,  anio_inicio:2023, anio_fin:2026, estatus:'En plan de pago' },
-  { empresa:'Internacional', categoria:'ISR Propio',               monto:7732939.00,  fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'En plan de pago' },
-  { empresa:'Internacional', categoria:'INFONAVIT / RCV',          monto:4114228.37,  fiduciario:false, anio_inicio:2024, anio_fin:2026, estatus:'En plan de pago' },
-  { empresa:'Internacional', categoria:'ISN Estatal',              monto:2203488.00,  fiduciario:false, anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Internacional', categoria:'IVA Retenido a Terceros',  monto:1930340.00,  fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'En plan de pago' },
-  { empresa:'Internacional', categoria:'ISR Retenido a Terceros',  monto:1290124.68,  fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'En plan de pago' },
-  { empresa:'Internacional', categoria:'IMSS / Seguridad Social',  monto:1049828.32,  fiduciario:true,  anio_inicio:2025, anio_fin:2026, estatus:'En plan de pago' },
-  { empresa:'Comercial',     categoria:'ISR Retenido a Empleados', monto:3317517.00,  fiduciario:true,  anio_inicio:2023, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Comercial',     categoria:'ISR Propio',               monto:2453426.00,  fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Comercial',     categoria:'ISN Estatal',              monto:712373.00,   fiduciario:false, anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Comercial',     categoria:'IMSS / Seguridad Social',  monto:504280.03,   fiduciario:true,  anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Comercial',     categoria:'INFONAVIT / RCV',          monto:517792.90,   fiduciario:false, anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Autobot',       categoria:'ISR Retenido a Empleados', monto:2627308.00,  fiduciario:true,  anio_inicio:2023, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Autobot',       categoria:'ISN Estatal',              monto:1043991.00,  fiduciario:false, anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Autobot',       categoria:'IMSS / Seguridad Social',  monto:792534.61,   fiduciario:true,  anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Autobot',       categoria:'INFONAVIT / RCV',          monto:871341.97,   fiduciario:false, anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Autobot',       categoria:'ISR Propio',               monto:738049.00,   fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Autobot',       categoria:'ISR Retenido a Terceros',  monto:11258.00,    fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Autobot',       categoria:'IVA Retenido a Terceros',  monto:6004.00,     fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Boughts',       categoria:'IVA',                      monto:5460963.00,  fiduciario:false, anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Boughts',       categoria:'ISR Propio',               monto:105704.00,   fiduciario:false, anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Ariitranst',    categoria:'ISR Retenido a Empleados', monto:1024191.00,  fiduciario:true,  anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Ariitranst',    categoria:'ISN Estatal',              monto:275507.00,   fiduciario:false, anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Ariitranst',    categoria:'INFONAVIT / RCV',          monto:310569.05,   fiduciario:false, anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Ariitranst',    categoria:'IVA',                      monto:186037.00,   fiduciario:false, anio_inicio:2026, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Ariitranst',    categoria:'IMSS / Seguridad Social',  monto:199294.61,   fiduciario:true,  anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
-  { empresa:'Ariitranst',    categoria:'ISR Propio',               monto:75140.00,    fiduciario:false, anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Internacional', categoria:'ISR Retenido a Empleados', ciudad:'Tijuana',             monto:14808998.20, fiduciario:true,  anio_inicio:2023, anio_fin:2026, estatus:'En plan de pago' },
+  { empresa:'Internacional', categoria:'ISR Propio',               ciudad:'Tijuana',             monto:7732939.00,  fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'En plan de pago' },
+  { empresa:'Internacional', categoria:'INFONAVIT / RCV',          ciudad:'Tijuana',             monto:4114228.37,  fiduciario:false, anio_inicio:2024, anio_fin:2026, estatus:'En plan de pago' },
+  { empresa:'Internacional', categoria:'ISN Estatal',              ciudad:'Tijuana',             monto:2203488.00,  fiduciario:false, anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Internacional', categoria:'IVA Retenido a Terceros',  ciudad:'Tijuana',             monto:1930340.00,  fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'En plan de pago' },
+  { empresa:'Internacional', categoria:'ISR Retenido a Terceros',  ciudad:'Tijuana',             monto:1290124.68,  fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'En plan de pago' },
+  { empresa:'Internacional', categoria:'IMSS / Seguridad Social',  ciudad:'Tijuana',             monto:1049828.32,  fiduciario:true,  anio_inicio:2025, anio_fin:2026, estatus:'En plan de pago' },
+  { empresa:'Comercial',     categoria:'ISR Retenido a Empleados', ciudad:'Tijuana',             monto:3317517.00,  fiduciario:true,  anio_inicio:2023, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Comercial',     categoria:'ISR Propio',               ciudad:'Tijuana',             monto:2453426.00,  fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Comercial',     categoria:'ISN Estatal',              ciudad:'Tijuana',             monto:712373.00,   fiduciario:false, anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Comercial',     categoria:'IMSS / Seguridad Social',  ciudad:'Tijuana',             monto:504280.03,   fiduciario:true,  anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Comercial',     categoria:'INFONAVIT / RCV',          ciudad:'Tijuana',             monto:517792.90,   fiduciario:false, anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Autobot',       categoria:'ISR Retenido a Empleados', ciudad:'Tijuana',             monto:2627308.00,  fiduciario:true,  anio_inicio:2023, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Autobot',       categoria:'ISN Estatal',              ciudad:'Tijuana',             monto:1043991.00,  fiduciario:false, anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Autobot',       categoria:'IMSS / Seguridad Social',  ciudad:'Tijuana',             monto:792534.61,   fiduciario:true,  anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Autobot',       categoria:'INFONAVIT / RCV',          ciudad:'Tijuana',             monto:871341.97,   fiduciario:false, anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Autobot',       categoria:'ISR Propio',               ciudad:'Tijuana',             monto:738049.00,   fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Autobot',       categoria:'ISR Retenido a Terceros',  ciudad:'Tijuana',             monto:11258.00,    fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Autobot',       categoria:'IVA Retenido a Terceros',  ciudad:'Tijuana',             monto:6004.00,     fiduciario:false, anio_inicio:2023, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Boughts',       categoria:'IVA',                      ciudad:'Tijuana',             monto:5460963.00,  fiduciario:false, anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Boughts',       categoria:'ISR Propio',               ciudad:'Tijuana',             monto:105704.00,   fiduciario:false, anio_inicio:2025, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Ariitranst',    categoria:'ISR Retenido a Empleados', ciudad:'Tijuana',             monto:1024191.00,  fiduciario:true,  anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Ariitranst',    categoria:'ISN Estatal',              ciudad:'Tijuana',             monto:275507.00,   fiduciario:false, anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Ariitranst',    categoria:'INFONAVIT / RCV',          ciudad:'Tijuana',             monto:310569.05,   fiduciario:false, anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Ariitranst',    categoria:'IVA',                      ciudad:'Tijuana',             monto:186037.00,   fiduciario:false, anio_inicio:2026, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Ariitranst',    categoria:'IMSS / Seguridad Social',  ciudad:'Tijuana',             monto:199294.61,   fiduciario:true,  anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
+  { empresa:'Ariitranst',    categoria:'ISR Propio',               ciudad:'Tijuana',             monto:75140.00,    fiduciario:false, anio_inicio:2024, anio_fin:2026, estatus:'Pendiente' },
 ];
 let cxcModoSoloLectura = false; // true si estamos usando SEED_CXC porque la tabla no existe/está vacía
 
@@ -2211,6 +2216,10 @@ function abrirModalNuevaObligacion(){
 
 function cerrarModalNuevaObligacion(){
   document.getElementById('modalNuevaObligacion').style.display = 'none';
+  const ciudadRowReset = document.getElementById('nob_ciudad_row');
+  if (ciudadRowReset) ciudadRowReset.style.display = 'none';
+  const ciudadSelReset = document.getElementById('nob_ciudad');
+  if (ciudadSelReset) ciudadSelReset.value = 'Tijuana';
   ['nob_empresa','nob_categoria','nob_monto','nob_notas'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.value = '';
@@ -2222,6 +2231,18 @@ function cerrarModalNuevaObligacion(){
   document.getElementById('nob_estatus').value = 'Pendiente';
   document.getElementById('nob_fiduciario_badge').style.display = 'none';
   document.getElementById('nob_preview').style.display = 'none';
+}
+
+function nobEmpresaCambia(empresa) {
+  const ciudadRow = document.getElementById('nob_ciudad_row');
+  if (ciudadRow) {
+    ciudadRow.style.display = empresa === 'Internacional' ? 'block' : 'none';
+    // Si no es Internacional, resetear a Tijuana
+    if (empresa !== 'Internacional') {
+      const sel = document.getElementById('nob_ciudad');
+      if (sel) sel.value = 'Tijuana';
+    }
+  }
 }
 
 function nobCategoriaCambia(cat){
@@ -2390,8 +2411,11 @@ async function guardarNuevaObligacion(){
     }
   }
 
+  const ciudadSel = document.getElementById('nob_ciudad');
+  const ciudad = (empresa === 'Internacional' && ciudadSel) ? ciudadSel.value : 'Tijuana';
+
   const payload = {
-    empresa, categoria: cat, monto, fiduciario,
+    empresa, categoria: cat, ciudad, monto, fiduciario,
     anio_inicio: anioIni, anio_fin: anioFin,
     fecha_exigibilidad: fecha || null,
     mes_exigibilidad:  mesEx,
@@ -2513,7 +2537,7 @@ function renderCxc(){
 
   let filas = cxcFiltroEmpresa === 'Todas' ? cxcImpuestos : cxcImpuestos.filter(r=>r.empresa===cxcFiltroEmpresa);
   filas = cxcFiltroCategoria === 'Todas' ? filas : filas.filter(r=>r.categoria===cxcFiltroCategoria);
-  if (cxcFiltroCiudad !== 'Todas') filas = filas.filter(r => parsearCiudad(r.empresa, r.categoria) === cxcFiltroCiudad);
+  if (cxcFiltroCiudad !== 'Todas') filas = filas.filter(r => getCiudad(r) === cxcFiltroCiudad);
   filas = cxcFiltroSemaforo ? filas.filter(r=>cxcSemaforo(r).code===cxcFiltroSemaforo) : filas;
   const ordenadas = [...filas].sort(CXC_ORDENADORES[cxcOrden] || CXC_ORDENADORES.monto_desc);
 
@@ -2533,7 +2557,7 @@ function renderCxc(){
     const chkCell = puedeEdit
       ? '<td style="text-align:center;padding:4px 6px"><input type="checkbox" class="acc-chk" ' + chkSel + ' onchange="accToggleRow(\'' + r.id + '\',this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#185fa5"></td>'
       : '<td style="text-align:center;padding:4px 6px;color:var(--muted);font-size:11px">—</td>';
-    const ciudad = parsearCiudad(r.empresa, r.categoria);
+    const ciudad = getCiudad(r);
     const CIUDADES_CONF = {
       'Tijuana':             { color:'#185FA5', bg:'#e6f1fb', dot:'#2a78d6' },
       'Monterrey':           { color:'#854F0B', bg:'#faeeda', dot:'#eb6834' },
