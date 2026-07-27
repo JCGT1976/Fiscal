@@ -1735,6 +1735,7 @@ function getCiudad(r) {
 
 function cxcSetFiltroCiudad(ciudad) {
   cxcFiltroCiudad = ciudad;
+  accSeleccionados.clear();
   renderCxc();
 }
 
@@ -2585,6 +2586,7 @@ function renderCxc(){
      muestra su porción — reactive al selector de empresa y tipo */
   let kpiBase = cxcFiltroEmpresa === 'Todas' ? cxcImpuestos : cxcImpuestos.filter(r=>r.empresa===cxcFiltroEmpresa);
   kpiBase = cxcFiltroCategoria === 'Todas' ? kpiBase : kpiBase.filter(r=>r.categoria===cxcFiltroCategoria);
+  if (cxcFiltroCiudad !== 'Todas') kpiBase = kpiBase.filter(r => getCiudad(r) === cxcFiltroCiudad);
   const total = sum(kpiBase);
   /* KPIs semáforo legal — calculados sobre kpiBase (empresa+tipo filtrados) */
   ['rojo','naranja','amarillo','verde'].forEach(code => {
