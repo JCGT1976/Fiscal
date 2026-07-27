@@ -1733,6 +1733,18 @@ function getCiudad(r) {
   return r.ciudad || 'Tijuana';
 }
 
+function getConcepto(r) {
+  if (r.empresa !== 'Internacional') return r.categoria;
+  const cat    = r.categoria || '';
+  const ciudad = getCiudad(r);
+  const sfx    = ciudad === 'Tijuana' ? 'TIJ' : ciudad === 'Monterrey' ? 'MTY' : 'MEX';
+  if (cat === 'IMSS / Seguridad Social')
+    return 'Social Security / IMSS ' + sfx;
+  if (cat === 'INFONAVIT / RCV')
+    return 'Housing and Retirement Fund / RCV, INFONAVIT ' + sfx;
+  return r.categoria;
+}
+
 function cxcSetFiltroCiudad(ciudad) {
   cxcFiltroCiudad = ciudad;
   accSeleccionados.clear();
@@ -2571,7 +2583,7 @@ function renderCxc(){
     return '<tr id="accRow-' + r.id + '">'
       + chkCell
       + '<td>' + r.empresa + '</td>'
-      + '<td>' + r.categoria + '</td>'
+      + '<td>' + getConcepto(r) + '</td>'
       + '<td>' + ciudadPill + '</td>'
       + '<td><b>' + fmtMoney(r.monto) + '</b></td>'
       + '<td>' + vigencia + '</td>'
