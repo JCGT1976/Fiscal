@@ -103,6 +103,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .combo-bar .lbl{font-size:12px;color:var(--muted);font-weight:600}
 .combo-bar .val{font-size:19px;font-weight:800;color:var(--red)}
 
+/* ── grid de Priorización de Pagos (Inteligencia) ── */
+.rank{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--surface2);font-weight:700;font-size:11px;color:var(--muted)}
+.chk{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:12px;font-weight:800}
+.chk.yes{background:rgba(5,150,105,.15);color:var(--green)}
+.chk.no{background:var(--surface2);color:var(--muted)}
 
 /* Tabs */
 /* ── SEMÁFORO CALENDARIO ── */
@@ -1513,6 +1518,70 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       </div>
     </div>
 
+    <!-- 3-A-bis: Priorización de Pagos -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px">
+        <h2 style="margin:0">🎯 Priorización de Pagos — Impuestos más urgentes a cubrir</h2>
+        <button onclick="ejecutarPriorizacionPagos()" style="padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer">▶ Calcular</button>
+      </div>
+      <div class="desc">Toma el monto ya planeado para "Impuestos" en el Plan de Pagos (Deadpool · <code>catalogo_cxp</code>) y decide, dentro de la cartera de CxC Fiscal, qué obligaciones cubrir primero según su riesgo legal.</div>
+
+      <div id="prioEstado" style="color:var(--muted);font-size:13px;padding:16px 0">Presiona "Calcular" para leer el Plan de Pagos y cruzarlo contra la cartera.</div>
+      <div id="prioContenido" style="display:none">
+        <div class="totales-grid">
+          <div class="ptile tile-impuesto">
+            <div class="ptile-head">
+              <div class="ptile-icon">✅</div>
+              <span class="ptile-badge b-neutral"><span class="dot"></span>RECOMENDADO</span>
+            </div>
+            <div class="ptile-title">Escenario Ideal</div>
+            <div class="ptile-value" id="prioIdealMonto">$0</div>
+            <div class="ptile-desc">= suma de la columna <code>recomendado</code> del Plan de Pagos (Deadpool) para la categoría Impuestos.</div>
+            <div class="ptile-footer">
+              <div class="ptile-meta"><span class="k">Obligaciones cubiertas</span><span class="v" id="prioIdealCubiertas">—</span></div>
+              <div class="ptile-meta"><span class="k">Sobrante sin asignar</span><span class="v" id="prioIdealSobrante">—</span></div>
+              <div class="ptile-meta"><span class="k">Fuente</span><span class="v">catalogo_cxp</span></div>
+            </div>
+          </div>
+          <div class="ptile tile-accesorios">
+            <div class="ptile-head">
+              <div class="ptile-icon">🚨</div>
+              <span class="ptile-badge b-warn"><span class="dot"></span>URGENTE</span>
+            </div>
+            <div class="ptile-title">Escenario Mínimo</div>
+            <div class="ptile-value" id="prioMinimoMonto">$0</div>
+            <div class="ptile-desc">= suma de la columna <code>urgente</code> del Plan de Pagos (Deadpool) para la categoría Impuestos.</div>
+            <div class="ptile-footer">
+              <div class="ptile-meta"><span class="k">Obligaciones cubiertas</span><span class="v" id="prioMinimoCubiertas">—</span></div>
+              <div class="ptile-meta"><span class="k">Sobrante sin asignar</span><span class="v" id="prioMinimoSobrante">—</span></div>
+              <div class="ptile-meta"><span class="k">Fuente</span><span class="v">catalogo_cxp</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="overflow-x:auto">
+          <table class="prio" style="width:100%;border-collapse:collapse;font-size:12.5px">
+            <thead>
+              <tr>
+                <th style="text-align:left;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border)">#</th>
+                <th style="text-align:left;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border)">Empresa</th>
+                <th style="text-align:left;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border)">Impuesto</th>
+                <th style="text-align:left;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border)">Semáforo</th>
+                <th style="text-align:right;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border)">Monto c/accesorios</th>
+                <th style="text-align:center;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border)">Ideal</th>
+                <th style="text-align:center;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border)">Mínimo</th>
+              </tr>
+            </thead>
+            <tbody id="prioTablaBody"></tbody>
+          </table>
+        </div>
+
+        <div class="legend" style="font-size:11px;color:var(--muted);background:var(--surface2);border:1px dashed var(--border);border-radius:10px;padding:12px 14px;margin-top:14px;line-height:1.6">
+          <b>Criterio de prioridad (igual al semáforo ya usado en CxC Fiscal):</b> 1º 🔴 fiduciario pendiente — riesgo penal arts.108-109 CFF; 2º 🟠 no fiduciario en mora — recargos 2.07%/mes art.21 CFF (o 2.25%/mes ISN BC); 3º 🟡 ya en plan de pago o por vencer, sin riesgo inmediato. El monto planeado se agota nivel por nivel: primero se maximiza cuánto de lo fiduciario se puede cerrar (ordenado por monto de mayor a menor dentro del nivel); solo lo que sobra pasa al siguiente nivel. Una obligación de menor riesgo nunca se cubre mientras quede presupuesto sin intentar en un nivel de mayor riesgo.
+        </div>
+      </div>
+    </div>
+
     <!-- 3-B: Simulador what-if -->
     <div class="card">
       <h2>🎲 Simulador what-if</h2>
@@ -2178,54 +2247,56 @@ const INPC_FACTOR = { 2023:1.138, 2024:1.086, 2025:1.043, 2026:1.016 };
 
 /* Devuelve { totalDeuda, totalHistorico, totalRecargos, hayEstimados }
    hayEstimados = true cuando algún registro usó fecha aproximada.   */
+/* Calcula histórico/recargos/actualizado para UNA obligación (art.17-A + 21 CFF).
+   Extraído de calcDeudaActualizada para poder reusarse fila por fila
+   (ej. grid de Priorización de Pagos en Inteligencia) sin duplicar la lógica legal. */
+function calcDeudaRow(r) {
+  const monto  = Number(r.monto) || 0;
+  const cat    = r.categoria || '';
+  const tasa   = cat.includes('ISN')
+    ? (window.__tasaMoraBC      || 0.0225)
+    : (window.__tasaMoraFederal || 0.0207);
+
+  /* ── Camino A: fecha_exigibilidad exacta (Fase C) → aplicar marco legal ── */
+  if(r.fecha_exigibilidad){
+    const { mesesMora, dentroPlazo } = calcMoraLegal(cat, r.fecha_exigibilidad);
+    if(dentroPlazo){
+      return { montoHistorico: monto, recargos: 0, montoActualizado: monto, esEstimado: false };
+    }
+    const fEx      = new Date(r.fecha_exigibilidad + 'T12:00:00');
+    const factor   = INPC_FACTOR[fEx.getFullYear()] || 1.138;
+    const montoAct = monto * factor;
+    const recargos = montoAct * tasa * mesesMora;
+    return { montoHistorico: monto, recargos, montoActualizado: montoAct + recargos, esEstimado: false };
+  }
+
+  /* ── Camino B: retrocompat (mes/año exigibilidad o solo anio_inicio) ── */
+  const hoy      = new Date();
+  const mesReal  = r.mes_exigibilidad  ? Number(r.mes_exigibilidad)  - 1 : null;
+  const anioReal = r.anio_exigibilidad ? Number(r.anio_exigibilidad)     : null;
+  const esEstimado = (mesReal === null || anioReal === null);
+
+  const anioBase = anioReal ?? (r.anio_inicio || 2023);
+  const mesBase  = mesReal  ?? 0;
+  const factor   = INPC_FACTOR[anioBase] || 1.138;
+  const origen   = new Date(anioBase, mesBase, 1);
+  const meses    = Math.min(
+    (hoy.getFullYear() - origen.getFullYear()) * 12 + (hoy.getMonth() - origen.getMonth()),
+    60
+  );
+  const montoAct = monto * factor;
+  const recargos = montoAct * tasa * Math.max(meses, 0);
+  return { montoHistorico: monto, recargos, montoActualizado: montoAct + recargos, esEstimado };
+}
+
 function calcDeudaActualizada(datos) {
   let totalDeuda = 0, totalHistorico = 0, totalRecargos = 0, hayEstimados = false;
   datos.filter(r => r.estatus !== 'Pagado').forEach(r => {
-    const monto  = Number(r.monto) || 0;
-    const cat    = r.categoria || '';
-    const tasa   = cat.includes('ISN')
-      ? (window.__tasaMoraBC      || 0.0225)
-      : (window.__tasaMoraFederal || 0.0207);
-
-    /* ── Camino A: fecha_exigibilidad exacta (Fase C) → aplicar marco legal ── */
-    if(r.fecha_exigibilidad){
-      const { mesesMora, dentroPlazo } = calcMoraLegal(cat, r.fecha_exigibilidad);
-      if(dentroPlazo){
-        /* Dentro del plazo legal: sin actualización, sin recargos */
-        totalDeuda     += monto;
-        totalHistorico += monto;
-        return;
-      }
-      const fEx      = new Date(r.fecha_exigibilidad + 'T12:00:00');
-      const factor   = INPC_FACTOR[fEx.getFullYear()] || 1.138;
-      const montoAct = monto * factor;
-      const recargos = montoAct * tasa * mesesMora;
-      totalDeuda     += montoAct + recargos;
-      totalHistorico += monto;
-      totalRecargos  += recargos;
-      return;
-    }
-
-    /* ── Camino B: retrocompat (mes/año exigibilidad o solo anio_inicio) ── */
-    const hoy      = new Date();
-    const mesReal  = r.mes_exigibilidad  ? Number(r.mes_exigibilidad)  - 1 : null;
-    const anioReal = r.anio_exigibilidad ? Number(r.anio_exigibilidad)     : null;
-    const esEstimado = (mesReal === null || anioReal === null);
-    if(esEstimado) hayEstimados = true;
-
-    const anioBase = anioReal ?? (r.anio_inicio || 2023);
-    const mesBase  = mesReal  ?? 0;
-    const factor   = INPC_FACTOR[anioBase] || 1.138;
-    const origen   = new Date(anioBase, mesBase, 1);
-    const meses    = Math.min(
-      (hoy.getFullYear() - origen.getFullYear()) * 12 + (hoy.getMonth() - origen.getMonth()),
-      60
-    );
-    const montoAct = monto * factor;
-    const recargos = montoAct * tasa * Math.max(meses, 0);
-    totalDeuda     += montoAct + recargos;
-    totalHistorico += monto;
+    const { montoHistorico, recargos, montoActualizado, esEstimado } = calcDeudaRow(r);
+    totalDeuda     += montoActualizado;
+    totalHistorico += montoHistorico;
     totalRecargos  += recargos;
+    if (esEstimado) hayEstimados = true;
   });
   return { totalDeuda, totalHistorico, totalRecargos, hayEstimados };
 }
@@ -3623,6 +3694,127 @@ function renderAnomalias(lista){
             </div>
             <span style="font-size:10px;font-weight:700;color:${COLORS[a.severidad]};background:${COLORS[a.severidad]}15;padding:3px 8px;border-radius:12px;white-space:nowrap;flex-shrink:0">${a.severidad.toUpperCase()}</span>
           </div>`).join('');
+}
+
+/* ─── 3-A-bis: Priorización de Pagos ───────────────────────
+   Lee el Plan de Pagos que YA existe en Deadpool (tabla catalogo_cxp,
+   categoría "Impuestos" / nivel L2 — columnas recomendado/urgente) y
+   lo cruza contra la cartera pendiente de CxC Fiscal ordenada por el
+   mismo semáforo legal (rojo fiduciario > naranja mora > amarillo en
+   plan). NO calcula un "disponible" nuevo — solo lee lo que ya está
+   planeado en Deadpool y decide qué obligaciones cubrir primero. ── */
+
+function prioMontoCxpMXN(r, campo) {
+  const m = parseFloat(r[campo]) || 0;
+  if (!r.moneda || r.moneda === 'MXN') return m;
+  const tc = parseFloat(r.tc_ref) || parseFloat(localStorage.getItem('mitech_tc')) || 17;
+  return m * tc;
+}
+
+function prioEsRenglonImpuestos(r) {
+  const cat   = (r.categoria || r.grupo || '').toString().toLowerCase();
+  const nivel = parseInt(r.nivel, 10) || 0;
+  return cat.includes('impuesto') || nivel === 2;
+}
+
+function prioAsignar(filas, disponible) {
+  /* Se procesa NIVEL POR NIVEL (rojo, luego naranja, luego amarillo) — nunca
+     junto. Dentro de cada nivel (ya viene ordenado por monto desc), se paga
+     completa cada obligación que quepa en lo que resta y se omite (sin pago
+     parcial) la que no quepa, probando igual con las más chicas del MISMO
+     nivel para no desperdiciar presupuesto. Solo el sobrante de un nivel pasa
+     al siguiente — así una obligación de menor riesgo (ej. 🟠 mora) jamás se
+     cubre mientras quede una de mayor riesgo (ej. 🔴 fiduciario/penal) sin
+     intentar primero con todo el presupuesto disponible en su propio nivel. */
+  const NIVELES = ['rojo', 'naranja', 'amarillo'];
+  let restante = disponible;
+  const cubiertas = new Set();
+  NIVELES.forEach(nivel => {
+    filas.filter(f => f.sem.code === nivel).forEach(f => {
+      if (f.montoActualizado <= restante) {
+        restante -= f.montoActualizado;
+        cubiertas.add(f.key);
+      }
+    });
+  });
+  return { cubiertas, usado: disponible - restante, sobrante: Math.max(restante, 0) };
+}
+
+function prioFilaHTML(f, idx, idealSet, minimoSet) {
+  const ICONS = { rojo:'🔴', naranja:'🟠', amarillo:'🟡', verde:'🟢' };
+  const LABELS = { rojo:'Fiduciario', naranja:'Mora', amarillo:'En plan', verde:'Liquidado' };
+  const chkIdeal  = idealSet.has(f.key)  ? '<span class="chk yes">✓</span>' : '<span class="chk no">–</span>';
+  const chkMinimo = minimoSet.has(f.key) ? '<span class="chk yes">✓</span>' : '<span class="chk no">–</span>';
+  return '<tr>'
+    + '<td style="padding:9px 10px;border-bottom:1px solid var(--border)"><span class="rank">' + (idx+1) + '</span></td>'
+    + '<td style="padding:9px 10px;border-bottom:1px solid var(--border)">' + (f.r.empresa || '—') + '</td>'
+    + '<td style="padding:9px 10px;border-bottom:1px solid var(--border)">' + (f.r.categoria || '—') + '</td>'
+    + '<td style="padding:9px 10px;border-bottom:1px solid var(--border)"><span class="sem-chip ' + f.sem.code + '">' + ICONS[f.sem.code] + ' ' + LABELS[f.sem.code] + '</span></td>'
+    + '<td style="padding:9px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700">' + fmtMoney(f.montoActualizado) + '</td>'
+    + '<td style="padding:9px 10px;border-bottom:1px solid var(--border);text-align:center">' + chkIdeal + '</td>'
+    + '<td style="padding:9px 10px;border-bottom:1px solid var(--border);text-align:center">' + chkMinimo + '</td>'
+    + '</tr>';
+}
+
+async function ejecutarPriorizacionPagos(){
+  if (!cxcImpuestos.length) await cargarCxc();
+
+  const estadoEl = document.getElementById('prioEstado');
+  const contEl   = document.getElementById('prioContenido');
+  estadoEl.style.display = 'block';
+  estadoEl.textContent = 'Leyendo el Plan de Pagos (Deadpool · catalogo_cxp)...';
+  contEl.style.display = 'none';
+
+  let totalRecomendado = 0, totalUrgente = 0, cxpDisponible = true;
+  try {
+    const { data, error } = await sb.from('catalogo_cxp').select('*');
+    if (error) throw error;
+    (data || []).filter(prioEsRenglonImpuestos).forEach(r => {
+      totalRecomendado += prioMontoCxpMXN(r, 'recomendado');
+      totalUrgente     += prioMontoCxpMXN(r, 'urgente');
+    });
+  } catch (e) {
+    console.warn('[prioridad] No se pudo leer catalogo_cxp de Deadpool:', e.message);
+    cxpDisponible = false;
+  }
+
+  if (!cxpDisponible) {
+    estadoEl.textContent = '⚠️ No se pudo leer el Plan de Pagos de Deadpool (tabla catalogo_cxp). Verifica la conexión o captura el monto directamente ahí.';
+    contEl.style.display = 'none';
+    return;
+  }
+
+  const RANK = { rojo:0, naranja:1, amarillo:2, verde:3 };
+  const filas = cxcImpuestos
+    .filter(r => r.estatus !== 'Pagado')
+    .map(r => {
+      const { montoActualizado } = calcDeudaRow(r);
+      const sem = cxcSemaforo(r);
+      const key = r.id != null ? String(r.id) : (r.empresa + '|' + r.categoria + '|' + (r.anio_inicio||''));
+      return { r, sem, montoActualizado, key };
+    })
+    .filter(f => f.sem.code !== 'verde')
+    .sort((a,b) => {
+      const rd = RANK[a.sem.code] - RANK[b.sem.code];
+      return rd !== 0 ? rd : (b.montoActualizado - a.montoActualizado);
+    });
+
+  const ideal  = prioAsignar(filas, totalRecomendado);
+  const minimo = prioAsignar(filas, totalUrgente);
+
+  document.getElementById('prioIdealMonto').textContent      = fmtMoney(totalRecomendado);
+  document.getElementById('prioMinimoMonto').textContent     = fmtMoney(totalUrgente);
+  document.getElementById('prioIdealCubiertas').textContent  = ideal.cubiertas.size + ' de ' + filas.length;
+  document.getElementById('prioMinimoCubiertas').textContent = minimo.cubiertas.size + ' de ' + filas.length;
+  document.getElementById('prioIdealSobrante').textContent   = fmtMoney(ideal.sobrante);
+  document.getElementById('prioMinimoSobrante').textContent  = fmtMoney(minimo.sobrante);
+
+  document.getElementById('prioTablaBody').innerHTML = filas.length
+    ? filas.map((f, idx) => prioFilaHTML(f, idx, ideal.cubiertas, minimo.cubiertas)).join('')
+    : '<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--muted)">Sin obligaciones pendientes en CxC Fiscal.</td></tr>';
+
+  estadoEl.style.display = 'none';
+  contEl.style.display = 'block';
 }
 
 /* ─── 3-B: Simulador what-if ─────────────────────────────── */
