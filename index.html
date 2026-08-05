@@ -625,7 +625,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
   <div class="topbar">
     <div class="topbar-left">
       <h1 data-i18n="title">Módulo Fiscal</h1>
-      <div class="sub" data-i18n="subtitle">SIF · MI Global — CxC Fiscal · Cálculo de Impuestos</div>
+      <div class="sub" data-i18n="subtitle">SIF · MI Global — CXP Fiscal · Cálculo de Impuestos</div>
     </div>
     <div class="topbar-right">
       <span class="sync-badge" id="syncBadge"><span class="sync-dot" id="syncDot"></span><span id="syncTxt">Conectado a Supabase</span></span>
@@ -696,14 +696,14 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
   </div>
 
   <div class="nav-tabs">
-    <button class="nav-tab active" data-view="cxc" data-i18n="tab_cxc" onclick="showView('cxc')">🚦 CxC Fiscal</button>
+    <button class="nav-tab active" data-view="cxc" data-i18n="tab_cxc" onclick="showView('cxc')">🚦 CXP Fiscal</button>
     <button class="nav-tab" data-view="impuestos" data-i18n="tab_imp" onclick="showView('impuestos')">🧮 Cálculo de Impuestos</button>
     <button class="nav-tab" data-view="recuperaciones" data-i18n="tab_rec" onclick="showView('recuperaciones');cargarRecuperaciones()">💸 Recuperaciones IVA</button>
     <button class="nav-tab" data-view="grupo" id="tabGrupo" onclick="showView('grupo');cargarGrupo()">🏢 Grupo</button>
     <button class="nav-tab" data-view="inteligencia" id="tabInteligencia" style="display:none" onclick="showView('inteligencia');cargarInteligencia()">🧠 Inteligencia</button>
   </div>
 
-  <!-- ===================== CxC FISCAL (semáforo de riesgo) ===================== -->
+  <!-- ===================== CXP Fiscal (semáforo de riesgo) ===================== -->
   <div class="view active" id="view-cxc">
     <!-- Badge de filtro activo sobre KPIs -->
     <div style="margin-bottom:8px;min-height:22px">
@@ -902,7 +902,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
     </div>
 
     <div class="card">
-      <h2 data-i18n="cxc_title">CxC Fiscal — cartera de impuestos por empresa</h2>
+      <h2>CXP Fiscal — cartera de impuestos por empresa</h2>
       <div class="desc" data-i18n="cxc_desc" data-i18n-mode="html">Semáforo legal CFF: <b style="color:var(--red)">🔴 rojo</b> = fiduciario pendiente (retenciones a empleados/IMSS — riesgo penal arts.108-109 CFF); <b style="color:#f97316">🟠 naranja</b> = pendiente no fiduciario (mora 2.07%/mes art.21 CFF); <b style="color:var(--yellow)">🟡 amarillo</b> = en plan de pago (arts.66,66-A CFF); <b style="color:var(--green)">🟢 verde</b> = liquidado.</div>
 
       <div class="cxc-controls">
@@ -1478,7 +1478,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
           <tbody id="tblGrupo"><tr><td colspan="8" style="color:var(--muted)">Cargando…</td></tr></tbody>
         </table>
       </div>
-      <div style="margin-top:10px;font-size:11px;color:var(--muted)">* Monto histórico sin accesorios. Los recargos e INPC se calculan en la vista CxC Fiscal.</div>
+      <div style="margin-top:10px;font-size:11px;color:var(--muted)">* Monto histórico sin accesorios. Los recargos e INPC se calculan en la vista CXP Fiscal.</div>
     </div>
   </div>
 
@@ -1524,7 +1524,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
         <h2 style="margin:0">🎯 Priorización de Pagos — Impuestos más urgentes a cubrir</h2>
         <button onclick="ejecutarPriorizacionPagos()" style="padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer">▶ Calcular</button>
       </div>
-      <div class="desc">Toma el monto ya planeado para "Impuestos" en el Plan de Pagos (Deadpool · <code>catalogo_cxp</code>) y decide, dentro de la cartera de CxC Fiscal, qué obligaciones cubrir primero según su riesgo legal.</div>
+      <div class="desc">Toma el monto ya planeado para "Impuestos" en el Plan de Pagos (Deadpool · <code>catalogo_cxp</code>) y decide, dentro de la cartera de CXP Fiscal, qué obligaciones cubrir primero según su riesgo legal.</div>
 
       <div id="prioEstado" style="color:var(--muted);font-size:13px;padding:16px 0">Presiona "Calcular" para leer el Plan de Pagos y cruzarlo contra la cartera.</div>
       <div id="prioContenido" style="display:none">
@@ -1577,7 +1577,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
         </div>
 
         <div class="legend" style="font-size:11px;color:var(--muted);background:var(--surface2);border:1px dashed var(--border);border-radius:10px;padding:12px 14px;margin-top:14px;line-height:1.6">
-          <b>Criterio de prioridad (igual al semáforo ya usado en CxC Fiscal):</b> 1º 🔴 fiduciario pendiente — riesgo penal arts.108-109 CFF; 2º 🟠 no fiduciario en mora — recargos 2.07%/mes art.21 CFF (o 2.25%/mes ISN BC); 3º 🟡 ya en plan de pago o por vencer, sin riesgo inmediato. El monto planeado se agota nivel por nivel: primero se maximiza cuánto de lo fiduciario se puede cerrar (ordenado por monto de mayor a menor dentro del nivel); solo lo que sobra pasa al siguiente nivel. Una obligación de menor riesgo nunca se cubre mientras quede presupuesto sin intentar en un nivel de mayor riesgo.
+          <b>Criterio de prioridad (igual al semáforo ya usado en CXP Fiscal):</b> 1º 🔴 fiduciario pendiente — riesgo penal arts.108-109 CFF; 2º 🟠 no fiduciario en mora — recargos 2.07%/mes art.21 CFF (o 2.25%/mes ISN BC); 3º 🟡 ya en plan de pago o por vencer, sin riesgo inmediato. El monto planeado se agota nivel por nivel: primero se maximiza cuánto de lo fiduciario se puede cerrar (ordenado por monto de mayor a menor dentro del nivel); solo lo que sobra pasa al siguiente nivel. Una obligación de menor riesgo nunca se cubre mientras quede presupuesto sin intentar en un nivel de mayor riesgo.
         </div>
       </div>
     </div>
@@ -1675,7 +1675,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
 <div id="cxcUploadModal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);width:min(960px,94vw);max-height:88vh;overflow:hidden;display:none;flex-direction:column">
   <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff">
     <div>
-      <div style="font-size:15px;font-weight:700" data-i18n="modal_title">📤 Vista previa — Carga masiva CxC Fiscal</div>
+      <div style="font-size:15px;font-weight:700" data-i18n="modal_title">📤 Vista previa — Carga masiva CXP Fiscal</div>
       <div id="cxcUploadSubtitle" style="font-size:11.5px;opacity:.85;margin-top:2px">—</div>
     </div>
     <button onclick="cerrarModalCarga()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px" data-i18n="modal_close">✕ Cerrar</button>
@@ -1901,7 +1901,7 @@ function toggleTheme(){
 /* ---------- IDIOMA ES / EN ---------- */
 const LANG = {
   es: {
-    title:'Módulo Fiscal', subtitle:'SIF · MI Global — CxC Fiscal · Cálculo de Impuestos',
+    title:'Módulo Fiscal', subtitle:'SIF · MI Global — CXP Fiscal · Cálculo de Impuestos',
     sync_ok:'Conectado a Supabase', sync_err:'Error de conexión con Supabase',
     portal_btn:'← Portal', logout_btn:'Cerrar sesión',
     kpi1_label:'Próximo vencimiento SAT',
@@ -1914,7 +1914,7 @@ const LANG = {
     meta_estimado_si:'Sí, marcado ~', meta_estimado_no:'No',
     combo_lbl:'= Deuda fiscal total con accesorios',
     kpi3_label:'Impuesto estimado · próx. venc.', kpi3_sub:'ISR + IVA — último cálculo registrado',
-    tab_cxc:'🚦 CxC Fiscal', tab_imp:'🧮 Cálculo de Impuestos',
+    tab_cxc:'🚦 CXP Fiscal', tab_imp:'🧮 Cálculo de Impuestos',
     sem_rojo_label:'🔴 Embargo cuentas', sem_naranja_label:'🟠 Notificado/Avisos',
     sem_amarillo_label:'🟡 Por vencer / En plan', sem_verde_label:'🟢 Liquidado',
     sem_rojo_legal:'Arts.145,151 CFF — Fiduciario pendiente. Riesgo penal arts.108-109 CFF.',
@@ -1922,7 +1922,7 @@ const LANG = {
     sem_amarillo_legal:'En plan de pago con autoridad. Regularización activa (arts.66,66-A CFF).',
     sem_verde_legal:'Obligación cubierta. Sin mora ni riesgo (art.6 CFF).',
     excel_loading:'Cargando datos CxC…', btn_cargar_excel:'📤 Cargar Excel',
-    cxc_title:'CxC Fiscal — cartera de impuestos por empresa',
+    cxc_title:'CXP Fiscal — cartera de impuestos por empresa',
     cxc_desc:'Semáforo legal CFF: <b style="color:var(--red)">🔴 rojo</b> = fiduciario pendiente (retenciones a empleados/IMSS — riesgo penal arts.108-109 CFF); <b style="color:#f97316">🟠 naranja</b> = pendiente no fiduciario (mora 2.07%/mes art.21 CFF); <b style="color:var(--yellow)">🟡 amarillo</b> = en plan de pago (arts.66,66-A CFF); <b style="color:var(--green)">🟢 verde</b> = liquidado.',
     filter_empresa:'Empresa', filter_tipo:'Tipo de impuesto', filter_orden:'Ordenar por',
     ord_monto_desc:'Monto (mayor a menor)', ord_monto_asc:'Monto (menor a mayor)',
@@ -1940,7 +1940,7 @@ const LANG = {
     res_iva_tras:'IVA trasladado', res_iva_cargo:'IVA a favor / a cargo', res_total:'Total estimado a pagar',
     hist_title:'Historial de cálculos',
     th_periodo:'Periodo', th_utilidad:'Utilidad fiscal', th_isr:'ISR', th_iva_cargo:'IVA a cargo', th_total:'Total',
-    modal_title:'📤 Vista previa — Carga masiva CxC Fiscal', modal_close:'✕ Cerrar',
+    modal_title:'📤 Vista previa — Carga masiva CXP Fiscal', modal_close:'✕ Cerrar',
     modal_cancel:'Cancelar', modal_confirm:'✓ Confirmar carga',
     modal_status:'Revisa la propuesta antes de confirmar.',
     modal_th_accion:'Acción', modal_th_empresa:'Empresa', modal_th_cat:'Categoría',
@@ -1990,7 +1990,7 @@ const LANG = {
     res_iva_tras:'VAT transferred', res_iva_cargo:'VAT in favor / owed', res_total:'Total estimated to pay',
     hist_title:'Calculation history',
     th_periodo:'Period', th_utilidad:'Taxable profit', th_isr:'ISR', th_iva_cargo:'VAT owed', th_total:'Total',
-    modal_title:'📤 Preview — Bulk upload CxC Fiscal', modal_close:'✕ Close',
+    modal_title:'📤 Preview — Bulk upload CXP Fiscal', modal_close:'✕ Close',
     modal_cancel:'Cancel', modal_confirm:'✓ Confirm upload',
     modal_status:'Review the proposal before confirming.',
     modal_th_accion:'Action', modal_th_empresa:'Company', modal_th_cat:'Category',
@@ -2003,7 +2003,7 @@ const LANG = {
 };
 
 var FISCAL_ES2EN = {
-"Recuperaciones IVA":"VAT Recoveries","Grupo":"Group","Inteligencia":"Intelligence","CxC Fiscal":"Fiscal AR","Módulo Fiscal":"Fiscal Module","SIF · MI Global — CxC Fiscal · Cálculo de Impuestos":"SIF · MI Global — Fiscal AR · Tax Calculation","Conectado a Supabase":"Connected to Supabase","🚦 CxC Fiscal":"🚦 Fiscal AR","🧮 Cálculo de Impuestos":"🧮 Tax Calculation","💸 Recuperaciones IVA":"💸 VAT Recoveries","🏢 Grupo":"🏢 Group","🧠 Inteligencia":"🧠 Intelligence","🔍 Todos":"🔍 All","🔴 Embargo cuentas":"🔴 Account seizure","🟠 Notificado/Avisos":"🟠 Notified/Notices","🟡 Por vencer / En plan":"🟡 Due soon / On plan","🟢 Liquidado":"🟢 Settled","📤 Cargar Excel":"📤 Upload Excel","➕ Nueva obligación":"➕ New obligation","➕ Nueva obligación fiscal":"➕ New tax obligation","EMPRESA *":"COMPANY *","EMPRESA":"COMPANY","Selecciona…":"Select…","CATEGORÍA *":"CATEGORY *","CATEGORÍA":"CATEGORY","CIUDAD / SUCURSAL":"CITY / BRANCH","MONTO HISTÓRICO (MXN) *":"HISTORICAL AMOUNT (MXN) *","ORIGEN":"SOURCE","AÑO INICIO *":"START YEAR *","AÑO FIN":"END YEAR","ESTATUS":"STATUS","NOTAS":"NOTES","Pendiente":"Pending","En plan de pago":"On payment plan","Pagado":"Paid","ESTIMADO DE ACCESORIOS AL DÍA DE HOY":"ESTIMATED SURCHARGES AS OF TODAY","Monto histórico":"Historical amount","Actualización INPC":"INPC adjustment","Recargos + total":"Surcharges + total","Cancelar":"Cancel","🧮 Calcular":"🧮 Calculate","💾 Guardar":"💾 Save","CxC Fiscal — cartera de impuestos por empresa":"Fiscal AR — tax portfolio by company","Empresa":"Company","Tipo de impuesto":"Tax type","Ordenar por":"Sort by","Ciudad / Sucursal":"City / Branch","🧮 Calcular accesorios":"🧮 Calculate surcharges","Ciudad":"City","Monto":"Amount","Vigencia":"Validity","Semáforo legal":"Legal status","Cargando…":"Loading…","🧮 Calculadora de Impuestos — MI Global":"🧮 Tax Calculator — MI Global","💼 ISR Propio":"💼 Own Income Tax","👷 ISR Ret. Empleados":"👷 Payroll Withholding Tax","📋 ISR Ret. Terceros":"📋 Third-Party Withholding Tax","🧾 IVA":"🧾 VAT","📄 IVA Ret. Terceros":"📄 Third-Party VAT Withholding","🏥 IMSS":"🏥 Social Security (IMSS)","🏠 INFONAVIT/RCV":"🏠 Housing Fund/RCV","🏛️ ISN BC":"🏛️ Payroll Tax BC","ISR Propio — Pago Provisional":"Own Income Tax — Provisional Payment","ISR Retenido a Empleados":"Income Tax Withheld from Employees","ISR Retenido a Terceros":"Income Tax Withheld from Third Parties","IVA — Declaración Mensual":"VAT — Monthly Return","IVA Retenido a Terceros":"VAT Withheld from Third Parties","IMSS — Cuotas Patronales y Obreras":"IMSS — Employer and Employee Contributions","INFONAVIT / RCV — Aportaciones Bimestrales":"INFONAVIT / RCV — Bimonthly Contributions","ISN — Impuesto Sobre Nómina · Baja California":"ISN — Payroll Tax · Baja California","💾 Guardar en historial":"💾 Save to history","📋 Historial de cálculos":"📋 Calculation history","Todos los tipos":"All types","Periodo":"Period","Tipo":"Type","Base/Utilidad":"Base/Profit","Impuesto calc.":"Calc. tax","Total a pagar":"Total due","💸 Recuperaciones IVA — Devoluciones SAT":"💸 VAT Recoveries — SAT Refunds","+ Registrar gestión":"+ Log activity","+ Nuevo período":"+ New period","💰 A Favor Total":"💰 Total Credit","✅ Devuelto":"✅ Refunded","🔵 Aprobado — Dep. Pdte":"🔵 Approved — Deposit Pending","🟡 En Proceso SAT":"🟡 In Process at SAT","📋 No Solicitado":"📋 Not Requested","📈 Tasa Recuperación":"📈 Recovery Rate","🚨 Alertas activas":"🚨 Active alerts","⚡ Eficiencia SAT — días de proceso":"⚡ SAT Efficiency — process days","🟢 Rápido (<40d)":"🟢 Fast (<40d)","🟡 Normal (40-60d)":"🟡 Normal (40-60d)","🔴 Lento (>60d)":"🔴 Slow (>60d)","📋 Períodos IVA":"📋 VAT Periods","Período":"Period","A Favor":"Credit","Solicitado":"Requested","Aprobado":"Approved","Devuelto":"Refunded","Brecha":"Gap","Estado":"Status","Días SAT":"SAT Days","Observaciones":"Remarks","Acciones":"Actions","MI GLOBAL · MI Technologies":"MI GLOBAL · MI Technologies","Reporte de Recuperación IVA":"VAT Recovery Report","📅 Timeline semanal — actividad histórica":"📅 Weekly timeline — historical activity","⤵ Expandir todo":"⤵ Expand all","⤴ Colapsar todo":"⤴ Collapse all","🖨️ Imprimir reporte":"🖨️ Print report","🔮 Proyección de recuperación":"🔮 Recovery projection","🏢 Consolidación grupal — MI Global":"🏢 Group consolidation — MI Global","Deuda total grupo":"Total group debt","⚠️ Fiduciario pendiente":"⚠️ Pending fiduciary","Liquidado":"Settled","Obligaciones":"Obligations","En plan":"On plan","Fiduciario":"Fiduciary","Workflow":"Workflow","🔍 Detector de anomalías":"🔍 Anomaly detector","▶ Analizar ahora":"▶ Analyze now","🔴 Críticas":"🔴 Critical","🟠 Altas":"🟠 High","🟡 Medias":"🟡 Medium","⚪ Bajas":"⚪ Low","🎲 Simulador what-if":"🎲 What-if simulator","Todas las empresas":"All companies","Todas":"All","💰 Pago total hoy":"💰 Full payment today","📅 Parcialidades 12m":"📅 12-month installments","🗓️ Parcialidades 24m":"🗓️ 24-month installments","🎁 Estímulo LIF 2026":"🎁 2026 LIF Incentive","🧮 Calcular escenarios":"🧮 Calculate scenarios","COMPARATIVA DE ESCENARIOS":"SCENARIO COMPARISON","💾 Guardar escenario":"💾 Save scenario","📡 Predictor de vencimientos":"📡 Due-date predictor","▶ Generar proyección 6 meses":"▶ Generate 6-month projection","PROYECCIÓN MENSUAL — RECARGOS ACUMULADOS":"MONTHLY PROJECTION — ACCUMULATED SURCHARGES","📤 Vista previa — Carga masiva CxC Fiscal":"📤 Preview — Fiscal AR bulk upload","✕ Cerrar":"✕ Close","Acción":"Action","Categoría":"Category","Año":"Year","Fid.":"Fid.","Monto anterior":"Previous amount","Monto nuevo":"New amount","Revisa la propuesta antes de confirmar.":"Review the proposal before confirming.","✓ Confirmar carga":"✓ Confirm upload","Calcular accesorios fiscales":"Calculate tax surcharges","Fecha estimada de pago":"Estimated payment date","Factor INPC (INEGI)":"INPC Factor (INEGI)","Incluir multas":"Include fines","No — pago espontáneo":"No — voluntary payment","Sí — con reducción 45 días (art. 75)":"Yes — with 45-day reduction (art. 75)","Tipo en Deadpool":"Type in Deadpool","Maquila":"Maquiladora","Logística":"Logistics","Operativos":"Operations","Calcular":"Calculate","➡️ Agregar al Plan de Pagos de Deadpool":"➡️ Add to Deadpool Payment Plan","Nueva entrada en la bitácora semanal del seguimiento IVA":"New entry in the weekly VAT tracking log","SEMANA":"WEEK","PERÍODO(S) IVA":"VAT PERIOD(S)","Presentación Solicitud":"Filing Request","Depósito Recibido":"Deposit Received","Atender Requerimiento SAT":"Address SAT Requirement","Seguimiento SAT":"SAT Follow-up","Revisión Interna":"Internal Review","Queja Prodecon":"Prodecon Complaint","INSTITUCIÓN":"INSTITUTION","Banco":"Bank","Interno":"Internal","RESPONSABLE":"OWNER","Tesorería":"Treasury","Contabilidad":"Accounting","Dir.Fiscal":"Tax Director","Dirección":"Management","MONTO ($)":"AMOUNT ($)","F. COMPROMISO":"DUE DATE","⏳ Pendiente":"⏳ Pending","✅ Completado":"✅ Completed","🔴 Bloqueado":"🔴 Blocked","⚪ Cancelado":"⚪ Cancelled","ACTIVIDAD / GESTIÓN":"ACTIVITY / TASK","SIGUIENTE ACCIÓN":"NEXT ACTION","⭐ Marcar como evento destacado":"⭐ Mark as highlighted event","+ Nuevo período IVA":"+ New VAT period","Alta de un período mensual de IVA a favor":"Register a monthly VAT credit period","AÑO":"YEAR","MES":"MONTH","Enero":"January","Febrero":"February","Marzo":"March","Abril":"April","Mayo":"May","Junio":"June","Julio":"July","Agosto":"August","Septiembre":"September","Octubre":"October","Noviembre":"November","Diciembre":"December","MONTO A FAVOR ($)":"CREDIT AMOUNT ($)","SOLICITADO ($)":"REQUESTED ($)","APROBADO ($)":"APPROVED ($)","DEVUELTO ($)":"REFUNDED ($)","F. PRESENTACIÓN":"FILING DATE","F. DEP. PROGRAMADO":"SCHEDULED DEPOSIT DATE","F. DEP. REAL":"ACTUAL DEPOSIT DATE","⬜ No Solicitado":"⬜ Not Requested","🟠 Requerimiento SAT":"🟠 SAT Requirement","🔵 Aprobado — Dep.Pdte":"🔵 Approved — Deposit Pending","🔴 Depósito Vencido":"🔴 Deposit Overdue","OBSERVACIONES":"REMARKS","💾 Guardar período":"💾 Save period","← Portal":"← Portal","Cerrar sesión":"Log out","Próximo vencimiento SAT":"Next SAT due date","Calculando…":"Calculating…","Impuesto estimado · próx. venc.":"Estimated tax · next due date","ISR + IVA — último cálculo registrado":"Income Tax + VAT — last recorded calculation"};
+"Recuperaciones IVA":"VAT Recoveries","Grupo":"Group","Inteligencia":"Intelligence","CXP Fiscal":"Fiscal AR","Módulo Fiscal":"Fiscal Module","SIF · MI Global — CXP Fiscal · Cálculo de Impuestos":"SIF · MI Global — Fiscal AR · Tax Calculation","Conectado a Supabase":"Connected to Supabase","🚦 CXP Fiscal":"🚦 Fiscal AR","🧮 Cálculo de Impuestos":"🧮 Tax Calculation","💸 Recuperaciones IVA":"💸 VAT Recoveries","🏢 Grupo":"🏢 Group","🧠 Inteligencia":"🧠 Intelligence","🔍 Todos":"🔍 All","🔴 Embargo cuentas":"🔴 Account seizure","🟠 Notificado/Avisos":"🟠 Notified/Notices","🟡 Por vencer / En plan":"🟡 Due soon / On plan","🟢 Liquidado":"🟢 Settled","📤 Cargar Excel":"📤 Upload Excel","➕ Nueva obligación":"➕ New obligation","➕ Nueva obligación fiscal":"➕ New tax obligation","EMPRESA *":"COMPANY *","EMPRESA":"COMPANY","Selecciona…":"Select…","CATEGORÍA *":"CATEGORY *","CATEGORÍA":"CATEGORY","CIUDAD / SUCURSAL":"CITY / BRANCH","MONTO HISTÓRICO (MXN) *":"HISTORICAL AMOUNT (MXN) *","ORIGEN":"SOURCE","AÑO INICIO *":"START YEAR *","AÑO FIN":"END YEAR","ESTATUS":"STATUS","NOTAS":"NOTES","Pendiente":"Pending","En plan de pago":"On payment plan","Pagado":"Paid","ESTIMADO DE ACCESORIOS AL DÍA DE HOY":"ESTIMATED SURCHARGES AS OF TODAY","Monto histórico":"Historical amount","Actualización INPC":"INPC adjustment","Recargos + total":"Surcharges + total","Cancelar":"Cancel","🧮 Calcular":"🧮 Calculate","💾 Guardar":"💾 Save","CXP Fiscal — cartera de impuestos por empresa":"Fiscal AR — tax portfolio by company","Empresa":"Company","Tipo de impuesto":"Tax type","Ordenar por":"Sort by","Ciudad / Sucursal":"City / Branch","🧮 Calcular accesorios":"🧮 Calculate surcharges","Ciudad":"City","Monto":"Amount","Vigencia":"Validity","Semáforo legal":"Legal status","Cargando…":"Loading…","🧮 Calculadora de Impuestos — MI Global":"🧮 Tax Calculator — MI Global","💼 ISR Propio":"💼 Own Income Tax","👷 ISR Ret. Empleados":"👷 Payroll Withholding Tax","📋 ISR Ret. Terceros":"📋 Third-Party Withholding Tax","🧾 IVA":"🧾 VAT","📄 IVA Ret. Terceros":"📄 Third-Party VAT Withholding","🏥 IMSS":"🏥 Social Security (IMSS)","🏠 INFONAVIT/RCV":"🏠 Housing Fund/RCV","🏛️ ISN BC":"🏛️ Payroll Tax BC","ISR Propio — Pago Provisional":"Own Income Tax — Provisional Payment","ISR Retenido a Empleados":"Income Tax Withheld from Employees","ISR Retenido a Terceros":"Income Tax Withheld from Third Parties","IVA — Declaración Mensual":"VAT — Monthly Return","IVA Retenido a Terceros":"VAT Withheld from Third Parties","IMSS — Cuotas Patronales y Obreras":"IMSS — Employer and Employee Contributions","INFONAVIT / RCV — Aportaciones Bimestrales":"INFONAVIT / RCV — Bimonthly Contributions","ISN — Impuesto Sobre Nómina · Baja California":"ISN — Payroll Tax · Baja California","💾 Guardar en historial":"💾 Save to history","📋 Historial de cálculos":"📋 Calculation history","Todos los tipos":"All types","Periodo":"Period","Tipo":"Type","Base/Utilidad":"Base/Profit","Impuesto calc.":"Calc. tax","Total a pagar":"Total due","💸 Recuperaciones IVA — Devoluciones SAT":"💸 VAT Recoveries — SAT Refunds","+ Registrar gestión":"+ Log activity","+ Nuevo período":"+ New period","💰 A Favor Total":"💰 Total Credit","✅ Devuelto":"✅ Refunded","🔵 Aprobado — Dep. Pdte":"🔵 Approved — Deposit Pending","🟡 En Proceso SAT":"🟡 In Process at SAT","📋 No Solicitado":"📋 Not Requested","📈 Tasa Recuperación":"📈 Recovery Rate","🚨 Alertas activas":"🚨 Active alerts","⚡ Eficiencia SAT — días de proceso":"⚡ SAT Efficiency — process days","🟢 Rápido (<40d)":"🟢 Fast (<40d)","🟡 Normal (40-60d)":"🟡 Normal (40-60d)","🔴 Lento (>60d)":"🔴 Slow (>60d)","📋 Períodos IVA":"📋 VAT Periods","Período":"Period","A Favor":"Credit","Solicitado":"Requested","Aprobado":"Approved","Devuelto":"Refunded","Brecha":"Gap","Estado":"Status","Días SAT":"SAT Days","Observaciones":"Remarks","Acciones":"Actions","MI GLOBAL · MI Technologies":"MI GLOBAL · MI Technologies","Reporte de Recuperación IVA":"VAT Recovery Report","📅 Timeline semanal — actividad histórica":"📅 Weekly timeline — historical activity","⤵ Expandir todo":"⤵ Expand all","⤴ Colapsar todo":"⤴ Collapse all","🖨️ Imprimir reporte":"🖨️ Print report","🔮 Proyección de recuperación":"🔮 Recovery projection","🏢 Consolidación grupal — MI Global":"🏢 Group consolidation — MI Global","Deuda total grupo":"Total group debt","⚠️ Fiduciario pendiente":"⚠️ Pending fiduciary","Liquidado":"Settled","Obligaciones":"Obligations","En plan":"On plan","Fiduciario":"Fiduciary","Workflow":"Workflow","🔍 Detector de anomalías":"🔍 Anomaly detector","▶ Analizar ahora":"▶ Analyze now","🔴 Críticas":"🔴 Critical","🟠 Altas":"🟠 High","🟡 Medias":"🟡 Medium","⚪ Bajas":"⚪ Low","🎲 Simulador what-if":"🎲 What-if simulator","Todas las empresas":"All companies","Todas":"All","💰 Pago total hoy":"💰 Full payment today","📅 Parcialidades 12m":"📅 12-month installments","🗓️ Parcialidades 24m":"🗓️ 24-month installments","🎁 Estímulo LIF 2026":"🎁 2026 LIF Incentive","🧮 Calcular escenarios":"🧮 Calculate scenarios","COMPARATIVA DE ESCENARIOS":"SCENARIO COMPARISON","💾 Guardar escenario":"💾 Save scenario","📡 Predictor de vencimientos":"📡 Due-date predictor","▶ Generar proyección 6 meses":"▶ Generate 6-month projection","PROYECCIÓN MENSUAL — RECARGOS ACUMULADOS":"MONTHLY PROJECTION — ACCUMULATED SURCHARGES","📤 Vista previa — Carga masiva CXP Fiscal":"📤 Preview — Fiscal AR bulk upload","✕ Cerrar":"✕ Close","Acción":"Action","Categoría":"Category","Año":"Year","Fid.":"Fid.","Monto anterior":"Previous amount","Monto nuevo":"New amount","Revisa la propuesta antes de confirmar.":"Review the proposal before confirming.","✓ Confirmar carga":"✓ Confirm upload","Calcular accesorios fiscales":"Calculate tax surcharges","Fecha estimada de pago":"Estimated payment date","Factor INPC (INEGI)":"INPC Factor (INEGI)","Incluir multas":"Include fines","No — pago espontáneo":"No — voluntary payment","Sí — con reducción 45 días (art. 75)":"Yes — with 45-day reduction (art. 75)","Tipo en Deadpool":"Type in Deadpool","Maquila":"Maquiladora","Logística":"Logistics","Operativos":"Operations","Calcular":"Calculate","➡️ Agregar al Plan de Pagos de Deadpool":"➡️ Add to Deadpool Payment Plan","Nueva entrada en la bitácora semanal del seguimiento IVA":"New entry in the weekly VAT tracking log","SEMANA":"WEEK","PERÍODO(S) IVA":"VAT PERIOD(S)","Presentación Solicitud":"Filing Request","Depósito Recibido":"Deposit Received","Atender Requerimiento SAT":"Address SAT Requirement","Seguimiento SAT":"SAT Follow-up","Revisión Interna":"Internal Review","Queja Prodecon":"Prodecon Complaint","INSTITUCIÓN":"INSTITUTION","Banco":"Bank","Interno":"Internal","RESPONSABLE":"OWNER","Tesorería":"Treasury","Contabilidad":"Accounting","Dir.Fiscal":"Tax Director","Dirección":"Management","MONTO ($)":"AMOUNT ($)","F. COMPROMISO":"DUE DATE","⏳ Pendiente":"⏳ Pending","✅ Completado":"✅ Completed","🔴 Bloqueado":"🔴 Blocked","⚪ Cancelado":"⚪ Cancelled","ACTIVIDAD / GESTIÓN":"ACTIVITY / TASK","SIGUIENTE ACCIÓN":"NEXT ACTION","⭐ Marcar como evento destacado":"⭐ Mark as highlighted event","+ Nuevo período IVA":"+ New VAT period","Alta de un período mensual de IVA a favor":"Register a monthly VAT credit period","AÑO":"YEAR","MES":"MONTH","Enero":"January","Febrero":"February","Marzo":"March","Abril":"April","Mayo":"May","Junio":"June","Julio":"July","Agosto":"August","Septiembre":"September","Octubre":"October","Noviembre":"November","Diciembre":"December","MONTO A FAVOR ($)":"CREDIT AMOUNT ($)","SOLICITADO ($)":"REQUESTED ($)","APROBADO ($)":"APPROVED ($)","DEVUELTO ($)":"REFUNDED ($)","F. PRESENTACIÓN":"FILING DATE","F. DEP. PROGRAMADO":"SCHEDULED DEPOSIT DATE","F. DEP. REAL":"ACTUAL DEPOSIT DATE","⬜ No Solicitado":"⬜ Not Requested","🟠 Requerimiento SAT":"🟠 SAT Requirement","🔵 Aprobado — Dep.Pdte":"🔵 Approved — Deposit Pending","🔴 Depósito Vencido":"🔴 Deposit Overdue","OBSERVACIONES":"REMARKS","💾 Guardar período":"💾 Save period","← Portal":"← Portal","Cerrar sesión":"Log out","Próximo vencimiento SAT":"Next SAT due date","Calculando…":"Calculating…","Impuesto estimado · próx. venc.":"Estimated tax · next due date","ISR + IVA — último cálculo registrado":"Income Tax + VAT — last recorded calculation"};
 function fiscalTranslateNode(root, lang){
   if (!root) return;
   var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
@@ -2171,7 +2171,7 @@ async function cargarBibliotecaLegal(){
   document.head.appendChild(s);
 })();
 
-/* ================= CxC FISCAL (semáforo de riesgo) =================
+/* ================= CXP Fiscal (semáforo de riesgo) =================
    Cartera de impuestos por empresa/categoría extraída de la cédula
    fiscal corporativa ("Cedula de impuestos corporativa.xlsx", hoja
    Resumen, consolidado 2023–2026 YTD). Vive en la tabla
@@ -3113,7 +3113,6 @@ async function procesarExcelCxc(file){
     return;
   }
   try {
-    const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type:'array' });
     if (!wb.SheetNames.includes('DATOS')) {
       alert('El archivo no contiene la hoja "DATOS".\nHojas encontradas: ' + wb.SheetNames.join(', '));
@@ -3130,6 +3129,10 @@ async function procesarExcelCxc(file){
       const empresa = String(r.Empresa||'').trim();
       const anio = Number(r['Año']);
       const tipo = String(r['Tipo de Impuesto']||'').trim();
+      
+      // 🌟 Captura el mes que viene en la fila del Excel
+      const mesStr = String(r['Mes'] || r['MES'] || 'Sin Mes').trim();
+      
       if (!empresa || !anio || !tipo) { skipped.push({row:r, motivo:'campos vacíos'}); continue; }
       const m = mapearTipoImpuesto(tipo);
       if (!m) { skipped.push({row:r, motivo:'tipo no mapeado: '+tipo}); continue; }
@@ -3142,10 +3145,22 @@ async function procesarExcelCxc(file){
           anio_inicio: anio,
           anio_fin: anio,
           monto: 0,
-          estatus: 'Pendiente'
+          estatus: 'Pendiente',
+          meses: {} // 🌟 Inicializa la estructura para el desglose mensual
         };
       }
+      
+      // Acumula el monto total en la tabla principal
       grouped[key].monto += monto;
+      
+      // 🌟 Agrupa los importes sumándolos por su mes específico
+      if (!grouped[key].meses[mesStr]) grouped[key].meses[mesStr] = 0;
+      grouped[key].meses[mesStr] += monto;
+    }
+
+    // 🌟 Al salir del bucle, mandamos a activar los clics interactivos en la pantalla
+    activarDesgloseMensualDesdeExcel(grouped);
+
     }
     const propuesta = Object.values(grouped).sort((a,b) =>
       a.empresa.localeCompare(b.empresa) ||
@@ -3598,7 +3613,7 @@ async function cargarInteligencia(){
 async function ejecutarDetectorAnomalias(){
   if (!requireEditFiscal('Sin permisos para ejecutar el detector de anomalías')) return;
   const datos = cxcImpuestos.length ? cxcImpuestos : [];
-  if (!datos.length){ mostrarToast('Sin datos en CxC Fiscal para analizar.','#6b7280'); return; }
+  if (!datos.length){ mostrarToast('Sin datos en CXP Fiscal para analizar.','#6b7280'); return; }
 
   const anomalias = [];
 
@@ -3722,7 +3737,7 @@ function renderAnomalias(lista){
 /* ─── 3-A-bis: Priorización de Pagos ───────────────────────
    Lee el Plan de Pagos que YA existe en Deadpool (tabla catalogo_cxp,
    categoría "Impuestos" / nivel L2 — columnas recomendado/urgente) y
-   lo cruza contra la cartera pendiente de CxC Fiscal ordenada por el
+   lo cruza contra la cartera pendiente de CXP Fiscal ordenada por el
    mismo semáforo legal (rojo fiduciario > naranja mora > amarillo en
    plan). NO calcula un "disponible" nuevo — solo lee lo que ya está
    planeado en Deadpool y decide qué obligaciones cubrir primero. ── */
@@ -3834,7 +3849,7 @@ async function ejecutarPriorizacionPagos(){
 
   document.getElementById('prioTablaBody').innerHTML = filas.length
     ? filas.map((f, idx) => prioFilaHTML(f, idx, ideal.cubiertas, minimo.cubiertas)).join('')
-    : '<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--muted)">Sin obligaciones pendientes en CxC Fiscal.</td></tr>';
+    : '<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--muted)">Sin obligaciones pendientes en CXP Fiscal.</td></tr>';
 
   estadoEl.style.display = 'none';
   contEl.style.display = 'block';
@@ -5194,6 +5209,111 @@ bootstrapAuth();
     </div>
   </div>
 </div>
+<script>
+// FUNCIÓN PRINCIPAL: Crea el menú interactivo por mes y persiste en Supabase
+  async function attachMontoClick(tdMonto, monthsData, role, { table = 'fiscal_impuestos', rowId, field = 'meses' } = {}) {
+    const isEditable = (role === 'admin_master' || role === 'co_host');
+    const fmt = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(v);
+    let dirty = false;
+
+    const persist = async () => {
+      if (!dirty || !isEditable || !rowId) return;
+      dirty = false;
+      try {
+        await supabase.from(table).update({ [field]: monthsData }).eq('id', rowId);
+      } catch (err) {
+        console.error('[fiscal] Error al actualizar en Supabase:', err);
+      }
+    };
+
+    tdMonto.style.cursor = 'pointer';
+    tdMonto.title = 'Haz clic para ver el desglose mensual';
+
+    tdMonto.addEventListener('click', function (e) {
+      e.stopPropagation();
+      document.querySelectorAll('.monto-popover').forEach(p => p.remove());
+
+      const entries = Object.entries(monthsData);
+      if (!entries.length) return;
+
+      const pop = document.createElement('div');
+      pop.className = 'monto-popover';
+      Object.assign(pop.style, {
+        position: 'absolute', background: '#fff', border: '1px solid #d1d5db',
+        borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,.15)',
+        padding: '12px 14px', zIndex: 9999, minWidth: '210px'
+      });
+
+      entries.forEach(([mes, val]) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px';
+
+        const lbl = document.createElement('label');
+        lbl.textContent = mes;
+        lbl.style.cssText = 'min-width:90px;font-size:12px;color:#374151;font-weight:500;';
+
+        const inp = document.createElement('input');
+        inp.type     = 'number';
+        inp.value    = val;
+        inp.step     = '0.01';
+        inp.disabled = !isEditable;
+        Object.assign(inp.style, {
+          width: '110px', padding: '3px 6px', border: '1px solid #d1d5db',
+          borderRadius: '4px', fontSize: '12px', textAlign: 'right'
+        });
+
+        inp.addEventListener('input', () => {
+          monthsData[mes] = parseFloat(inp.value) || 0;
+          const total = Object.values(monthsData).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+          tdMonto.textContent = fmt(total);
+          dirty = true;
+        });
+
+        inp.addEventListener('blur', persist);
+
+        row.appendChild(lbl);
+        row.appendChild(inp);
+        pop.appendChild(row);
+      });
+
+      const rect = tdMonto.getBoundingClientRect();
+      pop.style.top  = (window.scrollY + rect.bottom + 4) + 'px';
+      pop.style.left = (window.scrollX + rect.left)       + 'px';
+      document.body.appendChild(pop);
+
+      const close = async ev => {
+        if (!pop.contains(ev.target)) {
+          await persist();
+          pop.remove();
+          document.removeEventListener('click', close);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', close), 0);
+    });
+  }
+
+  // INYECTOR DE EVENTOS TRAS LA CARGA DE SHEETJS
+  // Esta función interceptará de forma segura la tabla cuando subas tu archivo local
+  function activarDesgloseMensualDesdeExcel(objetoAgrupado) {
+    setTimeout(() => {
+      const filas = document.querySelectorAll("#cxcUploadTabla tbody tr");
+      filas.forEach((tr, index) => {
+        const celdas = tr.querySelectorAll("td");
+        if (celdas.length > 0) {
+          // Busca la celda del monto final en la fila
+          const tdMonto = celdas[celdas.length - 1]; 
+          const keys = Object.keys(objetoAgrupado);
+          const datosFila = objetoAgrupado[keys[index]];
+          
+          if (datosFila && datosFila.meses) {
+            // Activa el clic pasándole el rol de usuario real de tu sistema
+            attachMontoClick(tdMonto, datosFila.meses, window.__ROLE__ || 'nom_view', { rowId: datosFila.id || index });
+          }
+        }
+      });
+    }, 600);
+  }
+</script>
 
 </body>
 </html>
