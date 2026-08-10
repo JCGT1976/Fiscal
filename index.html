@@ -600,7 +600,11 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
 /* ═════ FIN TIMELINE EJECUTIVO ═════ */
-</style>
+
+    .sif-btn-close { width: 32px; height: 32px; padding: 0; background: transparent; border: 1px solid var(--border,#ddd); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text,#666); flex-shrink: 0; transition: background .15s, color .15s; }
+    .sif-btn-close:hover { background: rgba(0,0,0,.08); color: #333; }
+    .sif-btn-close svg { pointer-events: none; }
+  </style>
 </head>
 <body>
 
@@ -766,7 +770,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       <div style="background:var(--bg);border-radius:16px;padding:28px 28px 24px;width:min(580px,94vw);max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
           <h3 style="margin:0;font-size:16px;font-weight:700">➕ Nueva obligación fiscal</h3>
-          <button onclick="cerrarModalNuevaObligacion()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1">✕</button>
+          <button onclick="cerrarModalNuevaObligacion()" class="sif-btn-close" title="Cerrar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="13" y2="13"/><line x1="13" y1="1" x2="1" y2="13"/></svg></button>
         </div>
 
         <!-- Fila 1: Empresa + Categoría -->
@@ -2146,7 +2150,7 @@ async function cargarBibliotecaLegal(){
             ${r.vigencia_hasta ? ` &nbsp;·&nbsp; <b>Vigente hasta:</b> ${r.vigencia_hasta}` : ''}
           </div>
         </div>
-        <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;cursor:pointer;color:#92400e;font-size:16px;line-height:1;flex-shrink:0;opacity:.7">✕</button>`;
+        <button onclick="this.parentElement.style.display='none'" class="sif-btn-close" title="Cerrar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="13" y2="13"/><line x1="13" y1="1" x2="1" y2="13"/></svg></button>`;
       zona.appendChild(div);
     });
 
