@@ -608,7 +608,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
 </head>
 <body>
 
-<!-- ═══════════ BOOT LOADER — verifica sesión SSO contra SIF-Portal ═══════════ -->
+<!-- ═══════════ BOOT LOADER &#x2014; verifica sesión SSO contra SIF-Portal ═══════════ -->
 <div id="bootLoader">
   <div>
     <div class="spin"></div>
@@ -621,7 +621,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
   <div style="font-size:48px">🚫</div>
   <h2 id="adTitle" style="font-size:20px;font-weight:700;color:var(--text)">Acceso no autorizado</h2>
   <p id="adMsg" style="font-size:14px;color:var(--muted);max-width:360px">No tienes permiso para acceder al módulo Fiscal. Contacta al administrador.</p>
-  <button id="adBtn" onclick="volverPortal()" style="margin-top:8px;padding:10px 24px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">← Volver al Portal</button>
+  <button id="adBtn" onclick="volverPortal()" style="margin-top:8px;padding:10px 24px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">&#x2190; Volver al Portal</button>
 </div>
 
 <div id="app" class="wrap">
@@ -629,20 +629,20 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
   <div class="topbar">
     <div class="topbar-left">
       <h1 data-i18n="title">Módulo Fiscal</h1>
-      <div class="sub" data-i18n="subtitle">SIF · MI Global — CXP Fiscal · Cálculo de Impuestos</div>
+      <div class="sub" data-i18n="subtitle">SIF · MI Global &#x2014; CXP Fiscal · Cálculo de Impuestos</div>
     </div>
     <div class="topbar-right">
       <span class="sync-badge" id="syncBadge"><span class="sync-dot" id="syncDot"></span><span id="syncTxt">Conectado a Supabase</span></span>
       <div class="user-chip">
-        <div class="user-avatar" id="userAvatar">—</div>
+        <div class="user-avatar" id="userAvatar">&#x2014;</div>
         <div class="user-meta">
-          <span class="name" id="userName">—</span>
-          <span class="role" id="userRole">—</span>
+          <span class="name" id="userName">&#x2014;</span>
+          <span class="role" id="userRole">&#x2014;</span>
         </div>
       </div>
       <button class="btn-ghost" onclick="toggleTheme()" title="Cambiar tema"><svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:middle" aria-hidden="true"><clipPath id="ttL"><rect x="0" y="0" width="12" height="24"/></clipPath><clipPath id="ttR"><rect x="12" y="0" width="12" height="24"/></clipPath><g clip-path="url(#ttL)"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="5.2"/><line x1="12" y1="18.8" x2="12" y2="21"/><line x1="3" y1="12" x2="5.2" y2="12"/><line x1="5.6" y1="5.6" x2="7.1" y2="7.1"/><line x1="5.6" y1="18.4" x2="7.1" y2="16.9"/></g></g><g clip-path="url(#ttR)"><path d="M17.5 8.2a5 5 0 1 0 4.3 7.9 6 6 0 0 1 -4.3 -7.9z" fill="currentColor"/></g></svg></button>
       <button class="btn-ghost" id="btnLang" onclick="toggleLang()" style="font-weight:700;font-size:11px;letter-spacing:.06em">EN</button>
-      <button class="btn-ghost" data-i18n="portal_btn" onclick="volverPortal()">← Portal</button>
+      <button class="btn-ghost" data-i18n="portal_btn" onclick="volverPortal()">&#x2190; Portal</button>
       <button class="btn-ghost" data-i18n="logout_btn" onclick="cerrarSesion()">Cerrar sesión</button>
     </div>
   </div>
@@ -660,14 +660,14 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       <div class="ptile-value" id="kpiTotalImpuestos">$0</div>
       <div class="ptile-desc" data-i18n="tile_imp_desc">Monto histórico de ISR, IVA, IMSS, INFONAVIT e ISN BC pendiente, sin actualización ni recargos.</div>
       <div class="ptile-footer">
-        <div class="ptile-meta"><span class="k" data-i18n="meta_empresas">Empresas</span><span class="v" id="kpiMetaEmpresas">—</span></div>
-        <div class="ptile-meta"><span class="k" data-i18n="meta_obligaciones">Obligaciones</span><span class="v" id="kpiMetaObligaciones">—</span></div>
-        <div class="ptile-meta"><span class="k" data-i18n="meta_corte">Corte</span><span class="v" id="kpiMetaCorte">—</span></div>
+        <div class="ptile-meta"><span class="k" data-i18n="meta_empresas">Empresas</span><span class="v" id="kpiMetaEmpresas">&#x2014;</span></div>
+        <div class="ptile-meta"><span class="k" data-i18n="meta_obligaciones">Obligaciones</span><span class="v" id="kpiMetaObligaciones">&#x2014;</span></div>
+        <div class="ptile-meta"><span class="k" data-i18n="meta_corte">Corte</span><span class="v" id="kpiMetaCorte">&#x2014;</span></div>
       </div>
     </div>
     <div class="ptile tile-accesorios">
       <div class="ptile-head">
-        <div class="ptile-icon">⚠️</div>
+        <div class="ptile-icon">&#x26A0;️</div>
         <span class="ptile-badge b-warn"><span class="dot"></span><span data-i18n="badge_accesorios">ACCESORIOS</span></span>
       </div>
       <div class="ptile-title" data-i18n="tile_acc_title">Actualización + Recargos</div>
@@ -676,7 +676,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       <div class="ptile-footer">
         <div class="ptile-meta"><span class="k" data-i18n="meta_rec_fed">Recargos fed.</span><span class="v">2.07%/mes</span></div>
         <div class="ptile-meta"><span class="k" data-i18n="meta_rec_bc">Recargos BC</span><span class="v">2.25%/mes</span></div>
-        <div class="ptile-meta"><span class="k" data-i18n="meta_estimado">Estimado</span><span class="v" id="kpiMetaEstimado">—</span></div>
+        <div class="ptile-meta"><span class="k" data-i18n="meta_estimado">Estimado</span><span class="v" id="kpiMetaEstimado">&#x2014;</span></div>
       </div>
     </div>
   </div>
@@ -689,13 +689,13 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
   <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr)">
     <div class="kpi-card">
       <div class="kpi-label" data-i18n="kpi1_label">Próximo vencimiento SAT</div>
-      <div class="kpi-value" id="kpiProximo" style="font-size:18px;margin-top:4px">—</div>
-      <div class="kpi-sub" id="kpiProximoSub" style="margin-top:6px">Calculando…</div>
+      <div class="kpi-value" id="kpiProximo" style="font-size:18px;margin-top:4px">&#x2014;</div>
+      <div class="kpi-sub" id="kpiProximoSub" style="margin-top:6px">Calculando&#x2026;</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label" data-i18n="kpi3_label">Impuesto estimado · próx. venc.</div>
       <div class="kpi-value" id="kpiImpuestoMes" style="font-size:18px;margin-top:4px">$0</div>
-      <div class="kpi-sub" style="margin-top:6px" data-i18n="kpi3_sub">ISR + IVA — último cálculo registrado</div>
+      <div class="kpi-sub" style="margin-top:6px" data-i18n="kpi3_sub">ISR + IVA &#x2014; último cálculo registrado</div>
     </div>
   </div>
 
@@ -719,7 +719,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
         <div class="kpi-label" style="color:var(--red)" data-i18n="sem_rojo_label">🔴 Embargo cuentas</div>
         <div class="kpi-value" id="kpiSemN-rojo" style="color:var(--red)">0</div>
         <div class="kpi-sub" id="kpiSemM-rojo">$0</div>
-        <div class="kpi-legal" data-i18n="sem_rojo_legal">Arts.145,151 CFF — Fiduciario pendiente. Riesgo penal arts.108-109 CFF.</div>
+        <div class="kpi-legal" data-i18n="sem_rojo_legal">Arts.145,151 CFF &#x2014; Fiduciario pendiente. Riesgo penal arts.108-109 CFF.</div>
       </div>
       <div class="kpi-card kpi-semaforo" id="kpiSem-naranja" onclick="cxcFiltrarStatus('naranja')"
            style="border-color:#f97316;cursor:pointer;user-select:none">
@@ -748,7 +748,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
       <div id="excelStatusBadge" style="display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:6px 14px 6px 10px;font-size:11.5px;font-weight:500">
         <span id="excelStatusDot" style="width:8px;height:8px;border-radius:50%;background:var(--yellow);flex-shrink:0"></span>
-        <span id="excelStatusTxt" data-i18n="excel_loading">Cargando datos CxC…</span>
+        <span id="excelStatusTxt" data-i18n="excel_loading">Cargando datos CxC&#x2026;</span>
       </div>
       <div id="excelStatusDetalle" style="font-size:11px;color:var(--muted)"></div>
       <!-- Botón carga masiva (solo admin_master, se muestra desde bootstrapAuth) -->
@@ -759,7 +759,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       </button>
       <button id="btnNuevaObligacion" onclick="abrirModalNuevaObligacion()"
               style="display:none;background:var(--surface);color:var(--accent);border:1.5px solid var(--accent);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer">
-        ➕ Nueva obligación
+        &#x2795; Nueva obligación
       </button>
       <input type="file" id="inputExcelCxc" accept=".xlsx,.xls" style="display:none"
              onchange="if(this.files[0]){procesarExcelCxc(this.files[0]);this.value='';}">
@@ -769,7 +769,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
     <div id="modalNuevaObligacion" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center">
       <div style="background:var(--bg);border-radius:16px;padding:28px 28px 24px;width:min(580px,94vw);max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-          <h3 style="margin:0;font-size:16px;font-weight:700">➕ Nueva obligación fiscal</h3>
+          <h3 style="margin:0;font-size:16px;font-weight:700">&#x2795; Nueva obligación fiscal</h3>
           <button onclick="cerrarModalNuevaObligacion()" class="sif-btn-close" title="Cerrar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="13" y2="13"/><line x1="13" y1="1" x2="1" y2="13"/></svg></button>
         </div>
 
@@ -778,7 +778,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
           <div>
             <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">EMPRESA *</label>
             <select id="nob_empresa" onchange="nobEmpresaCambia(this.value)" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
-              <option value="">Selecciona…</option>
+              <option value="">Selecciona&#x2026;</option>
               <option>Internacional</option>
               <option>Comercial</option>
               <option>Autobot</option>
@@ -789,7 +789,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
           <div>
             <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">CATEGORÍA *</label>
             <select id="nob_categoria" onchange="nobCategoriaCambia(this.value)" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px">
-              <option value="">Selecciona…</option>
+              <option value="">Selecciona&#x2026;</option>
               <option>ISR Propio</option>
               <option>ISR Retenido a Empleados</option>
               <option>ISR Retenido a Terceros</option>
@@ -814,7 +814,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
 
         <!-- Fiduciario badge (se muestra automático) -->
         <div id="nob_fiduciario_badge" style="display:none;background:#fef3cd;border:1px solid #fbbf24;border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:12.5px;color:#92400e">
-          ⚠️ <b>Concepto fiduciario</b> — Retención no enterada. Riesgo penal arts. 108-109 CFF. Prioridad máxima.
+          &#x26A0;️ <b>Concepto fiduciario</b> &#x2014; Retención no enterada. Riesgo penal arts. 108-109 CFF. Prioridad máxima.
         </div>
 
         <!-- Fila 2: Monto + Origen -->
@@ -854,7 +854,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
         <div style="margin-bottom:14px">
           <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px">
             FECHA EXIGIBLE
-            <span style="font-weight:400;color:var(--muted)"> — día en que debió pagarse (día/mes/año)</span>
+            <span style="font-weight:400;color:var(--muted)"> &#x2014; día en que debió pagarse (día/mes/año)</span>
           </label>
           <input id="nob_fecha_exigibilidad" type="date"
                  onchange="nobFechaCambia()"
@@ -883,9 +883,9 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
         <div id="nob_preview" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px">
           <div style="font-weight:600;margin-bottom:8px;font-size:12px;color:var(--muted);letter-spacing:.05em">ESTIMADO DE ACCESORIOS AL DÍA DE HOY</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-            <div><div style="font-size:11px;color:var(--muted)">Monto histórico</div><div id="nob_prev_hist" style="font-weight:700;font-size:15px">—</div></div>
-            <div><div style="font-size:11px;color:var(--muted)">Actualización INPC</div><div id="nob_prev_act" style="font-weight:700;font-size:15px;color:#185fa5">—</div></div>
-            <div><div style="font-size:11px;color:var(--muted)">Recargos + total</div><div id="nob_prev_total" style="font-weight:700;font-size:15px;color:#dc2626">—</div></div>
+            <div><div style="font-size:11px;color:var(--muted)">Monto histórico</div><div id="nob_prev_hist" style="font-weight:700;font-size:15px">&#x2014;</div></div>
+            <div><div style="font-size:11px;color:var(--muted)">Actualización INPC</div><div id="nob_prev_act" style="font-weight:700;font-size:15px;color:#185fa5">&#x2014;</div></div>
+            <div><div style="font-size:11px;color:var(--muted)">Recargos + total</div><div id="nob_prev_total" style="font-weight:700;font-size:15px;color:#dc2626">&#x2014;</div></div>
           </div>
           <div id="nob_prev_nota" style="margin-top:8px;font-size:11px;color:var(--muted)"></div>
         </div>
@@ -906,8 +906,8 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
     </div>
 
     <div class="card">
-      <h2 data-i18n="cxc_title">CXP Fiscal — cartera de impuestos por empresa</h2>
-      <div class="desc" data-i18n="cxc_desc" data-i18n-mode="html">Semáforo legal CFF: <b style="color:var(--red)">🔴 rojo</b> = fiduciario pendiente (retenciones a empleados/IMSS — riesgo penal arts.108-109 CFF); <b style="color:#f97316">🟠 naranja</b> = pendiente no fiduciario (mora 2.07%/mes art.21 CFF); <b style="color:var(--yellow)">🟡 amarillo</b> = en plan de pago (arts.66,66-A CFF); <b style="color:var(--green)">🟢 verde</b> = liquidado.</div>
+      <h2 data-i18n="cxc_title">CXP Fiscal &#x2014; cartera de impuestos por empresa</h2>
+      <div class="desc" data-i18n="cxc_desc" data-i18n-mode="html">Semáforo legal CFF: <b style="color:var(--red)">🔴 rojo</b> = fiduciario pendiente (retenciones a empleados/IMSS &#x2014; riesgo penal arts.108-109 CFF); <b style="color:#f97316">🟠 naranja</b> = pendiente no fiduciario (mora 2.07%/mes art.21 CFF); <b style="color:var(--yellow)">🟡 amarillo</b> = en plan de pago (arts.66,66-A CFF); <b style="color:var(--green)">🟢 verde</b> = liquidado.</div>
 
       <div class="cxc-controls">
         <div class="grp grow">
@@ -955,12 +955,12 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
             <th data-i18n="th_estatus">Estatus</th>
             <th data-i18n="th_semaforo">Semáforo legal</th>
           </tr></thead>
-          <tbody id="tblCxc"><tr><td colspan="7" style="color:var(--muted)">Cargando…</td></tr></tbody>
+          <tbody id="tblCxc"><tr><td colspan="7" style="color:var(--muted)">Cargando&#x2026;</td></tr></tbody>
         </table>
       </div>
       <div class="note" id="cxcNota" style="display:none"></div>
       <div class="note" data-i18n="cxc_note" data-i18n-mode="html">
-        <b>Nota sobre periodicidad:</b> esta cartera se registra a nivel anual (vigencia por año, no por mes), tomada de la cédula fiscal corporativa consolidada 2023–2026. El filtro de "Tipo de impuesto" y el orden por "Año" ya están disponibles arriba. Si necesitas desglose mes por mes, hay que ampliar la tabla <code>fiscal_cxc_impuestos</code> con un campo de periodo mensual y volver a cargar los montos con ese detalle — avísame y lo preparamos.
+        <b>Nota sobre periodicidad:</b> esta cartera se registra a nivel anual (vigencia por año, no por mes), tomada de la cédula fiscal corporativa consolidada 2023&#x2013;2026. El filtro de "Tipo de impuesto" y el orden por "Año" ya están disponibles arriba. Si necesitas desglose mes por mes, hay que ampliar la tabla <code>fiscal_cxc_impuestos</code> con un campo de periodo mensual y volver a cargar los montos con ese detalle &#x2014; avísame y lo preparamos.
       </div>
     </div>
   </div>
@@ -973,8 +973,8 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
         <div>
-          <h2 style="margin:0">🧮 Calculadora de Impuestos — MI Global</h2>
-          <div class="desc" style="margin-top:6px">Estimación con base legal por tipo de impuesto. No sustituye el cálculo oficial de tu contador — úsalo como control preventivo interno.</div>
+          <h2 style="margin:0">🧮 Calculadora de Impuestos &#x2014; MI Global</h2>
+          <div class="desc" style="margin-top:6px">Estimación con base legal por tipo de impuesto. No sustituye el cálculo oficial de tu contador &#x2014; úsalo como control preventivo interno.</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <label style="font-size:12px;color:var(--muted);font-weight:600">EMPRESA</label>
@@ -1011,7 +1011,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       <div class="calc-panel card" id="panel-ISR Propio">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div>
-            <h3 style="margin:0">ISR Propio — Pago Provisional</h3>
+            <h3 style="margin:0">ISR Propio &#x2014; Pago Provisional</h3>
             <div class="desc" style="margin-top:4px">Arts. 14 LISR (PM). Pago mensual = 1/12 estimado anual o coeficiente de utilidad del ejercicio anterior.</div>
           </div>
           <span class="sem-chip naranja" style="font-size:10px">CFF · SAT · Vence día 17</span>
@@ -1028,11 +1028,11 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
         </div>
         <div class="result-box" id="res-ISR Propio" style="margin-top:12px">
           <div class="result-row"><span class="muted">Utilidad fiscal estimada (ingresos × CU)</span><span id="isrp_r_utilidad">$0.00</span></div>
-          <div class="result-row"><span class="muted">Base ISR (utilidad − PTU − pérdidas)</span><span id="isrp_r_base">$0.00</span></div>
+          <div class="result-row"><span class="muted">Base ISR (utilidad &#x2212; PTU &#x2212; pérdidas)</span><span id="isrp_r_base">$0.00</span></div>
           <div class="result-row"><span class="muted">ISR provisional (30% × base)</span><span id="isrp_r_isr">$0.00</span></div>
           <div class="result-row"><span class="muted">Menos: pagos provisionales anteriores</span><span id="isrp_r_menos_pp">$0.00</span></div>
           <div class="result-row total"><span>ISR a pagar este periodo</span><span id="isrp_r_total">$0.00</span></div>
-          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Arts. 14, 9 LISR · Tasa 30% PM · Vence día 17 del mes siguiente</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">&#x2696;️ Arts. 14, 9 LISR · Tasa 30% PM · Vence día 17 del mes siguiente</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
         </div>
         <button class="btn" style="margin-top:12px" onclick="guardarCalculo('ISR Propio')">💾 Guardar en historial</button>
       </div>
@@ -1044,7 +1044,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
             <h3 style="margin:0">ISR Retenido a Empleados</h3>
             <div class="desc" style="margin-top:4px">Art. 96 LISR. La empresa retiene el ISR de nómina y lo entera. Monto retenido y no enterado: riesgo fiduciario arts. 108-109 CFF.</div>
           </div>
-          <span class="sem-chip rojo" style="font-size:10px">⚠️ Fiduciario · SAT · Vence día 17</span>
+          <span class="sem-chip rojo" style="font-size:10px">&#x26A0;️ Fiduciario · SAT · Vence día 17</span>
         </div>
         <div class="grid-3">
           <div class="field"><label>Nómina bruta del periodo</label><input id="isre_nomina" type="number" step="0.01" placeholder="0.00" oninput="calcISREmpleados()"></div>
@@ -1055,7 +1055,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
           <div class="result-row"><span class="muted">ISR retenido</span><span id="isre_r_retenido">$0.00</span></div>
           <div class="result-row"><span class="muted">Menos: subsidio al empleo</span><span id="isre_r_subsidio">$0.00</span></div>
           <div class="result-row total"><span>ISR neto a enterar</span><span id="isre_r_total">$0.00</span></div>
-          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Art. 96 LISR · Vence día 17 · No enterar = riesgo penal arts. 108-109 CFF</span><span style="font-size:10px;color:var(--red)">Fiduciario</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">&#x2696;️ Art. 96 LISR · Vence día 17 · No enterar = riesgo penal arts. 108-109 CFF</span><span style="font-size:10px;color:var(--red)">Fiduciario</span></div>
         </div>
         <button class="btn" style="margin-top:12px" onclick="guardarCalculo('ISR Retenido a Empleados')">💾 Guardar en historial</button>
       </div>
@@ -1067,7 +1067,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
             <h3 style="margin:0">ISR Retenido a Terceros</h3>
             <div class="desc" style="margin-top:4px">Arts. 106, 116 LISR. Retención sobre honorarios (10%), arrendamiento (20% si PM, tablas si PF), fletes (7.5%).</div>
           </div>
-          <span class="sem-chip rojo" style="font-size:10px">⚠️ Fiduciario · SAT · Vence día 17</span>
+          <span class="sem-chip rojo" style="font-size:10px">&#x26A0;️ Fiduciario · SAT · Vence día 17</span>
         </div>
         <div class="grid-3">
           <div class="field"><label>Honorarios pagados</label><input id="isrt_honorarios" type="number" step="0.01" placeholder="0.00" oninput="calcISRTerceros()"></div>
@@ -1079,7 +1079,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
           <div class="result-row"><span class="muted">ISR arrendamiento (20% art. 116 LISR)</span><span id="isrt_r_arr">$0.00</span></div>
           <div class="result-row"><span class="muted">ISR fletes (7.5% art. 106 LISR)</span><span id="isrt_r_fle">$0.00</span></div>
           <div class="result-row total"><span>Total ISR a enterar</span><span id="isrt_r_total">$0.00</span></div>
-          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Arts. 106, 116 LISR · Vence día 17 · Fiduciario: riesgo arts. 108-109 CFF</span><span style="font-size:10px;color:var(--red)">Fiduciario</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">&#x2696;️ Arts. 106, 116 LISR · Vence día 17 · Fiduciario: riesgo arts. 108-109 CFF</span><span style="font-size:10px;color:var(--red)">Fiduciario</span></div>
         </div>
         <button class="btn" style="margin-top:12px" onclick="guardarCalculo('ISR Retenido a Terceros')">💾 Guardar en historial</button>
       </div>
@@ -1088,8 +1088,8 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       <div class="calc-panel card" id="panel-IVA" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div>
-            <h3 style="margin:0">IVA — Declaración Mensual</h3>
-            <div class="desc" style="margin-top:4px">Arts. 5-D, 1 LIVA. IVA trasladado − IVA acreditable − retenciones recibidas. Tasa general 16% (0% exportación maquila IMMEX).</div>
+            <h3 style="margin:0">IVA &#x2014; Declaración Mensual</h3>
+            <div class="desc" style="margin-top:4px">Arts. 5-D, 1 LIVA. IVA trasladado &#x2212; IVA acreditable &#x2212; retenciones recibidas. Tasa general 16% (0% exportación maquila IMMEX).</div>
           </div>
           <span class="sem-chip naranja" style="font-size:10px">CFF · SAT · Vence día 17</span>
         </div>
@@ -1109,7 +1109,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
           <div class="result-row"><span class="muted">Menos: IVA retenido recibido</span><span id="iva_r_ret">$0.00</span></div>
           <div class="result-row"><span class="muted">Menos: saldo a favor anterior / compensaciones</span><span id="iva_r_saldo">$0.00</span></div>
           <div class="result-row total"><span>IVA a pagar / a favor</span><span id="iva_r_total">$0.00</span></div>
-          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Arts. 5-D, 1, 6 LIVA · Tasa 16% / 0% exportación · Vence día 17</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">&#x2696;️ Arts. 5-D, 1, 6 LIVA · Tasa 16% / 0% exportación · Vence día 17</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
         </div>
         <button class="btn" style="margin-top:12px" onclick="guardarCalculo('IVA')">💾 Guardar en historial</button>
       </div>
@@ -1121,7 +1121,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
             <h3 style="margin:0">IVA Retenido a Terceros</h3>
             <div class="desc" style="margin-top:4px">Art. 1-A LIVA. Retención 2/3 del IVA facturado por: personas físicas (honorarios, arrendamiento) y fletes terrestres.</div>
           </div>
-          <span class="sem-chip rojo" style="font-size:10px">⚠️ Fiduciario · SAT · Vence día 17</span>
+          <span class="sem-chip rojo" style="font-size:10px">&#x26A0;️ Fiduciario · SAT · Vence día 17</span>
         </div>
         <div class="grid-3">
           <div class="field"><label>IVA facturado por PF (honorarios/arrend.)</label><input id="ivart_pf" type="number" step="0.01" placeholder="0.00" oninput="calcIVARet()"></div>
@@ -1133,7 +1133,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
           <div class="result-row"><span class="muted">Retención fletes (4% sobre valor del servicio, aprox.)</span><span id="ivart_r_fle">$0.00</span></div>
           <div class="result-row"><span class="muted">Retención otros</span><span id="ivart_r_otros">$0.00</span></div>
           <div class="result-row total"><span>Total IVA retenido a enterar</span><span id="ivart_r_total">$0.00</span></div>
-          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Art. 1-A LIVA · 2/3 del IVA facturado · Fiduciario: riesgo arts. 108-109 CFF</span><span style="font-size:10px;color:var(--red)">Fiduciario</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">&#x2696;️ Art. 1-A LIVA · 2/3 del IVA facturado · Fiduciario: riesgo arts. 108-109 CFF</span><span style="font-size:10px;color:var(--red)">Fiduciario</span></div>
         </div>
         <button class="btn" style="margin-top:12px" onclick="guardarCalculo('IVA Retenido a Terceros')">💾 Guardar en historial</button>
       </div>
@@ -1142,7 +1142,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       <div class="calc-panel card" id="panel-IMSS / Seguridad Social" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div>
-            <h3 style="margin:0">IMSS — Cuotas Patronales y Obreras</h3>
+            <h3 style="margin:0">IMSS &#x2014; Cuotas Patronales y Obreras</h3>
             <div class="desc" style="margin-top:4px">Arts. 25-38 LSS. Cuota patronal + cuota obrera por: EnfMatern, IV-D, GVT, RT, Guarderías, RCV. Base: SBC diario × días trabajados. Vence día 17 del mes siguiente. Bimestral: RCV/INFONAVIT.</div>
           </div>
           <span class="sem-chip naranja" style="font-size:10px">LSS · IMSS · Vence día 17</span>
@@ -1154,14 +1154,14 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
         </div>
         <div style="margin-bottom:10px;font-size:12px;color:var(--muted)">Tasas 2026: EnfMatern patronal 20.40%, obrera 2.125% · GVT patronal 3.150% · IV-D patronal 1.75%, obrera 0.625% · RT según prima · Guarderías 1% · RCV patronal 3.150%, obrera 1.125%</div>
         <div class="grid-3">
-          <div class="field"><label>Prima RT (riesgo de trabajo)</label><input id="imss_prima_rt" type="number" step="0.0001" placeholder="0.0055" value="0.5" oninput="calcIMSS()"><span style="font-size:10px;color:var(--muted)">% sobre SBC · clases I–V</span></div>
+          <div class="field"><label>Prima RT (riesgo de trabajo)</label><input id="imss_prima_rt" type="number" step="0.0001" placeholder="0.0055" value="0.5" oninput="calcIMSS()"><span style="font-size:10px;color:var(--muted)">% sobre SBC · clases I&#x2013;V</span></div>
           <div class="field"><label>Cuotas patronales calculadas (manual)</label><input id="imss_pat" type="number" step="0.01" placeholder="0.00" oninput="calcIMSS()"></div>
           <div class="field"><label>Cuotas obreras a retener</label><input id="imss_ob" type="number" step="0.01" placeholder="0.00" oninput="calcIMSS()"></div>
         </div>
         <div class="result-box" id="res-IMSS / Seguridad Social" style="margin-top:12px">
           <div class="result-row"><span class="muted">Masa salarial (trab × SBC × días)</span><span id="imss_r_masa">$0.00</span></div>
-          <div class="result-row"><span class="muted">Cuota patronal estimada (≈25.4% masa)*</span><span id="imss_r_pat_est">$0.00</span></div>
-          <div class="result-row"><span class="muted">Cuota obrera estimada (≈3.875% masa)*</span><span id="imss_r_ob_est">$0.00</span></div>
+          <div class="result-row"><span class="muted">Cuota patronal estimada (&#x2248;25.4% masa)*</span><span id="imss_r_pat_est">$0.00</span></div>
+          <div class="result-row"><span class="muted">Cuota obrera estimada (&#x2248;3.875% masa)*</span><span id="imss_r_ob_est">$0.00</span></div>
           <div class="result-row total"><span>Total cuotas a liquidar (patronal + obrera)</span><span id="imss_r_total">$0.00</span></div>
           <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">*Tasa compuesta aprox. · Usar SUA para cálculo oficial · Arts. 25-38 LSS · Vence día 17</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
         </div>
@@ -1172,7 +1172,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       <div class="calc-panel card" id="panel-INFONAVIT / RCV" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div>
-            <h3 style="margin:0">INFONAVIT / RCV — Aportaciones Bimestrales</h3>
+            <h3 style="margin:0">INFONAVIT / RCV &#x2014; Aportaciones Bimestrales</h3>
             <div class="desc" style="margin-top:4px">Arts. 29-35 Ley INFONAVIT · Art. 168 LSS RCV. Aportación patronal INFONAVIT 5% SBC + descuento crédito obrero. RCV patronal 2% SBC. Bimestral.</div>
           </div>
           <span class="sem-chip naranja" style="font-size:10px">INFONAVIT · Bimestral · Vence día 17</span>
@@ -1193,7 +1193,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
           <div class="result-row"><span class="muted">Aportación RCV patronal (2% masa)</span><span id="info_r_rcv">$0.00</span></div>
           <div class="result-row"><span class="muted">Descuentos crédito obrero (estimado bimestre)</span><span id="info_r_desc">$0.00</span></div>
           <div class="result-row total"><span>Total a enterar (INFONAVIT + RCV + créditos)</span><span id="info_r_total">$0.00</span></div>
-          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Arts. 29 Ley INFONAVIT · Art. 168 LSS · 5% + 2% SBC patronal · Vence día 17 bimestre sig.</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">&#x2696;️ Arts. 29 Ley INFONAVIT · Art. 168 LSS · 5% + 2% SBC patronal · Vence día 17 bimestre sig.</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
         </div>
         <button class="btn" style="margin-top:12px" onclick="guardarCalculo('INFONAVIT / RCV')">💾 Guardar en historial</button>
       </div>
@@ -1202,7 +1202,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       <div class="calc-panel card" id="panel-ISN Estatal" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div>
-            <h3 style="margin:0">ISN — Impuesto Sobre Nómina · Baja California</h3>
+            <h3 style="margin:0">ISN &#x2014; Impuesto Sobre Nómina · Baja California</h3>
             <div class="desc" style="margin-top:4px">Art. 151-9 Ley de Hacienda del Estado de BC. Tasa 2.5% sobre nómina gravable. Vence día 15 del mes siguiente. Recargos BC: 2.25%/mes.</div>
           </div>
           <span class="sem-chip amarillo" style="font-size:10px">Estatal BC · Hacienda BC · Vence día 15</span>
@@ -1213,9 +1213,9 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
           <div class="field"><label>Deducciones exentas (aguinaldo, PTU exenta, etc.)</label><input id="isn_exento" type="number" step="0.01" placeholder="0.00" oninput="calcISN()"></div>
         </div>
         <div class="result-box" id="res-ISN Estatal" style="margin-top:12px">
-          <div class="result-row"><span class="muted">Nómina gravable neta (nómina − exentos)</span><span id="isn_r_base">$0.00</span></div>
+          <div class="result-row"><span class="muted">Nómina gravable neta (nómina &#x2212; exentos)</span><span id="isn_r_base">$0.00</span></div>
           <div class="result-row total"><span>ISN a pagar (tasa × base)</span><span id="isn_r_total">$0.00</span></div>
-          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">⚖️ Art. 151-9 Ley Hacienda BC · Tasa 2.5% · Recargos mora 2.25%/mes · Vence día 15</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
+          <div class="result-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span class="muted" style="font-size:10px">&#x2696;️ Art. 151-9 Ley Hacienda BC · Tasa 2.5% · Recargos mora 2.25%/mes · Vence día 15</span><span style="font-size:10px;color:var(--muted)">Estimado</span></div>
         </div>
         <button class="btn" style="margin-top:12px" onclick="guardarCalculo('ISN Estatal')">💾 Guardar en historial</button>
       </div>
@@ -1248,7 +1248,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
             <th>Impuesto calc.</th>
             <th>Total a pagar</th>
           </tr></thead>
-          <tbody id="tblImpuestos"><tr><td colspan="6" style="color:var(--muted)">Cargando…</td></tr></tbody>
+          <tbody id="tblImpuestos"><tr><td colspan="6" style="color:var(--muted)">Cargando&#x2026;</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1261,7 +1261,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
         <div>
-          <h2 style="margin:0">💸 Recuperaciones IVA — Devoluciones SAT</h2>
+          <h2 style="margin:0">💸 Recuperaciones IVA &#x2014; Devoluciones SAT</h2>
           <div class="desc" style="margin-top:6px">Seguimiento mensual de solicitudes de devolución de IVA a favor. Base: art. 22 CFF. Alertas por depósitos vencidos, requerimientos SAT y riesgo de prescripción.</div>
         </div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -1289,15 +1289,15 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       <div class="kpi-card" style="border-left:3px solid #002855">
         <div class="kpi-label">💰 A Favor Total</div>
         <div class="kpi-value" id="recKpiFavor" style="font-size:20px;margin-top:4px;color:#002855">$0</div>
-        <div class="kpi-sub" id="recKpiFavorSub" style="margin-top:6px">— períodos acumulados</div>
+        <div class="kpi-sub" id="recKpiFavorSub" style="margin-top:6px">&#x2014; períodos acumulados</div>
       </div>
       <div class="kpi-card" style="border-left:3px solid var(--green)">
-        <div class="kpi-label">✅ Devuelto</div>
+        <div class="kpi-label">&#x2705; Devuelto</div>
         <div class="kpi-value" id="recKpiDevuelto" style="font-size:20px;margin-top:4px;color:var(--green)">$0</div>
         <div class="kpi-sub" id="recKpiDevueltoSub" style="margin-top:6px">Recibido en cuenta bancaria</div>
       </div>
       <div class="kpi-card" style="border-left:3px solid #0284c7">
-        <div class="kpi-label">🔵 Aprobado — Dep. Pdte</div>
+        <div class="kpi-label">🔵 Aprobado &#x2014; Dep. Pdte</div>
         <div class="kpi-value" id="recKpiAprobado" style="font-size:20px;margin-top:4px;color:#0284c7">$0</div>
         <div class="kpi-sub" id="recKpiAprobadoSub" style="margin-top:6px">Aprobado sin depositar</div>
       </div>
@@ -1322,30 +1322,30 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
     <div class="card" style="margin-bottom:16px;border-left:4px solid var(--red)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
         <h2 style="margin:0;font-size:15px">🚨 Alertas activas</h2>
-        <div style="font-size:11.5px;color:var(--muted);font-weight:600" id="recAlertasResumen">—</div>
+        <div style="font-size:11.5px;color:var(--muted);font-weight:600" id="recAlertasResumen">&#x2014;</div>
       </div>
       <div id="recAlertasLista" style="display:flex;flex-direction:column;gap:8px">
-        <div style="color:var(--muted);font-size:13px">Cargando…</div>
+        <div style="color:var(--muted);font-size:13px">Cargando&#x2026;</div>
       </div>
     </div>
 
     <!-- MÉTRICAS DE EFICIENCIA SAT -->
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-        <h2 style="margin:0;font-size:15px">⚡ Eficiencia SAT — días de proceso</h2>
-        <div id="recEfPromedio" style="font-size:12px;color:var(--muted);font-weight:600">—</div>
+        <h2 style="margin:0;font-size:15px">&#x26A1; Eficiencia SAT &#x2014; días de proceso</h2>
+        <div id="recEfPromedio" style="font-size:12px;color:var(--muted);font-weight:600">&#x2014;</div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:12px">
         <div style="background:#d1fae5;border:1px solid #10b981;border-radius:10px;padding:12px;text-align:center">
-          <div style="font-size:22px;font-weight:800;color:#065f46" id="recEfRapido">—</div>
+          <div style="font-size:22px;font-weight:800;color:#065f46" id="recEfRapido">&#x2014;</div>
           <div style="font-size:11px;color:#065f46;font-weight:600">🟢 Rápido (&lt;40d)</div>
         </div>
         <div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:12px;text-align:center">
-          <div style="font-size:22px;font-weight:800;color:#713f12" id="recEfNormal">—</div>
+          <div style="font-size:22px;font-weight:800;color:#713f12" id="recEfNormal">&#x2014;</div>
           <div style="font-size:11px;color:#713f12;font-weight:600">🟡 Normal (40-60d)</div>
         </div>
         <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:12px;text-align:center">
-          <div style="font-size:22px;font-weight:800;color:#991b1b" id="recEfLento">—</div>
+          <div style="font-size:22px;font-weight:800;color:#991b1b" id="recEfLento">&#x2014;</div>
           <div style="font-size:11px;color:#991b1b;font-weight:600">🔴 Lento (&gt;60d)</div>
         </div>
       </div>
@@ -1362,8 +1362,8 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
           <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:#f97316;color:#f97316" onclick="recFiltrar('requerimiento')">🟠 Requerimiento</button>
           <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:#0284c7;color:#0284c7" onclick="recFiltrar('aprobado_pdte')">🔵 Aprobado</button>
           <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:var(--yellow);color:var(--yellow)" onclick="recFiltrar('en_proceso')">🟡 En Proceso</button>
-          <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:var(--muted);color:var(--muted)" onclick="recFiltrar('no_solicitado')">⬜ No Sol.</button>
-          <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:var(--green);color:var(--green)" onclick="recFiltrar('devuelto')">✅ Devuelto</button>
+          <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:var(--muted);color:var(--muted)" onclick="recFiltrar('no_solicitado')">&#x2B1C; No Sol.</button>
+          <button class="btn-secondary btn" style="font-size:11px;padding:4px 10px;border-color:var(--green);color:var(--green)" onclick="recFiltrar('devuelto')">&#x2705; Devuelto</button>
         </div>
       </div>
       <div style="overflow-x:auto">
@@ -1382,36 +1382,36 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
               <th style="padding:9px 10px;border-bottom:2px solid var(--border);text-align:center">Acciones</th>
             </tr>
           </thead>
-          <tbody id="recTablaPeriodos"><tr><td colspan="10" style="padding:16px;color:var(--muted)">Cargando…</td></tr></tbody>
+          <tbody id="recTablaPeriodos"><tr><td colspan="10" style="padding:16px;color:var(--muted)">Cargando&#x2026;</td></tr></tbody>
         </table>
       </div>
     </div>
 
-    <!-- TIMELINE DE EVENTOS (log semanal — vista ejecutiva) -->
+    <!-- TIMELINE DE EVENTOS (log semanal &#x2014; vista ejecutiva) -->
     <div class="card rec-timeline-card" style="margin-bottom:16px">
 
       <!-- PORTADA DE IMPRESIÓN (solo visible al imprimir) -->
       <div class="rec-print-cover" style="display:none">
         <div class="rec-print-brand">MI GLOBAL · MI Technologies</div>
         <div class="rec-print-title">Reporte de Recuperación IVA</div>
-        <div class="rec-print-subtitle" id="recPrintSubtitle">—</div>
+        <div class="rec-print-subtitle" id="recPrintSubtitle">&#x2014;</div>
         <div class="rec-print-hr"></div>
-        <div class="rec-print-kpis" id="recPrintKpis">—</div>
+        <div class="rec-print-kpis" id="recPrintKpis">&#x2014;</div>
         <div class="rec-print-hr"></div>
         <div class="rec-print-footer">Documento generado automáticamente desde SIF-Fiscal · Uso interno</div>
       </div>
 
       <div class="rec-timeline-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
         <div>
-          <h2 style="margin:0;font-size:15px">📅 Timeline semanal — actividad histórica</h2>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:3px" id="recLogResumen">—</div>
+          <h2 style="margin:0;font-size:15px">📅 Timeline semanal &#x2014; actividad histórica</h2>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:3px" id="recLogResumen">&#x2014;</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap" class="rec-no-print">
           <button onclick="expandirTodosAnios(true)" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:11.5px;font-weight:600;cursor:pointer">
-            ⤵ Expandir todo
+            &#x2935; Expandir todo
           </button>
           <button onclick="expandirTodosAnios(false)" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:11.5px;font-weight:600;cursor:pointer">
-            ⤴ Colapsar todo
+            &#x2934; Colapsar todo
           </button>
           <button onclick="imprimirTimelineIva()" style="padding:6px 14px;border-radius:6px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,40,85,.25)">
             🖨️ Imprimir reporte
@@ -1420,7 +1420,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       </div>
 
       <div id="recTimeline" class="rec-timeline-body">
-        <div style="color:var(--muted);font-size:13px;padding:8px 0">Cargando…</div>
+        <div style="color:var(--muted);font-size:13px;padding:8px 0">Cargando&#x2026;</div>
       </div>
     </div>
 
@@ -1429,7 +1429,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       <h2 style="font-size:15px;margin-bottom:6px">🔮 Proyección de recuperación</h2>
       <div class="desc" style="margin-bottom:14px">Basado en la cartera actual + tiempos SAT históricos. Probabilidad ALTA = aprobado sin depositar. MEDIA = en proceso normal. BAJA = requerimiento pendiente.</div>
       <div id="recProyeccion" style="display:grid;gap:10px">
-        <div style="color:var(--muted);font-size:13px">Cargando…</div>
+        <div style="color:var(--muted);font-size:13px">Cargando&#x2026;</div>
       </div>
       <div id="recProyeccionTotal" style="margin-top:14px;padding:14px;background:var(--surface2);border-radius:10px;font-size:13px;font-weight:700;text-align:center"></div>
     </div>
@@ -1439,7 +1439,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
   <!-- ═══════════ VISTA: GRUPO (consolidación grupal) ═══════════ -->
   <div class="view" id="view-grupo">
     <div class="card">
-      <h2>🏢 Consolidación grupal — MI Global</h2>
+      <h2>🏢 Consolidación grupal &#x2014; MI Global</h2>
       <div class="desc">Deuda fiscal agregada por empresa. Efectivo (pendiente) · En plan · Liquidado · Fiduciario de alto riesgo. Actualización en tiempo real desde Supabase.</div>
 
       <!-- KPIs grupo -->
@@ -1450,7 +1450,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
           <div class="kpi-sub" id="gkpiTotalSub" style="font-size:11px;margin-top:4px">5 empresas</div>
         </div>
         <div class="kpi-card" style="padding:14px;border-color:#dc2626">
-          <div class="kpi-label" style="font-size:11px;color:#dc2626">⚠️ Fiduciario pendiente</div>
+          <div class="kpi-label" style="font-size:11px;color:#dc2626">&#x26A0;️ Fiduciario pendiente</div>
           <div class="kpi-value" id="gkpiFiduciario" style="font-size:20px;margin-top:4px;color:#dc2626">$0</div>
           <div class="kpi-sub" id="gkpiFiduciarioSub" style="font-size:11px;margin-top:4px">Arts. 108-109 CFF</div>
         </div>
@@ -1479,7 +1479,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
             <th>Fiduciario</th>
             <th>Workflow</th>
           </tr></thead>
-          <tbody id="tblGrupo"><tr><td colspan="8" style="color:var(--muted)">Cargando…</td></tr></tbody>
+          <tbody id="tblGrupo"><tr><td colspan="8" style="color:var(--muted)">Cargando&#x2026;</td></tr></tbody>
         </table>
       </div>
       <div style="margin-top:10px;font-size:11px;color:var(--muted)">* Monto histórico sin accesorios. Los recargos e INPC se calculan en la vista CXP Fiscal.</div>
@@ -1493,27 +1493,27 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px">
         <h2 style="margin:0">🔍 Detector de anomalías</h2>
-        <button onclick="ejecutarDetectorAnomalias()" style="padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer">▶ Analizar ahora</button>
+        <button onclick="ejecutarDetectorAnomalias()" style="padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer">&#x25B6; Analizar ahora</button>
       </div>
       <div class="desc">Analiza patrones anómalos: obligaciones sin mes exigible, concentración de deuda fiduciaria, montos atípicos por empresa, vencimientos críticos y más. Basado en tus datos reales de <code>fiscal_cxc_impuestos</code>.</div>
 
       <!-- KPIs anomalías -->
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0">
         <div style="background:#fef3cd;border:1px solid #fbbf24;border-radius:10px;padding:12px;text-align:center">
-          <div style="font-size:22px;font-weight:800;color:#92400e" id="anomN_critica">—</div>
+          <div style="font-size:22px;font-weight:800;color:#92400e" id="anomN_critica">&#x2014;</div>
           <div style="font-size:11px;color:#92400e;font-weight:600">🔴 Críticas</div>
         </div>
         <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:12px;text-align:center">
-          <div style="font-size:22px;font-weight:800;color:#991b1b" id="anomN_alta">—</div>
+          <div style="font-size:22px;font-weight:800;color:#991b1b" id="anomN_alta">&#x2014;</div>
           <div style="font-size:11px;color:#991b1b;font-weight:600">🟠 Altas</div>
         </div>
         <div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:12px;text-align:center">
-          <div style="font-size:22px;font-weight:800;color:#713f12" id="anomN_media">—</div>
+          <div style="font-size:22px;font-weight:800;color:#713f12" id="anomN_media">&#x2014;</div>
           <div style="font-size:11px;color:#713f12;font-weight:600">🟡 Medias</div>
         </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
-          <div style="font-size:22px;font-weight:800;color:var(--muted)" id="anomN_baja">—</div>
-          <div style="font-size:11px;color:var(--muted);font-weight:600">⚪ Bajas</div>
+          <div style="font-size:22px;font-weight:800;color:var(--muted)" id="anomN_baja">&#x2014;</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600">&#x26AA; Bajas</div>
         </div>
       </div>
 
@@ -1525,8 +1525,8 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
     <!-- 3-A-bis: Priorización de Pagos -->
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px">
-        <h2 style="margin:0">🎯 Priorización de Pagos — Impuestos más urgentes a cubrir</h2>
-        <button onclick="ejecutarPriorizacionPagos()" style="padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer">▶ Calcular</button>
+        <h2 style="margin:0">🎯 Priorización de Pagos &#x2014; Impuestos más urgentes a cubrir</h2>
+        <button onclick="ejecutarPriorizacionPagos()" style="padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer">&#x25B6; Calcular</button>
       </div>
       <div class="desc">Toma el monto ya planeado para "Impuestos" en el Plan de Pagos (Deadpool · <code>catalogo_cxp</code>) y decide, dentro de la cartera de CXP Fiscal, qué obligaciones cubrir primero según su riesgo legal.</div>
 
@@ -1535,15 +1535,15 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
         <div class="totales-grid">
           <div class="ptile tile-impuesto">
             <div class="ptile-head">
-              <div class="ptile-icon">✅</div>
+              <div class="ptile-icon">&#x2705;</div>
               <span class="ptile-badge b-neutral"><span class="dot"></span>RECOMENDADO</span>
             </div>
             <div class="ptile-title">Escenario Ideal</div>
             <div class="ptile-value" id="prioIdealMonto">$0</div>
             <div class="ptile-desc">= suma de la columna <code>recomendado</code> del Plan de Pagos (Deadpool) para la categoría Impuestos.</div>
             <div class="ptile-footer">
-              <div class="ptile-meta"><span class="k">Obligaciones cubiertas</span><span class="v" id="prioIdealCubiertas">—</span></div>
-              <div class="ptile-meta"><span class="k">Sobrante sin asignar</span><span class="v" id="prioIdealSobrante">—</span></div>
+              <div class="ptile-meta"><span class="k">Obligaciones cubiertas</span><span class="v" id="prioIdealCubiertas">&#x2014;</span></div>
+              <div class="ptile-meta"><span class="k">Sobrante sin asignar</span><span class="v" id="prioIdealSobrante">&#x2014;</span></div>
               <div class="ptile-meta"><span class="k">Fuente</span><span class="v">catalogo_cxp</span></div>
             </div>
           </div>
@@ -1556,8 +1556,8 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
             <div class="ptile-value" id="prioMinimoMonto">$0</div>
             <div class="ptile-desc">= suma de la columna <code>urgente</code> del Plan de Pagos (Deadpool) para la categoría Impuestos.</div>
             <div class="ptile-footer">
-              <div class="ptile-meta"><span class="k">Obligaciones cubiertas</span><span class="v" id="prioMinimoCubiertas">—</span></div>
-              <div class="ptile-meta"><span class="k">Sobrante sin asignar</span><span class="v" id="prioMinimoSobrante">—</span></div>
+              <div class="ptile-meta"><span class="k">Obligaciones cubiertas</span><span class="v" id="prioMinimoCubiertas">&#x2014;</span></div>
+              <div class="ptile-meta"><span class="k">Sobrante sin asignar</span><span class="v" id="prioMinimoSobrante">&#x2014;</span></div>
               <div class="ptile-meta"><span class="k">Fuente</span><span class="v">catalogo_cxp</span></div>
             </div>
           </div>
@@ -1581,7 +1581,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
         </div>
 
         <div class="legend" style="font-size:11px;color:var(--muted);background:var(--surface2);border:1px dashed var(--border);border-radius:10px;padding:12px 14px;margin-top:14px;line-height:1.6">
-          <b>Criterio de prioridad (igual al semáforo ya usado en CXP Fiscal):</b> 1º 🔴 fiduciario pendiente — riesgo penal arts.108-109 CFF; 2º 🟠 no fiduciario en mora — recargos 2.07%/mes art.21 CFF (o 2.25%/mes ISN BC); 3º 🟡 ya en plan de pago o por vencer, sin riesgo inmediato. El monto planeado se agota nivel por nivel: primero se maximiza cuánto de lo fiduciario se puede cerrar (ordenado por monto de mayor a menor dentro del nivel); solo lo que sobra pasa al siguiente nivel. Una obligación de menor riesgo nunca se cubre mientras quede presupuesto sin intentar en un nivel de mayor riesgo.
+          <b>Criterio de prioridad (igual al semáforo ya usado en CXP Fiscal):</b> 1º 🔴 fiduciario pendiente &#x2014; riesgo penal arts.108-109 CFF; 2º 🟠 no fiduciario en mora &#x2014; recargos 2.07%/mes art.21 CFF (o 2.25%/mes ISN BC); 3º 🟡 ya en plan de pago o por vencer, sin riesgo inmediato. El monto planeado se agota nivel por nivel: primero se maximiza cuánto de lo fiduciario se puede cerrar (ordenado por monto de mayor a menor dentro del nivel); solo lo que sobra pasa al siguiente nivel. Una obligación de menor riesgo nunca se cubre mientras quede presupuesto sin intentar en un nivel de mayor riesgo.
         </div>
       </div>
     </div>
@@ -1635,7 +1635,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
         <div style="border:1.5px solid #f59e0b;border-radius:12px;padding:14px;cursor:pointer;transition:all .2s" onclick="wifSeleccionar('condonacion_lif',this)" id="wifCardLif">
           <div style="font-size:16px;margin-bottom:6px">🎁</div>
           <div style="font-weight:700;font-size:13px;color:#b45309">Estímulo LIF 2026</div>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:4px">100% condonación multas+recargos. Solo ISR/IVA. Ingresos ≤$300M MXN.</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:4px">100% condonación multas+recargos. Solo ISR/IVA. Ingresos &#x2264;$300M MXN.</div>
         </div>
       </div>
 
@@ -1659,11 +1659,11 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
       <div class="desc">Proyecta los próximos 6 meses de obligaciones fiscales basado en la cartera actual. Identifica meses de alta presión y el impacto acumulado de recargos si no se paga.</div>
 
       <button onclick="ejecutarPredictor()" style="padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#002855,#0057B8);color:#fff;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:16px">
-        ▶ Generar proyección 6 meses
+        &#x25B6; Generar proyección 6 meses
       </button>
 
       <div id="predictorResultados" style="display:none">
-        <div style="font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:12px">PROYECCIÓN MENSUAL — RECARGOS ACUMULADOS</div>
+        <div style="font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:12px">PROYECCIÓN MENSUAL &#x2014; RECARGOS ACUMULADOS</div>
         <div id="predictorBars" style="display:flex;flex-direction:column;gap:8px"></div>
         <div id="predictorAlerta" style="margin-top:14px;font-size:12.5px;color:var(--muted)"></div>
       </div>
@@ -1679,10 +1679,10 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
 <div id="cxcUploadModal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);width:min(960px,94vw);max-height:88vh;overflow:hidden;display:none;flex-direction:column">
   <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff">
     <div>
-      <div style="font-size:15px;font-weight:700" data-i18n="modal_title">📤 Vista previa — Carga masiva CXP Fiscal</div>
-      <div id="cxcUploadSubtitle" style="font-size:11.5px;opacity:.85;margin-top:2px">—</div>
+      <div style="font-size:15px;font-weight:700" data-i18n="modal_title">📤 Vista previa &#x2014; Carga masiva CXP Fiscal</div>
+      <div id="cxcUploadSubtitle" style="font-size:11.5px;opacity:.85;margin-top:2px">&#x2014;</div>
     </div>
-    <button onclick="cerrarModalCarga()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px" data-i18n="modal_close">✕ Cerrar</button>
+    <button onclick="cerrarModalCarga()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px" data-i18n="modal_close">&#x2715; Cerrar</button>
   </div>
   <div id="cxcUploadResumen" style="padding:12px 22px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:20px;flex-wrap:wrap;font-size:12px"></div>
   <div style="overflow:auto;flex:1">
@@ -1707,7 +1707,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
     <div id="cxcUploadStatus" style="font-size:12px;color:var(--muted)" data-i18n="modal_status">Revisa la propuesta antes de confirmar.</div>
     <div style="display:flex;gap:10px">
       <button onclick="cerrarModalCarga()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer" data-i18n="modal_cancel">Cancelar</button>
-      <button id="btnConfirmarCarga" onclick="confirmarCargaMasiva()" style="background:var(--green);color:#000;border:none;border-radius:8px;padding:9px 22px;font-size:12px;font-weight:700;cursor:pointer" data-i18n="modal_confirm">✓ Confirmar carga</button>
+      <button id="btnConfirmarCarga" onclick="confirmarCargaMasiva()" style="background:var(--green);color:#000;border:none;border-radius:8px;padding:9px 22px;font-size:12px;font-weight:700;cursor:pointer" data-i18n="modal_confirm">&#x2713; Confirmar carga</button>
     </div>
   </div>
 </div>
@@ -5006,8 +5006,8 @@ bootstrapAuth();
       <div>
         <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">Incluir multas</label>
         <select id="accMultas" style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:7px;font-size:13px">
-          <option value="no">No — pago espontáneo</option>
-          <option value="si">Sí — con reducción 45 días (art. 75)</option>
+          <option value="no">No &#x2014; pago espontáneo</option>
+          <option value="si">Sí &#x2014; con reducción 45 días (art. 75)</option>
         </select>
       </div>
       <div>
@@ -5090,9 +5090,9 @@ bootstrapAuth();
         <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">ESTATUS</label>
         <select id="recEvEstatus" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
           <option value="pendiente">⏳ Pendiente</option>
-          <option value="completado">✅ Completado</option>
+          <option value="completado">&#x2705; Completado</option>
           <option value="bloqueado">🔴 Bloqueado</option>
-          <option value="cancelado">⚪ Cancelado</option>
+          <option value="cancelado">&#x26AA; Cancelado</option>
         </select>
       </div>
     </div>
@@ -5109,12 +5109,12 @@ bootstrapAuth();
 
     <div style="margin-bottom:14px">
       <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">NOTAS</label>
-      <textarea id="recEvNotas" rows="2" placeholder="Notas adicionales…" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text);font-family:inherit;resize:vertical"></textarea>
+      <textarea id="recEvNotas" rows="2" placeholder="Notas adicionales&#x2026;" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text);font-family:inherit;resize:vertical"></textarea>
     </div>
 
     <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
       <input type="checkbox" id="recEvDestacado" style="width:16px;height:16px;cursor:pointer">
-      <label for="recEvDestacado" style="font-size:12.5px;cursor:pointer">⭐ Marcar como evento destacado</label>
+      <label for="recEvDestacado" style="font-size:12.5px;cursor:pointer">&#x2B50; Marcar como evento destacado</label>
     </div>
 
     <div style="display:flex;gap:10px;justify-content:flex-end">
@@ -5177,19 +5177,19 @@ bootstrapAuth();
       <div>
         <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">ESTADO</label>
         <select id="recPerEstado" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text)">
-          <option value="no_solicitado">⬜ No Solicitado</option>
+          <option value="no_solicitado">&#x2B1C; No Solicitado</option>
           <option value="en_proceso">🟡 En Proceso SAT</option>
           <option value="requerimiento">🟠 Requerimiento SAT</option>
-          <option value="aprobado_pdte">🔵 Aprobado — Dep.Pdte</option>
+          <option value="aprobado_pdte">🔵 Aprobado &#x2014; Dep.Pdte</option>
           <option value="dep_vencido">🔴 Depósito Vencido</option>
-          <option value="devuelto">✅ Devuelto</option>
+          <option value="devuelto">&#x2705; Devuelto</option>
         </select>
       </div>
     </div>
 
     <div style="margin-bottom:14px">
       <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600">OBSERVACIONES</label>
-      <textarea id="recPerObs" rows="2" placeholder="Notas…" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text);font-family:inherit;resize:vertical"></textarea>
+      <textarea id="recPerObs" rows="2" placeholder="Notas&#x2026;" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface2);color:var(--text);font-family:inherit;resize:vertical"></textarea>
     </div>
 
     <div style="display:flex;gap:10px;justify-content:flex-end">
