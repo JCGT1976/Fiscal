@@ -1723,7 +1723,7 @@ details[open] > .rec-year-summary::before { transform: rotate(90deg); }
 const SUPABASE_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
 const PORTAL_URL    = 'https://jcgt1976.github.io/SIF-Portal/';
-const APP_VERSION   = '2026.07.22.2';
+const APP_VERSION   = '2026.10.29.1';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
@@ -1793,8 +1793,8 @@ async function bootstrapAuth() {
             const btnNob = document.getElementById('btnNuevaObligacion');
             if (btnNob) btnNob.style.display = 'inline-flex';
           }
-          /* Mostrar tab Inteligencia a admin_master, admin y cohost */
-          if (['admin_master','admin','cohost'].includes(currentUserRol)) {
+          /* Mostrar tab Inteligencia a admin_master, admin, cohost o usuarios con permiso 'fiscal_inteligencia' */
+          if (['admin_master','admin','cohost'].includes(currentUserRol) || modulos.includes('fiscal_inteligencia')) {
             const tabInt = document.getElementById('tabInteligencia');
             if (tabInt) tabInt.style.display = 'inline-flex';
           }
