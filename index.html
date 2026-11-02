@@ -1738,12 +1738,12 @@ let currentUserId = null;
 let currentUserRol = null;
 
 /* ═══════════════════════════════════════════════════════════════
-   GUARDIÁN DE ESCRITURAS (patrón Deadpool) — Solo admin_master y
-   cohost pueden modificar. Cualquier otro rol (view, admin, income)
+   GUARDIÁN DE ESCRITURAS (patrón Deadpool) — Solo admin_master, admin
+   y cohost pueden modificar. Cualquier otro rol (view, income)
    queda en modo solo lectura completo.
    ═══════════════════════════════════════════════════════════════ */
 function puedeEditarFiscal(){
-  return currentUserRol === 'admin_master' || currentUserRol === 'cohost';
+  return ['admin_master','admin','cohost'].includes(currentUserRol);
 }
 function requireEditFiscal(mensaje){
   if (puedeEditarFiscal()) return true;
@@ -3113,7 +3113,7 @@ let cargaMasivaPropuesta = null;
 
 async function procesarExcelCxc(file){
   if (currentUserRol !== 'admin_master' && currentUserRol !== 'cohost' && currentUserRol !== 'admin') {
-    alert('Solo admin_master o cohost pueden realizar carga masiva.');
+    alert('Solo admin_master, admin o cohost pueden realizar carga masiva.');
     return;
   }
   try {
